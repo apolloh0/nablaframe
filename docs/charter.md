@@ -1,0 +1,64 @@
+<p align="center"><img src="brand/nablaframe-mark-dark.svg" width="120" alt="Nablaframe mark"></p>
+
+# Nablaframe: Charter
+
+Nablaframe is a small GPT, trained from scratch on a Mac, whose training run and forward pass can be replayed, inspected, manipulated and refactored. Every explanation it shows carries a measured faithfulness number. It is the successor to Glasshouse, with a model where the program was.
+
+This charter changes rarely. Any change needs a C-entry in [decisions.md](decisions.md).
+
+## Goal
+
+A research and learning instrument for how a transformer learns and computes. nanoGPT makes the code readable; Nablaframe aims to make the trained model and its training run readable.
+
+## Non-goals
+
+- Speed, scale, or frontier capability.
+- A general interpretability library for arbitrary pretrained models.
+- Claims about large-model phenomena. At this scale a global workspace is a hypothesis to test, and the expected result is a null.
+- Open-ended self-improvement or autonomous research loops.
+
+## Principles
+
+Carried over from Glasshouse.
+
+- **Trace as canonical output.** Every view is a pure decode of a typed, named-axis event log.
+- **One evaluator, two modes.** The fast and instrumented forward passes are tied together by an equality oracle.
+- **Trace once, decode forever.** Deterministic replay makes counterfactuals exact instead of estimated.
+- **Honesty over cleverness.** No view ships until it recovers planted structure and comes up empty on a random-weights control. No view renders without its meter.
+- **Crystallization is demonstrated over an envelope, never proven.** The gap is always shown.
+
+## Scope for v1
+
+| Area | In scope |
+| --- | --- |
+| Models | GPT-2-style, 1–30M parameters. Architecture dial: dense baseline, LayerNorm-free or element-wise norm, weight-sparse, bilinear MLP |
+| Data | Ground-truth tasks (modular addition, induction, planted two-hop, Tracr-compiled models) and TinyStories with a word-level tokenizer of a few thousand tokens |
+| Stack | JAX on CPU as reference; Haliax and Equinox model code; Levanter as a dependency; metaljax as optional accelerator; a PyTorch lane for TransformerLens and J-lens reference cross-checks |
+| Views | Logit lens and J-lens slice views; attention, attribution and per-token loss; training-timeline scrubber; layer-structure dashboard |
+| Dictionaries | Pluggable TopK SAE, Staircase SAE, Jacobian SAE (middle-layer MLPs, experimental) and transcoder, sharing one edge-sparsity meter |
+| Manipulation | Ablate, patch, steer, J-lens coordinate swap, leave-a-batch-out replay |
+| Gestures | Name-this-direction, assert-this-edge, generalize-this, crystallize-this, open-this-up |
+| Self-learning | Test-time training and expert iteration on verifiable tasks, under a ledger with anchor results, lens diff, regression gate and revert. Promotion stays human |
+
+## Phases
+
+| Phase | Delivers | Spec |
+| --- | --- | --- |
+| 0 | Gates: backend, determinism, throughput, cross-check; trace schema; oracle harness | [specs/phase-0.md](specs/phase-0.md) |
+| 1 | Trace engine on the real model; oracle wired in | Not yet written |
+| 2 | Read-only views and the timeline scrubber | Not yet written |
+| 3 | Manipulation: ablate, patch, steer, swap | Not yet written |
+| 4 | Ground-truth zoo and discrimination tests | Not yet written |
+| 5 | Gestures and dictionaries | Not yet written |
+| 6 | Self-learning ledger | Not yet written |
+
+Phase 4 precedes Phase 5 so nothing explanatory ships untested. Each phase ends at a human gate, and nothing in the next phase starts before that gate is ruled.
+
+## Done for v1
+
+- [ ] Bit-exact replay on the reference backend, or a measured and pinned tolerance.
+- [ ] Mode-equality oracle green.
+- [ ] Every shipped view has passed its discrimination test and displays its meter.
+- [ ] Signature demos: an induction head forming at the loss bump on the scrubber, and a planted two-hop intermediate swapped with the answer changing.
+- [ ] One learned component crystallized into an explicit function, with its loss delta shown.
+- [ ] One self-update logged, evaluated and reverted.
