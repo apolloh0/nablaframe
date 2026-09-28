@@ -1,0 +1,39 @@
+# Legacy TransformerLens hook names that resolve on TransformerBridge for a
+# pre-norm GPT-2 model, blocks 0 and 1. One name per line; '#' starts a comment.
+#
+# Verified by reading the TransformerLens source at commit 24b039f (2026-09-21),
+# TransformerLens 4.x, where HookedTransformer no longer exists:
+#   bridge_core.py         hook_embed -> embed.hook_out, hook_pos_embed -> pos_embed.hook_out
+#   block.py hook_aliases  hook_resid_pre/_mid/_post, hook_attn_out, hook_mlp_out
+#   attention.py           hook_pattern (HookPoint), hook_z -> o.hook_in
+#   normalization.py       hook_normalized, hook_scale (HookPoints)
+#   gpt2.py                component tree: embed, pos_embed, blocks{ln1, attn{qkv, o}, ln2, mlp}, ln_final
+# Static reading only. scripts/check_tl_names.py confirms at runtime in nf-torch;
+# if it disagrees, report the difference instead of editing this file.
+
+hook_embed
+hook_pos_embed
+blocks.0.hook_resid_pre
+blocks.0.ln1.hook_scale
+blocks.0.ln1.hook_normalized
+blocks.0.attn.hook_pattern
+blocks.0.attn.hook_z
+blocks.0.hook_attn_out
+blocks.0.hook_resid_mid
+blocks.0.ln2.hook_scale
+blocks.0.ln2.hook_normalized
+blocks.0.hook_mlp_out
+blocks.0.hook_resid_post
+blocks.1.hook_resid_pre
+blocks.1.ln1.hook_scale
+blocks.1.ln1.hook_normalized
+blocks.1.attn.hook_pattern
+blocks.1.attn.hook_z
+blocks.1.hook_attn_out
+blocks.1.hook_resid_mid
+blocks.1.ln2.hook_scale
+blocks.1.ln2.hook_normalized
+blocks.1.hook_mlp_out
+blocks.1.hook_resid_post
+ln_final.hook_scale
+ln_final.hook_normalized

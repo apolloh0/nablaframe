@@ -1,0 +1,28 @@
+# Vendored verbatim from the Marin monorepo:
+#   https://github.com/marin-community/marin/blob/dba12e3676039d856ffb4ae95e46976d9c27c6bd/lib/levanter/config/gpt2_nano.yaml
+# The marin-levanter wheel does not ship its configs, so G0.1 reads this copy.
+# Do not edit it. G0.1 applies its overrides in code and records them in its report:
+#   trainer.num_train_steps = 1000   (spec: 1,000 steps)
+#   trainer.mp = float32              (spec: float32 reference lane; this file says bfloat16)
+#   checkpoints by step, including step 500, which G0.2 resumes from
+
+data:
+  components:
+    main:
+      source:
+        type: hf
+        id: dlwh/wikitext_103_detokenized
+model:
+  type: gpt2
+  hidden_dim: 32
+  num_heads: 4
+  num_layers: 2
+trainer:
+  mp: bfloat16
+  num_train_steps: 100
+  checkpointer:
+    keep:
+    - every: 50
+    save_interval: 5m
+  per_device_parallelism: -1
+  train_batch_size: 32

@@ -1,0 +1,74 @@
+[project]
+name = "nablaframe"
+version = "0.0.0"
+description = "A small GPT you can read: replayable training, inspectable forward passes, a meter on every view."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "safetensors",
+]
+
+[project.optional-dependencies]
+# Reference lane (nf-jax). Versions are recorded by the lockfile, not pinned here.
+# Levanter and Haliax now live in the Marin monorepo and publish only as dev builds
+# (marin-levanter, marin-haliax); the old "levanter" package stopped in October 2025.
+# A ".dev0" floor opts one package into dev builds. The other marin-* packages are
+# Levanter's own dependencies, listed so they get the same opt-in by name. Allowing
+# pre-releases globally would also pull betas of unrelated packages.
+jax = [
+    "jax",
+    "equinox",
+    "optax",
+    "marin-levanter>=0.2.0.dev0",
+    "marin-haliax>=0.2.0.dev0",
+    "marin-finelog>=0.2.0.dev0",
+    "marin-finelog-server>=0.2.0.dev0",
+    "marin-finestore>=0.2.0.dev0",
+    "marin-fray>=0.2.0.dev0",
+    "marin-iris>=0.2.0.dev0",
+    "marin-iris-native>=0.1.0.dev0",
+    "marin-rigging>=0.2.0.dev0",
+    "marin-zephyr>=0.2.0.dev0",
+]
+# Accelerator probe (nf-metal): the reference lane plus metaljax, Apple Silicon only.
+metal = [
+    "nablaframe[jax]",
+    "metaljax; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+# Cross-check lane and fallback (nf-torch).
+torch = [
+    "torch",
+    "transformer_lens",
+]
+
+[dependency-groups]
+# Installed by default by `uv sync` and `uv run`, so `uv run pytest` works as is.
+dev = [
+    "pytest",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nablaframe"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.uv]
+# The lanes never share an environment. Without this, uv resolves both extras
+# into one lock and silently backtracks transformer-lens to a pre-4.0 release.
+conflicts = [
+    [{ extra = "jax" }, { extra = "torch" }],
+    [{ extra = "metal" }, { extra = "torch" }],
+]
+# Where this project runs: apolloh0's Mac and the Project's cloud threads. uv only picks
+# versions with wheels for both, which skips partial uploads of Marin dev builds.
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
