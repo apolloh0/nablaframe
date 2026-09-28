@@ -24,3 +24,5 @@ Every ruling that shapes Nablaframe lands here, with its reason and its evidence
 | ID | Date | Decision | Evidence |
 | --- | --- | --- | --- |
 | D0 | Pending | Phase 1 lane: JAX or PyTorch | `reports/phase0/summary.md`, ruled at human gate H0 |
+| D1 | 2026-09-27 | Levanter and Haliax come from PyPI as `marin-levanter` and `marin-haliax` dev builds, pinned by `uv.lock`. The jax and metal extras conflict with the torch extra. The lock targets macOS arm64 and Linux x86_64 | The `levanter` package stopped in October 2025; one shared resolution dropped TransformerLens to 1.14; the newest build of one Marin dependency shipped an Intel-Mac wheel only |
+| D2 | 2026-09-27 | Tap names are TransformerLens legacy names, resolved as aliases on `TransformerBridge`. G0.4 loads through the bridge without compatibility mode | TransformerLens 4.0 removed `HookedTransformer`; compatibility mode reproduces its weight processing, so activations would no longer match the raw weights Levanter exports |

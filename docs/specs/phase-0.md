@@ -22,17 +22,19 @@ Three uv environments keep the lanes from fighting over versions. Python 3.12 ev
 
 | Env | Contents | Used by |
 | --- | --- | --- |
-| `nf-jax` | jax (CPU), equinox, haliax, levanter, optax, numpy | Reference lane: G0.1, G0.2, G0.3, G0.6 |
+| `nf-jax` | jax (CPU), equinox, optax, marin-levanter and marin-haliax with their marin-* dependencies, numpy | Reference lane: G0.1, G0.2, G0.3, G0.6 |
 | `nf-metal` | `nf-jax` contents plus metaljax on the jax line it pins | Accelerator probe: G0.5 |
 | `nf-torch` | torch (CPU and MPS), transformer_lens, safetensors | Cross-check lane and fallback: G0.4 |
 
-Record, don't assume, whether levanter and metaljax resolve to a shared jax version. If they do, `nf-metal` folds into `nf-jax`.
+The lock resolves one jax version (0.11.2) for marin-levanter and metaljax, so `nf-metal` is the jax lane plus metaljax (`uv sync --extra metal`). Confirm it installs and runs on the Mac before trusting G0.5.
 
 ## Files added in Phase 0
 
 ```
 pyproject.toml
+uv.lock
 src/nablaframe/
+  reports.py              # gate report schema and status rules
   trace/
     schema.py             # RunManifest, TapSpec, TraceEvent (frozen dataclasses)
     registry.py           # canonical tap names, TransformerLens-compatible
@@ -41,16 +43,21 @@ src/nablaframe/
     mode_equality.py      # fast vs instrumented comparison
     tolerance.py          # pinned tolerance records
   lanes/
-    jax_ref/              # minimal model and train step for the gates
+    jax_ref/              # the G0.6 toy model
     torch_ref/            # cross-check and fallback
 gates/
+  configs/gpt2_nano.yaml  # vendored from the Marin monorepo
   g01_cpu_train.py
   g02_determinism.py
   g03_throughput.py
   g04_crosscheck.py
   g05_metal_probe.py
   g06_mode_probe.py
+  summarize.py
+scripts/
+  check_tl_names.py       # runtime check of tap names, nf-torch
 tests/
+  data/transformerlens_legacy_hook_names.txt
 reports/phase0/           # generated JSON and markdown, committed
 ```
 
@@ -60,14 +67,16 @@ Six gates, each a script under `gates/` that writes one JSON report. G0.1 throug
 
 | Gate | Measures | Pass | On failure |
 | --- | --- | --- | --- |
-| G0.1 CPU training | Levanter's own tiny GPT-2 config trains in `nf-jax` on CPU for 1,000 steps | Completes with no NaN or Inf; eval loss at step 1,000 is at least 30% below step 0 | PyTorch lane |
+| G0.1 CPU training | Levanter's own tiny GPT-2 config (`gates/configs/gpt2_nano.yaml`, run in float32) trains in `nf-jax` on CPU for 1,000 steps | Completes with no NaN or Inf; eval loss at step 1,000 is at least 30% below step 0 | PyTorch lane |
 | G0.2 Determinism | Same seed twice, plus a run killed at step 500 and resumed; SHA-256 over serialized parameter leaves at step 1,000 | All three hashes identical | Retry single-threaded (for example `--xla_cpu_multi_thread_eigen=false`). Still different: max abs parameter diff ≤ 1e-6 is a conditional pass with a pinned tolerance; larger is a fail |
 | G0.3 Throughput | Training tokens/s on CPU at size S (4 layers, d=256, batch 32×256) and size M (4 layers, d=512, batch 64×256) | S ≥ 25,000 tokens/s. M recorded only | Revisit scale targets |
-| G0.4 Cross-check | G0.1 checkpoint exported to Hugging Face format, loaded in TransformerLens in `nf-torch`, logits compared on a fixed 8×128 batch | Max abs logit diff ≤ 1e-3, and identical top-1 tokens wherever the top-2 margin exceeds 1e-3 | Diagnose export or load path before D0 |
+| G0.4 Cross-check | G0.1 checkpoint exported to Hugging Face format, loaded through TransformerLens's `TransformerBridge` in `nf-torch` without compatibility mode, logits compared on a fixed 8×128 batch | Max abs logit diff ≤ 1e-3, and identical top-1 tokens wherever the top-2 margin exceeds 1e-3 | Diagnose export or load path before D0 |
 | G0.5 Metal probe | G0.1 config in `nf-metal`: declined ops, loss vs CPU over the first 200 steps, tokens/s | Runs, with loss within 2% relative of CPU at every logged step | No accelerator; CPU only |
 | G0.6 Mode probe | A 2-layer, d=128 model under `jit`, forward returning logits only vs logits plus all taps, 3 seeds | Always passes: records bitwise equality or the measured max abs diff | Not applicable; the result sets the oracle policy |
 
 Every report carries the gate id, pass or fail, the measurements, the env lockfile hash, `XLA_FLAGS`, thread count, chip model, and a UTC timestamp. The Phase 0 summary is generated from the six JSON files, never written by hand.
+
+`src/nablaframe/reports.py` also rejects a report whose status contradicts its own measurements, such as a G0.3 pass below 25,000 tokens/s.
 
 ## Trace schema v0
 
@@ -77,7 +86,7 @@ The schema is the contract between lanes, so Phase 0 fixes it even though Phase 
 
 **TapSpec**, one per tap point. Fields: `name`, `axes` (ordered named axes with sizes), `dtype`, `site` (residual, attention, MLP, embedding, final norm). Names follow TransformerLens hook names, so traces cross-check without a translation table.
 
-**TraceEvent**, one per recorded tensor. Fields: `run_id`, `step` (training step of the weights), `kind` (forward, grad, update, checkpoint, intervention), `tap`, `batch_hash`, `mode` (fast or instrumented), `tensor_ref` (shard file and key), `sha256` of the tensor bytes.
+**TraceEvent**, one per recorded tensor. Callers set `run_id`, `step` (training step of the weights), `kind` (forward, grad, update, checkpoint, intervention), `tap`, `batch_hash` and `mode` (fast or instrumented). The store fills `sha256` of the tensor bytes, `supersedes` (the event a correction replaces), `event_id` (the hash of the event's content) and `tensor_ref` (its shard file).
 
 | Tap (per layer L) | Axes | Needed for |
 | --- | --- | --- |
