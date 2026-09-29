@@ -150,6 +150,10 @@ class TapSpec:
 
     Construction raises ValueError when ``site`` is unknown, ``dtype`` is not a
     numpy dtype name, an axis size is not a positive int, or axis names repeat.
+
+    `dtype` must be the canonical numpy name, that is `np.dtype(dtype).name == dtype`, so `"float32"` is accepted and `"f4"` is not.
+
+    `axes` must be a tuple of `Axis`, each with a non-empty str name. Anything else raises ValueError.
     """
 
     name: str
@@ -166,7 +170,13 @@ class TapSpec:
             dtype_name = None
         if not isinstance(self.dtype, str) or dtype_name != self.dtype:
             raise ValueError(f"{self.dtype!r} is not a numpy dtype name")
+        if not isinstance(self.axes, tuple):
+            raise ValueError(f"axes must be a tuple of Axis, got {type(self.axes).__name__}")
         for axis in self.axes:
+            if not isinstance(axis, Axis):
+                raise ValueError(f"axes must be a tuple of Axis, got an element {axis!r}")
+            if not isinstance(axis.name, str) or not axis.name:
+                raise ValueError(f"axis name must be a non-empty str, got {axis.name!r}")
             if not isinstance(axis.size, int) or isinstance(axis.size, bool) or axis.size < 1:
                 raise ValueError(f"axis {axis.name!r} has size {axis.size!r}; expected a positive int")
         names = [axis.name for axis in self.axes]
@@ -214,6 +224,8 @@ class TraceEvent:
       tensor, else None.
 
     ``kind`` is one of ``EVENT_KINDS``; ``mode`` is one of ``MODES``.
+
+    Construction raises ValueError when `kind` is not in `EVENT_KINDS` or `mode` is not in `MODES`. `tap` is not checked: checkpoint markers have none, and valid names depend on layer count.
     """
 
     run_id: str
@@ -226,6 +238,12 @@ class TraceEvent:
     supersedes: str | None = None
     event_id: str | None = None
     tensor_ref: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind not in EVENT_KINDS:
+            raise ValueError(f"unknown kind {self.kind!r}; expected one of {EVENT_KINDS}")
+        if self.mode not in MODES:
+            raise ValueError(f"unknown mode {self.mode!r}; expected one of {MODES}")
 
     def identity_hash(self) -> str:
         """SHA-256 of the canonical JSON of every field except ``event_id`` and ``tensor_ref``.

@@ -64,10 +64,21 @@ def compare_logits(
       ValueError. It passes when ``max_abs_diff <= tolerance.value``.
     * Under either policy, differing shapes or dtypes, or any NaN or infinity in
       either array, fail.
+
+    Under `"instrumented_canonical"`, a tolerance applies only to logits of its own dtype: if the logits' dtype name differs from `tolerance.dtype`, raise ValueError (D3).
     """
     _check_policy(policy, tolerance)
     a = np.asarray(fast)
     b = np.asarray(instrumented)
+
+    # D3. When the two arrays disagree on dtype, "the logits' dtype" is undefined and
+    # the differing-dtypes failure below applies unchanged.
+    if policy == "instrumented_canonical" and a.dtype == b.dtype:
+        assert tolerance is not None
+        if a.dtype.name != tolerance.dtype:
+            raise ValueError(
+                f"tolerance from {tolerance.source_report} is for {tolerance.dtype} logits, got {a.dtype.name} (D3)"
+            )
 
     if a.shape != b.shape or a.dtype != b.dtype:
         return OracleResult(

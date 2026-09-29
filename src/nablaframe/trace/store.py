@@ -10,6 +10,8 @@ Layout under ``root``::
 Nothing is edited in place. A correction is a new event that supersedes the old
 one by id; the old event stays in the log. There is deliberately no update,
 delete, remove, replace or rewrite method.
+
+One writer per store at a time. Two open handles each keep their own index and can record the same event twice. Phase 1 adds locking before anything writes traces concurrently.
 """
 
 from __future__ import annotations
@@ -30,8 +32,8 @@ class StoreError(Exception):
 
 
 class AppendOnlyViolation(StoreError):
-    """An append would rewrite history: a duplicate event id, an existing shard,
-    or a second event superseding the same original."""
+    """An append would rewrite history: a duplicate event id or a second event
+    superseding the same original."""
 
 
 class IntegrityError(StoreError):
@@ -88,12 +90,17 @@ class TraceStore:
 
         tensor_ref = f"shards/{event_id}.safetensors" if tensor is not None else None
         shard_path = self.root / tensor_ref if tensor_ref is not None else None
-        if shard_path is not None and shard_path.exists():
-            raise AppendOnlyViolation(f"shard {tensor_ref} already exists")
+        # No logged event has this id, so an existing shard is an orphan from an append
+        # that died between writing the shard and writing the log line.
+        reuse_orphan = shard_path is not None and shard_path.exists()
+        if reuse_orphan and not self._orphan_matches(shard_path, final_sha256):
+            raise IntegrityError(
+                f"orphan shard {tensor_ref} does not hold this event's tensor; left in place for inspection"
+            )
 
         final_event = replace(candidate, event_id=event_id, tensor_ref=tensor_ref)
 
-        if tensor is not None:
+        if tensor is not None and not reuse_orphan:
             save_file({"tensor": np.ascontiguousarray(tensor)}, str(shard_path))
 
         with self._log_path.open("a", encoding="utf-8") as handle:
@@ -107,6 +114,15 @@ class TraceStore:
             self._superseded_ids.add(final_event.supersedes)
         return final_event
 
+    @staticmethod
+    def _orphan_matches(shard_path: Path, sha256: str) -> bool:
+        """Whether the orphan shard's tensor hashes to ``sha256``. Unreadable counts as no."""
+        try:
+            array = load_file(str(shard_path))["tensor"]
+        except Exception:
+            return False
+        return tensor_sha256(array) == sha256
+
     def append(self, event: TraceEvent, tensor: np.ndarray | None = None) -> TraceEvent:
         """Record ``event``, and ``tensor`` if given, and return the completed event.
 
@@ -114,8 +130,7 @@ class TraceStore:
           None; otherwise ValueError. Use ``supersede`` for corrections.
         * With a tensor: its hash is computed with ``tensor_sha256``. If
           ``event.sha256`` is already set and differs, raise IntegrityError. The
-          shard is written to ``shards/<event_id>.safetensors``; if that file
-          exists, raise AppendOnlyViolation.
+          shard is written to ``shards/<event_id>.safetensors``. If the shard file already exists but no logged event references it, it is an orphan from an interrupted append. If its tensor hashes to this event's `sha256`, reuse it and append the log line. Otherwise raise IntegrityError and leave the file in place for inspection.
         * Without a tensor: ``event.sha256`` must be None; otherwise ValueError.
         * ``event_id`` is the completed event's ``identity_hash()``. If an event
           with that id is already in the store, raise AppendOnlyViolation.

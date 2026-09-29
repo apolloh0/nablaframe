@@ -18,8 +18,8 @@ from typing import Any
 
 import numpy as np
 
-# A source report is a committed gate report: a relative path under reports/.
-SOURCE_REPORT_PATTERN = r"^reports/[^/].*\.json$"
+# A source report is a committed gate report: `reports/phase<N>/<name>.json`, nothing else (D3).
+SOURCE_REPORT_PATTERN = r"^reports/phase[0-9]+/[A-Za-z0-9_-]+\.json$"
 
 
 def _finite_nonnegative(name: str, x: Any) -> float:

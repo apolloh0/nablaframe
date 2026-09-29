@@ -24,15 +24,22 @@ timestamp_utc       ISO-8601 UTC ending in "Z", e.g. "2026-09-27T12:00:00Z"
 
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
-* G0.1 pass     requires nonfinite_seen is False and loss_drop_fraction >= 0.30
+* G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
 * G0.2 pass     requires identical is True
   G0.2 conditional_pass requires identical is False and max_abs_param_diff <= 1e-6
+* G0.2, under every status: identical must be True exactly when hash_run_a, hash_run_b and hash_resumed are all equal.
 * G0.3 pass     requires tokens_per_s_S >= 25000
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
 * conditional_pass is allowed only for G0.2
 * fail is allowed for any gate except G0.6
+
+Measurements:
+
+Null is allowed for anything a gate could not measure; every number must be finite. Values must be plain JSON types: convert numpy scalars with int(), float() or bool().
+
+G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
 
 from __future__ import annotations
@@ -44,6 +51,8 @@ from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 SCHEMA_VERSION = 1
 GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
@@ -117,6 +126,8 @@ def validate_report(report: Mapping[str, Any]) -> list[str]:
         problems += [
             f"{gate_id} measurements missing {key}" for key in REQUIRED_MEASUREMENTS[gate_id] if key not in measurements
         ]
+        if gate_id == "G0.2":
+            problems += _g02_consistency_problems(measurements)
         if isinstance(status, str) and status in STATUSES:
             problems += _status_problems(gate_id, status, measurements)
     return problems
@@ -128,11 +139,14 @@ def write_report(report: Mapping[str, Any], path: str | Path, *, overwrite: bool
     Raises ValueError listing every problem if the report is invalid, and
     FileExistsError if ``path`` exists and ``overwrite`` is False. Writes nothing
     in either case.
+
+    Creates missing parent folders.
     """
     problems = validate_report(report)
     if problems:
         raise ValueError("invalid gate report:\n" + "\n".join(f"  - {p}" for p in problems))
     text = json.dumps(_plain(report), indent=2, sort_keys=True, allow_nan=False) + "\n"
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     # Mode "x" refuses an existing file atomically, so nothing is ever half-overwritten by accident.
     with open(path, "w" if overwrite else "x", encoding="utf-8") as f:
         f.write(text)
@@ -166,7 +180,10 @@ def _is_utc_timestamp(v: Any) -> bool:
 
 
 def _json_problems(value: Any, where: str) -> list[str]:
-    """Anything that is not a JSON value, or a number that is not finite. Null is allowed."""
+    """Anything that is not a plain JSON value, or a number that is not finite. Null is allowed."""
+    # numpy scalars first: np.float64 subclasses float and would otherwise pass.
+    if isinstance(value, np.generic):
+        return [f"{where} is a numpy scalar, not a plain JSON value: {value!r} ({type(value).__name__})"]
     if value is None or isinstance(value, (bool, str)):
         return []
     if isinstance(value, _Number):
@@ -182,6 +199,19 @@ def _json_problems(value: Any, where: str) -> list[str]:
     if isinstance(value, (list, tuple)):
         return [p for i, item in enumerate(value) for p in _json_problems(item, f"{where}[{i}]")]
     return [f"{where} is not a JSON value: {value!r} ({type(value).__name__})"]
+
+
+def _g02_consistency_problems(m: Mapping[str, Any]) -> list[str]:
+    """G0.2, under every status: ``identical`` is True exactly when the three hashes
+    are all equal. A null hash was not measured, so it never counts as equal."""
+    hashes = [m.get(key) for key in ("hash_run_a", "hash_run_b", "hash_resumed")]
+    all_equal = all(isinstance(h, str) for h in hashes) and len(set(hashes)) == 1
+    if (m.get("identical") is True) != all_equal:
+        return [
+            f"G0.2 identical must be True exactly when hash_run_a, hash_run_b and hash_resumed are all equal;"
+            f" identical is {m.get('identical')!r}, hashes are {'all equal' if all_equal else 'not all equal'}"
+        ]
+    return []
 
 
 def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[str]:
@@ -209,7 +239,9 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         return _is_number(v) and v == target, f"{key} == {target!r}"
 
     rules = {
-        ("G0.1", "pass"): [is_("nonfinite_seen", False), at_least("loss_drop_fraction", 0.30)],
+        ("G0.1", "pass"): [
+            is_("nonfinite_seen", False), at_least("loss_drop_fraction", 0.30), at_least("steps", 1000)
+        ],
         ("G0.2", "pass"): [is_("identical", True)],
         ("G0.2", "conditional_pass"): [is_("identical", False), at_most("max_abs_param_diff", 1e-6)],
         ("G0.3", "pass"): [at_least("tokens_per_s_S", 25000)],
