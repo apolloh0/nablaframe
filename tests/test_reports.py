@@ -76,7 +76,8 @@ def _invalid_cases() -> list[tuple[str, dict]]:
         ("NaN measurement", _with(base, m_eval_loss_final=float("nan"))),
         ("G0.1 pass, loss barely moved", _with(base, m_loss_drop_fraction=0.2)),
         ("G0.1 pass, NaN seen", _with(base, m_nonfinite_seen=True)),
-        ("G0.2 pass, hashes differ", _with(passing_report("G0.2"), m_identical=False, m_max_abs_param_diff=1e-7)),
+        ("G0.2 pass, hashes differ", _with(passing_report("G0.2"), m_hash_resumed="b" * 64, m_identical=False,
+                                           m_max_abs_param_diff=1e-7)),
         ("G0.2 conditional, diff too large", _with(passing_report("G0.2"), status="conditional_pass",
                                                    m_identical=False, m_max_abs_param_diff=1e-5)),
         ("G0.2 conditional, but identical", _with(passing_report("G0.2"), status="conditional_pass")),
@@ -96,7 +97,7 @@ def test_gate_reports_validate(tmp_path):
 
     # Honest failures and G0.2's conditional pass are valid reports.
     assert validate_report(_with(passing_report("G0.3"), status="fail", m_tokens_per_s_S=12000.0)) == []
-    assert validate_report(_with(passing_report("G0.2"), status="conditional_pass",
+    assert validate_report(_with(passing_report("G0.2"), status="conditional_pass", m_hash_resumed="b" * 64,
                                  m_identical=False, m_max_abs_param_diff=4e-7)) == []
 
     for label, report in _invalid_cases():

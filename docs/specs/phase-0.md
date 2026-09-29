@@ -101,7 +101,7 @@ The schema is the contract between lanes, so Phase 0 fixes it even though Phase 
 | `blocks.L.hook_mlp_out` | Batch, Pos, Embed | MLP output for the same dictionaries |
 | `ln_final.hook_normalized` | Batch, Pos, Embed | Unembedding side of every lens |
 
-The store is append-only: events in JSONL, tensors in safetensors shards. Nothing is edited in place; a correction appends a superseding event that names the one it replaces.
+The store is append-only: events in JSONL, tensors in safetensors shards. Nothing is edited in place; a correction appends a superseding event that names the one it replaces. One writer per store at a time. An append interrupted between its shard and its log line leaves an orphan shard; retrying reuses it when its content matches and raises IntegrityError when it doesn't.
 
 ## Mode-equality oracle
 
@@ -112,7 +112,7 @@ The oracle asserts that turning instrumentation on never changes what the model 
 | Bitwise | G0.6 finds identical logits on all 3 seeds | `array_equal` on logits | Either mode may serve views |
 | Instrumented canonical | G0.6 finds any difference | Max abs logit diff ≤ τ, with τ pinned from the G0.6 measurement | Views read only from instrumented mode; fast mode is for training |
 
-A pinned tolerance is a record, not a constant: its value, the report it was measured in, the backend and the dtype. Any change to a policy or τ needs a D-entry in `docs/decisions.md` plus a discrimination test, never a unilateral edit by the implementing agent.
+A pinned tolerance is a record, not a constant: its value, the report it was measured in, the backend and the dtype. Any change to a policy or τ needs a D-entry in `docs/decisions.md` plus a discrimination test, never a unilateral edit by the implementing agent. A record applies only to logits of its own dtype, and its source report is a committed gate report at `reports/phase<N>/<name>.json` (D3).
 
 The oracle is itself tested against planted defects, so a green oracle means something:
 
