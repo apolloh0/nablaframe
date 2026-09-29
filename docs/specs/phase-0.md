@@ -1,6 +1,6 @@
 # Phase 0 spec: gates, trace schema, oracle harness
 
-Status: ready for implementation. Charter: [../charter.md](../charter.md). Decisions: [../decisions.md](../decisions.md).
+Status: complete. Ruled at human gate H0 on 2026-09-29: see D0, D5 and D6 in [../decisions.md](../decisions.md).
 
 ## Purpose and decision
 
