@@ -1,0 +1,50 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G0.2",
+  "measurements": {
+    "attempts": [
+      {
+        "hash_resumed": "38ddd6c58ff2b20bc24824727828e423192d5cedf478b0d51428b336ca8cccdf",
+        "hash_run_a": "38ddd6c58ff2b20bc24824727828e423192d5cedf478b0d51428b336ca8cccdf",
+        "hash_run_b": "38ddd6c58ff2b20bc24824727828e423192d5cedf478b0d51428b336ca8cccdf",
+        "identical": true,
+        "max_abs_param_diff": 0.0,
+        "resumed_from_updates": 501,
+        "single_threaded": false,
+        "xla_flags": ""
+      }
+    ],
+    "hash_resumed": "38ddd6c58ff2b20bc24824727828e423192d5cedf478b0d51428b336ca8cccdf",
+    "hash_run_a": "38ddd6c58ff2b20bc24824727828e423192d5cedf478b0d51428b336ca8cccdf",
+    "hash_run_b": "38ddd6c58ff2b20bc24824727828e423192d5cedf478b0d51428b336ca8cccdf",
+    "identical": true,
+    "kill_step": 500,
+    "max_abs_param_diff": 0.0,
+    "overrides": {
+      "trainer.checkpointer.keep": [
+        {
+          "every": 500
+        }
+      ],
+      "trainer.mp": "float32",
+      "trainer.num_train_steps": 1000
+    },
+    "single_threaded": false,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "marin-levanter": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6"
+    }
+  },
+  "schema_version": 1,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-09-29T07:37:10Z",
+  "xla_flags": ""
+}

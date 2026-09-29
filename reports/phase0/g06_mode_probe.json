@@ -1,0 +1,63 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G0.6",
+  "measurements": {
+    "backend": "cpu",
+    "bitwise_equal": true,
+    "logits_dtype": "float32",
+    "max_abs_logit_diff": 0.0,
+    "model": {
+      "d_mlp": 512,
+      "d_model": 128,
+      "n_heads": 4,
+      "n_layers": 2,
+      "seq": 64,
+      "vocab": 256
+    },
+    "per_seed": [
+      {
+        "bitwise_equal": true,
+        "max_abs_logit_diff": 0.0,
+        "n_mismatched": 0,
+        "reason": "",
+        "seed": 0
+      },
+      {
+        "bitwise_equal": true,
+        "max_abs_logit_diff": 0.0,
+        "n_mismatched": 0,
+        "reason": "",
+        "seed": 1
+      },
+      {
+        "bitwise_equal": true,
+        "max_abs_logit_diff": 0.0,
+        "n_mismatched": 0,
+        "reason": "",
+        "seed": 2
+      }
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "taps": 19,
+    "tokens_shape": [
+      8,
+      64
+    ],
+    "versions": {
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "numpy": "2.5.3"
+    }
+  },
+  "schema_version": 1,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-09-29T07:40:14Z",
+  "xla_flags": ""
+}
