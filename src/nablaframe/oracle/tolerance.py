@@ -9,12 +9,36 @@ docs/decisions.md plus a discrimination test, never a unilateral edit.
 
 from __future__ import annotations
 
+import math
+import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+from numbers import Real
 from typing import Any
+
+import numpy as np
 
 # A source report is a committed gate report: a relative path under reports/.
 SOURCE_REPORT_PATTERN = r"^reports/[^/].*\.json$"
+
+
+def _finite_nonnegative(name: str, x: Any) -> float:
+    if isinstance(x, bool) or not isinstance(x, Real):
+        raise ValueError(f"{name} must be a real number, got {x!r}")
+    x = float(x)
+    if not math.isfinite(x) or x < 0:
+        raise ValueError(f"{name} must be finite and >= 0, got {x!r}")
+    return x
+
+
+def _is_float_dtype_name(name: Any) -> bool:
+    if not isinstance(name, str):
+        return False
+    try:
+        dtype = np.dtype(name)
+    except (TypeError, ValueError):
+        return False
+    return np.issubdtype(dtype, np.floating) and dtype.name == name
 
 
 @dataclass(frozen=True)
@@ -38,12 +62,33 @@ class ToleranceRecord:
     measured_max_abs_diff: float
 
     def __post_init__(self) -> None:
-        raise NotImplementedError
+        value = _finite_nonnegative("value", self.value)
+        measured = _finite_nonnegative("measured_max_abs_diff", self.measured_max_abs_diff)
+        if value < measured:
+            raise ValueError(
+                f"value {value!r} is tighter than measured_max_abs_diff {measured!r} in its own source report"
+            )
+        if not isinstance(self.source_report, str) or re.fullmatch(SOURCE_REPORT_PATTERN, self.source_report) is None:
+            raise ValueError(f"source_report must match {SOURCE_REPORT_PATTERN!r}, got {self.source_report!r}")
+        if not isinstance(self.backend, str) or not self.backend:
+            raise ValueError(f"backend must be a non-empty str, got {self.backend!r}")
+        if not _is_float_dtype_name(self.dtype):
+            raise ValueError(f"dtype must be a numpy floating dtype name such as 'float32', got {self.dtype!r}")
+        # Store plain floats so the JSON form round-trips exactly.
+        object.__setattr__(self, "value", value)
+        object.__setattr__(self, "measured_max_abs_diff", measured)
 
     def to_dict(self) -> dict[str, Any]:
-        raise NotImplementedError
+        return {f.name: getattr(self, f.name) for f in fields(self)}
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ToleranceRecord:
         """Builds and validates; the same ValueErrors as construction."""
-        raise NotImplementedError
+        if not isinstance(data, Mapping):
+            raise ValueError(f"expected a mapping, got {type(data).__name__}")
+        names = {f.name for f in fields(cls)}
+        missing = sorted(names - set(data))
+        extra = sorted(map(str, set(data) - names))
+        if missing or extra:
+            raise ValueError(f"tolerance record fields: missing {missing}, unexpected {extra}")
+        return cls(**{name: data[name] for name in names})
