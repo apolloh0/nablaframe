@@ -21,8 +21,10 @@ are not hashable.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Any
 
 import numpy as np
@@ -37,12 +39,12 @@ def canonical_json(obj: Any) -> str:
 
     Raises ValueError for NaN or infinity anywhere in ``obj``.
     """
-    raise NotImplementedError
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False)
 
 
 def sha256_hex(data: bytes) -> str:
     """SHA-256 of ``data`` as 64 lowercase hex characters."""
-    raise NotImplementedError
+    return hashlib.sha256(data).hexdigest()
 
 
 def tensor_sha256(array: np.ndarray) -> str:
@@ -51,7 +53,9 @@ def tensor_sha256(array: np.ndarray) -> str:
     Non-contiguous arrays and big-endian dtypes are converted first, so two arrays
     with equal values, dtype and shape always hash equal.
     """
-    raise NotImplementedError
+    array = np.asarray(array)
+    little = np.ascontiguousarray(array, dtype=array.dtype.newbyteorder("<"))
+    return sha256_hex(little.tobytes(order="C"))
 
 
 @dataclass(frozen=True)
@@ -93,26 +97,38 @@ class RunManifest:
 
     @property
     def run_id(self) -> str:
-        raise NotImplementedError
+        identity = self.to_dict()
+        del identity["created_at"]
+        return sha256_hex(canonical_json(identity).encode("utf-8"))
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-compatible dict of every field, including ``created_at``.
 
         ``seeds`` becomes a nested dict and ``checkpoint_schedule`` a list.
         """
-        raise NotImplementedError
+        out = {f.name: getattr(self, f.name) for f in fields(self)}
+        out["model_config"] = dict(self.model_config)
+        out["optimizer"] = dict(self.optimizer)
+        out["seeds"] = {f.name: getattr(self.seeds, f.name) for f in fields(Seeds)}
+        out["checkpoint_schedule"] = list(self.checkpoint_schedule)
+        return out
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> RunManifest:
-        raise NotImplementedError
+        values = {f.name: data[f.name] for f in fields(cls)}
+        values["model_config"] = dict(values["model_config"])
+        values["optimizer"] = dict(values["optimizer"])
+        values["seeds"] = Seeds(**{f.name: values["seeds"][f.name] for f in fields(Seeds)})
+        values["checkpoint_schedule"] = tuple(values["checkpoint_schedule"])
+        return cls(**values)
 
     def to_json(self) -> str:
         """Canonical JSON of ``to_dict()``."""
-        raise NotImplementedError
+        return canonical_json(self.to_dict())
 
     @classmethod
     def from_json(cls, text: str) -> RunManifest:
-        raise NotImplementedError
+        return cls.from_dict(json.loads(text))
 
 
 @dataclass(frozen=True)
@@ -142,23 +158,46 @@ class TapSpec:
     site: str
 
     def __post_init__(self) -> None:
-        raise NotImplementedError
+        if self.site not in SITES:
+            raise ValueError(f"unknown site {self.site!r}; expected one of {SITES}")
+        try:
+            dtype_name = np.dtype(self.dtype).name
+        except TypeError:
+            dtype_name = None
+        if not isinstance(self.dtype, str) or dtype_name != self.dtype:
+            raise ValueError(f"{self.dtype!r} is not a numpy dtype name")
+        for axis in self.axes:
+            if not isinstance(axis.size, int) or isinstance(axis.size, bool) or axis.size < 1:
+                raise ValueError(f"axis {axis.name!r} has size {axis.size!r}; expected a positive int")
+        names = [axis.name for axis in self.axes]
+        if len(set(names)) != len(names):
+            raise ValueError(f"axis names repeat: {names}")
 
     def to_dict(self) -> dict[str, Any]:
         """``axes`` becomes a list of ``{"name": ..., "size": ...}`` objects, in order."""
-        raise NotImplementedError
+        return {
+            "name": self.name,
+            "axes": [{"name": axis.name, "size": axis.size} for axis in self.axes],
+            "dtype": self.dtype,
+            "site": self.site,
+        }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> TapSpec:
-        raise NotImplementedError
+        return cls(
+            name=data["name"],
+            axes=tuple(Axis(name=a["name"], size=a["size"]) for a in data["axes"]),
+            dtype=data["dtype"],
+            site=data["site"],
+        )
 
     def to_json(self) -> str:
         """Canonical JSON of ``to_dict()``. ``from_json(s).to_json() == s`` must hold."""
-        raise NotImplementedError
+        return canonical_json(self.to_dict())
 
     @classmethod
     def from_json(cls, text: str) -> TapSpec:
-        raise NotImplementedError
+        return cls.from_dict(json.loads(text))
 
 
 @dataclass(frozen=True)
@@ -194,11 +233,14 @@ class TraceEvent:
         Two events with the same content, including ``sha256`` and ``supersedes``,
         share an identity. That is what lets the store reject rewrites.
         """
-        raise NotImplementedError
+        identity = self.to_dict()
+        del identity["event_id"]
+        del identity["tensor_ref"]
+        return sha256_hex(canonical_json(identity).encode("utf-8"))
 
     def to_dict(self) -> dict[str, Any]:
-        raise NotImplementedError
+        return {f.name: getattr(self, f.name) for f in fields(self)}
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> TraceEvent:
-        raise NotImplementedError
+        return cls(**{f.name: data[f.name] for f in fields(cls) if f.name in data})

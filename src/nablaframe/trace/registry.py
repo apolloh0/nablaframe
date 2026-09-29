@@ -14,7 +14,7 @@ This module never imports TransformerLens.
 
 from __future__ import annotations
 
-from .schema import TapSpec
+from .schema import Axis, TapSpec
 
 # Taps before the first block, in forward order.
 GLOBAL_TAPS_BEFORE: tuple[str, ...] = ("hook_embed", "hook_pos_embed")
@@ -41,7 +41,10 @@ def tap_names(n_layers: int) -> tuple[str, ...]:
     Order: ``GLOBAL_TAPS_BEFORE``, then ``PER_LAYER_TAPS`` for block 0, block 1, and
     so on, then ``GLOBAL_TAPS_AFTER``. Raises ValueError if ``n_layers < 1``.
     """
-    raise NotImplementedError
+    if n_layers < 1:
+        raise ValueError(f"n_layers must be at least 1, got {n_layers}")
+    per_layer = tuple(f"blocks.{layer}.{tap}" for layer in range(n_layers) for tap in PER_LAYER_TAPS)
+    return GLOBAL_TAPS_BEFORE + per_layer + GLOBAL_TAPS_AFTER
 
 
 def tap_spec(
@@ -74,4 +77,35 @@ def tap_spec(
     Sizes: Batch=batch, Pos=QPos=KPos=seq, Embed=d_model, Head=n_heads,
     HeadDim=d_head. Raises KeyError for a name that is not canonical.
     """
-    raise NotImplementedError
+    tap = name
+    if name.startswith("blocks."):
+        parts = name.split(".", 2)
+        if len(parts) != 3:
+            raise KeyError(name)
+        _, layer, tap = parts
+        if not layer.isdigit() or layer != str(int(layer)) or tap not in PER_LAYER_TAPS:
+            raise KeyError(name)
+    elif name not in GLOBAL_TAPS_BEFORE + GLOBAL_TAPS_AFTER:
+        raise KeyError(name)
+
+    sizes = {"Batch": batch, "Pos": seq, "QPos": seq, "KPos": seq, "Embed": d_model, "Head": n_heads, "HeadDim": d_head}
+    axis_names, site = _TAP_TABLE[tap]
+    return TapSpec(name, tuple(Axis(axis, sizes[axis]) for axis in axis_names), dtype, site)
+
+
+_STREAM = ("Batch", "Pos", "Embed")
+
+# Unprefixed tap name -> (axis names, site), per the spec's tap table.
+_TAP_TABLE: dict[str, tuple[tuple[str, ...], str]] = {
+    "hook_embed": (_STREAM, "embedding"),
+    "hook_pos_embed": (_STREAM, "embedding"),
+    "hook_resid_pre": (_STREAM, "residual"),
+    "attn.hook_pattern": (("Batch", "Head", "QPos", "KPos"), "attention"),
+    "attn.hook_z": (("Batch", "Pos", "Head", "HeadDim"), "attention"),
+    "hook_attn_out": (_STREAM, "attention"),
+    "hook_resid_mid": (_STREAM, "residual"),
+    "ln2.hook_normalized": (_STREAM, "mlp"),
+    "hook_mlp_out": (_STREAM, "mlp"),
+    "hook_resid_post": (_STREAM, "residual"),
+    "ln_final.hook_normalized": (_STREAM, "final_norm"),
+}
