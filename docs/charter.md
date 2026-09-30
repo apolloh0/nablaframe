@@ -44,8 +44,8 @@ Carried over from Glasshouse.
 
 | Phase | Delivers | Spec |
 | --- | --- | --- |
-| 0 | Gates: backend, determinism, throughput, cross-check; trace schema; oracle harness | [specs/phase-0.md](specs/phase-0.md) |
-| 1 | Trace engine on the real model; oracle wired in | Not yet written |
+| 0 | Gates: backend, determinism, throughput, cross-check; trace schema; oracle harness | [specs/phase-0.md](specs/phase-0.md), done at H0 on 2026-09-29 |
+| 1 | Reference model, trainer and trace engine; oracle wired in | [specs/phase-1.md](specs/phase-1.md) |
 | 2 | Read-only views and the timeline scrubber | Not yet written |
 | 3 | Manipulation: ablate, patch, steer, swap | Not yet written |
 | 4 | Ground-truth zoo and discrimination tests | Not yet written |

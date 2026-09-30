@@ -22,7 +22,7 @@ Specs, contracts, stubs and tests are written in a Claude Project and committed 
 
 ## Conventions
 
-- Python 3.12, uv. Three environments: `nf-jax` (reference), `nf-metal` (accelerator probe), `nf-torch` (cross-checks and fallback). See the current spec for contents.
+- Python 3.12, uv. Three environments: `nf-jax` (reference), `nf-metal` (accelerator probe), `nf-torch` (cross-checks and fallback). See the current spec for contents. Every lane command names its extra, for example `UV_PROJECT_ENVIRONMENT=.venv-jax uv run --extra jax ...`; without it, uv resyncs the lane to the base packages.
 - Records are frozen dataclasses with a JSON form.
 - Tap names follow TransformerLens hook names exactly. Tensors carry named axes.
-- Tests live in `tests/`; run them with `uv run pytest`.
+- Tests live in `tests/`. Run them in the jax lane: `UV_PROJECT_ENVIRONMENT=.venv-jax uv run --extra jax pytest`. Plain `uv run pytest` skips the JAX tests, so work isn't done until the jax-lane run has zero skips.

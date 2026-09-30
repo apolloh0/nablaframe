@@ -13,6 +13,7 @@ dist/
 runs/
 checkpoints/
 traces/
+data/
 
 # Editors and OS
 .DS_Store
