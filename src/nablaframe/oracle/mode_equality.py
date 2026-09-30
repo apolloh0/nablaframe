@@ -66,6 +66,8 @@ def compare_logits(
       either array, fail.
 
     Under `"instrumented_canonical"`, a tolerance applies only to logits of its own dtype: if the logits' dtype name differs from `tolerance.dtype`, raise ValueError (D3).
+
+    When the fast and instrumented logits differ in dtype, the result is a failure, not a ValueError: instrumentation that changes the dtype is a finding, not caller misuse. D3's dtype check applies only when both share a dtype.
     """
     _check_policy(policy, tolerance)
     a = np.asarray(fast)

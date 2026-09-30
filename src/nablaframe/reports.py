@@ -1,16 +1,16 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates".
 
-Each gate script writes one JSON report under ``reports/phase0/``. The Phase 0
+Each gate script writes one JSON report under ``reports/phase0/`` or ``reports/phase1/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
 status must agree with its own measurements.
 
-Report fields, all required, no others allowed:
+Report fields, all required, no others allowed (version 2 adds two; see below):
 
 ==================  =============================================================
-schema_version      1
-gate_id             one of GATE_IDS
+schema_version      1 or 2
+gate_id             one of GATE_IDS or PHASE1_GATE_IDS
 status              one of STATUSES; see STATUS RULES below
 measurements        JSON object containing at least REQUIRED_MEASUREMENTS[gate_id];
                     every number finite
@@ -22,22 +22,43 @@ chip                non-empty str, e.g. "Apple M3 Max"
 timestamp_utc       ISO-8601 UTC ending in "Z", e.g. "2026-09-27T12:00:00Z"
 ==================  =============================================================
 
+Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex characters, and `git_dirty`, a bool. Version 1 reports have neither and stay valid. Phase 1 gates write version 2 only; a Phase 1 report on version 1 is invalid.
+
+`GATE_IDS` stays the Phase 0 tuple, because Phase 0's tests and summary loop over it. Phase 1's gates are `PHASE1_GATE_IDS = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")`, and the validator accepts both.
+
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
 * G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
 * G0.2 pass     requires identical is True
   G0.2 conditional_pass requires identical is False and max_abs_param_diff <= 1e-6
-* G0.2, under every status: identical must be True exactly when hash_run_a, hash_run_b and hash_resumed are all equal.
+* G0.2, under every status: identical must be True exactly when hash_run_a, hash_run_b and hash_resumed are all equal. A null hash was not measured and never counts as equal to another hash.
 * G0.3 pass     requires tokens_per_s_S >= 25000
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
-* conditional_pass is allowed only for G0.2
 * fail is allowed for any gate except G0.6
+
+Status rules for Phase 1:
+
+* G1.1 pass requires `builds_identical` is true and `vocab_selected` is 4,096 exactly when `unk_rate_4096 <= 0.01`, otherwise 8,192 (D8).
+* G1.2 pass requires `n_params == n_params_expected`, `max_abs_logit_diff <= 1e-4` and `top1_agreement == 1.0`.
+* G1.3 follows G0.2's rules, including `conditional_pass` and the hash-agreement rule under every status. `conditional_pass` is allowed only for G0.2 and G1.3.
+* G1.4 pass requires `nonfinite_seen` is false, `checkpoints_written == checkpoints_scheduled` and `final_val_loss < bigram_val_loss`.
+* G1.5 pass requires `bitwise_equal` and `defect_detected` both true.
+* G1.6 pass requires `sample_matches == sample_size`, `retrace_new_events == 0` and `store_bytes` within 10% of `store_bytes_expected`.
 
 Measurements:
 
 Null is allowed for anything a gate could not measure; every number must be finite. Values must be plain JSON types: convert numpy scalars with int(), float() or bool().
+
+Required measurements for Phase 1:
+
+* G1.1: `vocab_selected`, `unk_rate_4096`, `unk_rate_8192`, `unk_rate_4096_cased`, `builds_identical`, `train_tokens`, `validation_tokens`, `stories_dropped`
+* G1.2: `n_params`, `n_params_expected`, `max_abs_logit_diff`, `top1_agreement`, `positions_near_tie`
+* G1.3: the same six as G0.2
+* G1.4: `steps`, `tokens`, `nonfinite_seen`, `checkpoints_written`, `checkpoints_scheduled`, `final_val_loss`, `bigram_val_loss`
+* G1.5: `bitwise_equal`, `steps_checked`, `defect_detected`
+* G1.6: `events_recorded`, `sample_size`, `sample_matches`, `retrace_new_events`, `store_bytes`, `store_bytes_expected`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
@@ -54,8 +75,10 @@ from typing import Any
 
 import numpy as np
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSIONS: tuple[int, ...] = (1, 2)
 GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
+PHASE1_GATE_IDS: tuple[str, ...] = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")
+_ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS
 STATUSES: tuple[str, ...] = ("pass", "conditional_pass", "fail")
 ENV_NAMES: tuple[str, ...] = ("nf-jax", "nf-metal", "nf-torch")
 
@@ -71,6 +94,8 @@ REQUIRED_FIELDS: tuple[str, ...] = (
     "chip",
     "timestamp_utc",
 )
+# Required in addition to REQUIRED_FIELDS from schema version 2 on.
+V2_FIELDS: tuple[str, ...] = ("git_commit", "git_dirty")
 
 REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
     "G0.1": ("steps", "eval_loss_initial", "eval_loss_final", "loss_drop_fraction", "nonfinite_seen"),
@@ -79,7 +104,24 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
     "G0.4": ("max_abs_logit_diff", "top1_agreement", "positions_compared", "positions_near_tie"),
     "G0.5": ("runs", "declined_ops", "max_rel_loss_diff", "tokens_per_s"),
     "G0.6": ("bitwise_equal", "max_abs_logit_diff", "seeds"),
+    "G1.1": (
+        "vocab_selected", "unk_rate_4096", "unk_rate_8192", "unk_rate_4096_cased", "builds_identical",
+        "train_tokens", "validation_tokens", "stories_dropped",
+    ),
+    "G1.2": ("n_params", "n_params_expected", "max_abs_logit_diff", "top1_agreement", "positions_near_tie"),
+    "G1.3": ("hash_run_a", "hash_run_b", "hash_resumed", "identical", "max_abs_param_diff", "single_threaded"),
+    "G1.4": (
+        "steps", "tokens", "nonfinite_seen", "checkpoints_written", "checkpoints_scheduled", "final_val_loss",
+        "bigram_val_loss",
+    ),
+    "G1.5": ("bitwise_equal", "steps_checked", "defect_detected"),
+    "G1.6": (
+        "events_recorded", "sample_size", "sample_matches", "retrace_new_events", "store_bytes",
+        "store_bytes_expected",
+    ),
 }
+# Gates whose three final-state hashes must agree with ``identical`` under every status.
+_HASH_GATES: tuple[str, ...] = ("G0.2", "G1.3")
 
 
 def validate_report(report: Mapping[str, Any]) -> list[str]:
@@ -93,17 +135,19 @@ def validate_report(report: Mapping[str, Any]) -> list[str]:
         raise TypeError(f"a report is a Mapping, got {type(report).__name__}")
     problems: list[str] = []
 
-    missing = [name for name in REQUIRED_FIELDS if name not in report]
+    version = report.get("schema_version")
+    fields = REQUIRED_FIELDS + V2_FIELDS if _is_int(version) and version >= 2 else REQUIRED_FIELDS
+    missing = [name for name in fields if name not in report]
     problems += [f"missing field {name}" for name in missing]
-    extra = sorted(repr(key) for key in report if key not in REQUIRED_FIELDS)
+    extra = sorted(repr(key) for key in report if key not in fields)
     problems += [f"unexpected field {key}" for key in extra]
 
     def check(name: str, ok: Any, expected: str) -> None:
         if name in report and not ok(report[name]):
             problems.append(f"{name} must be {expected}, got {report[name]!r}")
 
-    check("schema_version", lambda v: _is_int(v) and v == SCHEMA_VERSION, str(SCHEMA_VERSION))
-    check("gate_id", lambda v: isinstance(v, str) and v in GATE_IDS, f"one of {GATE_IDS}")
+    check("schema_version", lambda v: _is_int(v) and v in SCHEMA_VERSIONS, f"one of {SCHEMA_VERSIONS}")
+    check("gate_id", lambda v: isinstance(v, str) and v in _ALL_GATE_IDS, f"one of {_ALL_GATE_IDS}")
     check("status", lambda v: isinstance(v, str) and v in STATUSES, f"one of {STATUSES}")
     check("env_name", lambda v: isinstance(v, str) and v in ENV_NAMES, f"one of {ENV_NAMES}")
     check("env_lock_sha256", lambda v: isinstance(v, str) and re.fullmatch(r"[0-9a-f]{64}", v) is not None,
@@ -112,6 +156,14 @@ def validate_report(report: Mapping[str, Any]) -> list[str]:
     check("thread_count", lambda v: _is_int(v) and v >= 1, "an int >= 1")
     check("chip", lambda v: isinstance(v, str) and v != "", "a non-empty str")
     check("timestamp_utc", _is_utc_timestamp, 'an ISO-8601 UTC timestamp ending in "Z"')
+    if "git_commit" in fields:
+        check("git_commit", lambda v: isinstance(v, str) and re.fullmatch(r"[0-9a-f]{40}", v) is not None,
+              "40 lowercase hex characters")
+        check("git_dirty", lambda v: isinstance(v, bool), "a bool")
+
+    gate_id, status = report.get("gate_id"), report.get("status")
+    if isinstance(gate_id, str) and gate_id in PHASE1_GATE_IDS and _is_int(version) and version < 2:
+        problems.append(f"{gate_id} is a Phase 1 gate and must use schema version 2, got {version!r}")
 
     measurements = report.get("measurements")
     if "measurements" in report:
@@ -121,13 +173,12 @@ def validate_report(report: Mapping[str, Any]) -> list[str]:
         else:
             problems += _json_problems(measurements, "measurements")
 
-    gate_id, status = report.get("gate_id"), report.get("status")
-    if isinstance(gate_id, str) and gate_id in GATE_IDS and measurements is not None:
+    if isinstance(gate_id, str) and gate_id in _ALL_GATE_IDS and measurements is not None:
         problems += [
             f"{gate_id} measurements missing {key}" for key in REQUIRED_MEASUREMENTS[gate_id] if key not in measurements
         ]
-        if gate_id == "G0.2":
-            problems += _g02_consistency_problems(measurements)
+        if gate_id in _HASH_GATES:
+            problems += _hash_consistency_problems(gate_id, measurements)
         if isinstance(status, str) and status in STATUSES:
             problems += _status_problems(gate_id, status, measurements)
     return problems
@@ -201,14 +252,14 @@ def _json_problems(value: Any, where: str) -> list[str]:
     return [f"{where} is not a JSON value: {value!r} ({type(value).__name__})"]
 
 
-def _g02_consistency_problems(m: Mapping[str, Any]) -> list[str]:
-    """G0.2, under every status: ``identical`` is True exactly when the three hashes
-    are all equal. A null hash was not measured, so it never counts as equal."""
+def _hash_consistency_problems(gate_id: str, m: Mapping[str, Any]) -> list[str]:
+    """G0.2 and G1.3, under every status: ``identical`` is True exactly when the three
+    hashes are all equal. A null hash was not measured, so it never counts as equal."""
     hashes = [m.get(key) for key in ("hash_run_a", "hash_run_b", "hash_resumed")]
     all_equal = all(isinstance(h, str) for h in hashes) and len(set(hashes)) == 1
     if (m.get("identical") is True) != all_equal:
         return [
-            f"G0.2 identical must be True exactly when hash_run_a, hash_run_b and hash_resumed are all equal;"
+            f"{gate_id} identical must be True exactly when hash_run_a, hash_run_b and hash_resumed are all equal;"
             f" identical is {m.get('identical')!r}, hashes are {'all equal' if all_equal else 'not all equal'}"
         ]
     return []
@@ -220,23 +271,43 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         return [] if status == "pass" else [f'G0.6 status is always "pass", got {status!r}']
     if status == "fail":
         return []
-    if status == "conditional_pass" and gate_id != "G0.2":
-        return [f"conditional_pass is allowed only for G0.2, not {gate_id}"]
+    if status == "conditional_pass" and gate_id not in _HASH_GATES:
+        return [f"conditional_pass is allowed only for G0.2 and G1.3, not {gate_id}"]
 
-    def is_(key: str, expected: bool) -> tuple[bool, str]:
-        return m.get(key) is expected, f"{key} is {expected}"
+    # Each rule is (holds, what it requires, what the report has).
+    def is_(key: str, expected: bool) -> tuple[bool, str, str]:
+        return m.get(key) is expected, f"{key} is {expected}", f"{m.get(key)!r}"
 
-    def at_least(key: str, bound: float) -> tuple[bool, str]:
+    def at_least(key: str, bound: float) -> tuple[bool, str, str]:
         v = m.get(key)
-        return _is_number(v) and v >= bound, f"{key} >= {bound:g}"
+        return _is_number(v) and v >= bound, f"{key} >= {bound:g}", f"{v!r}"
 
-    def at_most(key: str, bound: float) -> tuple[bool, str]:
+    def at_most(key: str, bound: float) -> tuple[bool, str, str]:
         v = m.get(key)
-        return _is_number(v) and v <= bound, f"{key} <= {bound:g}"
+        return _is_number(v) and v <= bound, f"{key} <= {bound:g}", f"{v!r}"
 
-    def equals(key: str, target: float) -> tuple[bool, str]:
+    def equals(key: str, target: float) -> tuple[bool, str, str]:
         v = m.get(key)
-        return _is_number(v) and v == target, f"{key} == {target!r}"
+        return _is_number(v) and v == target, f"{key} == {target!r}", f"{v!r}"
+
+    def equals_key(key: str, other: str) -> tuple[bool, str, str]:
+        v, w = m.get(key), m.get(other)
+        return _is_number(v) and _is_number(w) and v == w, f"{key} == {other}", f"{v!r} and {w!r}"
+
+    def below_key(key: str, other: str) -> tuple[bool, str, str]:
+        v, w = m.get(key), m.get(other)
+        return _is_number(v) and _is_number(w) and v < w, f"{key} < {other}", f"{v!r} and {w!r}"
+
+    def within_fraction_of(key: str, other: str, fraction: float) -> tuple[bool, str, str]:
+        v, w = m.get(key), m.get(other)
+        ok = _is_number(v) and _is_number(w) and abs(v - w) <= fraction * abs(w)
+        return ok, f"{key} within {fraction:.0%} of {other}", f"{v!r} and {w!r}"
+
+    def d8_vocabulary() -> tuple[bool, str, str]:
+        v, rate = m.get("vocab_selected"), m.get("unk_rate_4096")
+        ok = _is_number(v) and _is_number(rate) and v == (4096 if rate <= 0.01 else 8192)
+        rule = "vocab_selected == 4096 when unk_rate_4096 <= 0.01, otherwise 8192 (D8)"
+        return ok, rule, f"vocab_selected {v!r} with unk_rate_4096 {rate!r}"
 
     rules = {
         ("G0.1", "pass"): [
@@ -247,10 +318,24 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         ("G0.3", "pass"): [at_least("tokens_per_s_S", 25000)],
         ("G0.4", "pass"): [at_most("max_abs_logit_diff", 1e-3), equals("top1_agreement", 1.0)],
         ("G0.5", "pass"): [is_("runs", True), at_most("max_rel_loss_diff", 0.02)],
+        ("G1.1", "pass"): [is_("builds_identical", True), d8_vocabulary()],
+        ("G1.2", "pass"): [
+            equals_key("n_params", "n_params_expected"), at_most("max_abs_logit_diff", 1e-4),
+            equals("top1_agreement", 1.0),
+        ],
+        ("G1.3", "pass"): [is_("identical", True)],
+        ("G1.3", "conditional_pass"): [is_("identical", False), at_most("max_abs_param_diff", 1e-6)],
+        ("G1.4", "pass"): [
+            is_("nonfinite_seen", False), equals_key("checkpoints_written", "checkpoints_scheduled"),
+            below_key("final_val_loss", "bigram_val_loss"),
+        ],
+        ("G1.5", "pass"): [is_("bitwise_equal", True), is_("defect_detected", True)],
+        ("G1.6", "pass"): [
+            equals_key("sample_matches", "sample_size"), equals("retrace_new_events", 0),
+            within_fraction_of("store_bytes", "store_bytes_expected", 0.10),
+        ],
     }[(gate_id, status)]
-    return [
-        f"{gate_id} {status} requires {rule}, got {m.get(rule.split()[0])!r}" for ok, rule in rules if not ok
-    ]
+    return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
 
 
 def _plain(value: Any) -> Any:

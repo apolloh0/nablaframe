@@ -11,11 +11,12 @@ Nothing is edited in place. A correction is a new event that supersedes the old
 one by id; the old event stays in the log. There is deliberately no update,
 delete, remove, replace or rewrite method.
 
-One writer per store at a time. Two open handles each keep their own index and can record the same event twice. Phase 1 adds locking before anything writes traces concurrently.
+One writer per store at a time, enforced by a lock. A handle takes an exclusive `fcntl.flock` on `root/.lock` at its first append or supersede, rereads the log once it holds the lock, and keeps the lock until `close()`. If another handle holds it, the write raises StoreError at once. Opening and reading never lock.
 """
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 from dataclasses import replace
@@ -41,16 +42,32 @@ class IntegrityError(StoreError):
 
 
 class TraceStore:
-    def __init__(self, root: str | Path) -> None:
+    def __init__(self, root: str | Path, mode: str = "w") -> None:
         """Open the store at ``root``, creating the directory, ``events.jsonl`` and
-        ``shards/`` if absent. Events already on disk are visible immediately."""
-        self.root = Path(root)
-        self.root.mkdir(parents=True, exist_ok=True)
-        self._shards_dir = self.root / "shards"
-        self._shards_dir.mkdir(parents=True, exist_ok=True)
-        self._log_path = self.root / "events.jsonl"
-        self._log_path.touch(exist_ok=True)
+        ``shards/`` if absent. Events already on disk are visible immediately.
 
+        `mode="w"` is the default. `TraceStore(root, mode="r")` requires the store to exist (FileNotFoundError otherwise), never creates anything, and raises StoreError on append or supersede. `close()` releases the lock, and TraceStore is a context manager.
+        """
+        if mode not in ("w", "r"):
+            raise ValueError(f'mode must be "w" or "r", got {mode!r}')
+        self.root = Path(root)
+        self.mode = mode
+        self._shards_dir = self.root / "shards"
+        self._log_path = self.root / "events.jsonl"
+        self._lock_path = self.root / ".lock"
+        self._lock_file = None  # the open .lock file while this handle holds the lock
+
+        if mode == "r":
+            if not self._log_path.is_file():
+                raise FileNotFoundError(f"no trace store at {self.root}: {self._log_path} does not exist")
+        else:
+            self.root.mkdir(parents=True, exist_ok=True)
+            self._shards_dir.mkdir(parents=True, exist_ok=True)
+            self._log_path.touch(exist_ok=True)
+        self._load_log()
+
+    def _load_log(self) -> None:
+        """Rebuild the in-memory index from ``events.jsonl``."""
         self._events: list[TraceEvent] = []
         self._by_id: dict[str, TraceEvent] = {}
         self._superseded_ids: set[str] = set()
@@ -65,6 +82,40 @@ class TraceStore:
                 self._by_id[event.event_id] = event
                 if event.supersedes is not None:
                     self._superseded_ids.add(event.supersedes)
+
+    def _acquire_lock(self) -> None:
+        """Hold the writer lock, taking it and rereading the log if this handle doesn't yet."""
+        if self.mode == "r":
+            raise StoreError(f"store at {self.root} is open read-only")
+        if self._lock_file is not None:
+            return
+        lock_file = open(self._lock_path, "a")
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            lock_file.close()
+            raise StoreError(f"store at {self.root} has another writer holding {self._lock_path}") from None
+        except BaseException:
+            lock_file.close()
+            raise
+        self._lock_file = lock_file
+        # Another writer may have appended since this handle read the log.
+        self._load_log()
+
+    def close(self) -> None:
+        """Release the writer lock, if held. Safe to call more than once."""
+        if self._lock_file is not None:
+            lock_file, self._lock_file = self._lock_file, None
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            finally:
+                lock_file.close()
+
+    def __enter__(self) -> TraceStore:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
 
     def _record(self, event: TraceEvent, tensor: np.ndarray | None, supersedes: str | None) -> TraceEvent:
         for field_name in ("event_id", "tensor_ref", "supersedes"):
@@ -101,7 +152,11 @@ class TraceStore:
         final_event = replace(candidate, event_id=event_id, tensor_ref=tensor_ref)
 
         if tensor is not None and not reuse_orphan:
-            save_file({"tensor": np.ascontiguousarray(tensor)}, str(shard_path))
+            tmp_path = shard_path.with_name(shard_path.name + ".tmp")
+            save_file({"tensor": np.ascontiguousarray(tensor)}, str(tmp_path))
+            with tmp_path.open("rb") as handle:
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, shard_path)
 
         with self._log_path.open("a", encoding="utf-8") as handle:
             handle.write(canonical_json(final_event.to_dict()) + "\n")
@@ -129,8 +184,7 @@ class TraceStore:
         * ``event.event_id``, ``event.tensor_ref`` and ``event.supersedes`` must be
           None; otherwise ValueError. Use ``supersede`` for corrections.
         * With a tensor: its hash is computed with ``tensor_sha256``. If
-          ``event.sha256`` is already set and differs, raise IntegrityError. The
-          shard is written to ``shards/<event_id>.safetensors``. If the shard file already exists but no logged event references it, it is an orphan from an interrupted append. If its tensor hashes to this event's `sha256`, reuse it and append the log line. Otherwise raise IntegrityError and leave the file in place for inspection.
+          ``event.sha256`` is already set and differs, raise IntegrityError. Shards are written through the module-level `save_file` to `shards/<event_id>.safetensors.tmp`, then renamed into place with `os.replace`, so a partial shard never carries its final name. A leftover `.tmp` file is ignored and overwritten. An unreadable file under a shard's final name can then only mean corruption, and raises IntegrityError. If the shard file already exists but no logged event references it, it is an orphan from an interrupted append. If its tensor hashes to this event's `sha256`, reuse it and append the log line. Otherwise raise IntegrityError and leave the file in place for inspection.
         * Without a tensor: ``event.sha256`` must be None; otherwise ValueError.
         * ``event_id`` is the completed event's ``identity_hash()``. If an event
           with that id is already in the store, raise AppendOnlyViolation.
@@ -138,6 +192,7 @@ class TraceStore:
           before returning. A rejected append leaves ``events.jsonl`` byte-for-byte
           unchanged and writes no shard.
         """
+        self._acquire_lock()
         return self._record(event, tensor, supersedes=None)
 
     def supersede(
@@ -150,6 +205,7 @@ class TraceStore:
         event already supersedes it. Corrections chain: to correct a correction,
         supersede the correction.
         """
+        self._acquire_lock()
         if original_id not in self._by_id:
             raise KeyError(original_id)
         if original_id in self._superseded_ids:
@@ -172,12 +228,17 @@ class TraceStore:
         """Load the event's tensor and check it against ``event.sha256``.
 
         Raises ValueError if the event has no tensor, and IntegrityError if the
-        loaded bytes do not hash to ``event.sha256``.
+        shard is unreadable or the loaded bytes do not hash to ``event.sha256``.
         """
         if event.tensor_ref is None:
             raise ValueError("event has no tensor")
-        tensors = load_file(str(self.root / event.tensor_ref))
-        array = tensors["tensor"]
+        try:
+            array = load_file(str(self.root / event.tensor_ref))["tensor"]
+        except FileNotFoundError:
+            raise
+        except Exception as exc:
+            # Shards reach their final name only whole, so an unreadable one is corrupt.
+            raise IntegrityError(f"shard {event.tensor_ref} is unreadable: {exc}") from exc
         if tensor_sha256(array) != event.sha256:
             raise IntegrityError(f"tensor at {event.tensor_ref} does not match event.sha256")
         return array
