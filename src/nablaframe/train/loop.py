@@ -9,6 +9,7 @@ Spec: docs/specs/phase-1.md, "Trainer and checkpoints".
   with two or more dimensions), on a schedule of linear warmup over
   ``warmup_steps`` then cosine decay to ``lr * min_lr_ratio`` at ``total_steps``.
   No dropout.
+* ``learning_rate(train_config, step)`` returns, as a float, the learning rate the optimizer uses at that step: linear warmup from ``lr / warmup_steps`` at step 0 to ``lr`` at ``warmup_steps``, then cosine decay to ``lr * min_lr_ratio`` at ``total_steps`` (D9). The optimizer builds its schedule from the same function, so there is exactly one schedule.
 * The loss is mean next-token cross-entropy over every position of the batch.
 * ``make_train_step`` returns a ``jit``-compiled function taking ``(state, batch)``,
   where ``batch`` is ``batch_for_step``'s ``(batch, seq + 1)`` int32 array. It
@@ -64,16 +65,29 @@ def init_state(model_config: GPT2Config, train_config: TrainConfig) -> TrainStat
     return TrainState(params=params, opt_state=_optimizer(train_config).init(params), step=0)
 
 
+def learning_rate(train_config: TrainConfig, step: int) -> float:
+    return float(_schedule(train_config)(step))
+
+
+def _schedule(train_config: TrainConfig) -> optax.Schedule:
+    """The one schedule, read by ``learning_rate`` and by the optimizer (D9)."""
+    warmup = train_config.warmup_steps
+    return optax.warmup_cosine_decay_schedule(
+        init_value=train_config.lr / warmup if warmup else train_config.lr, peak_value=train_config.lr,
+        warmup_steps=warmup, decay_steps=train_config.total_steps,
+        end_value=train_config.lr * train_config.min_lr_ratio)
+
+
 def _optimizer(train_config: TrainConfig) -> optax.GradientTransformation:
     """Clipping by global norm, then AdamW on the warmup-cosine schedule.
 
-    The schedule is optax's: the learning rate rises linearly from 0 at update 0 to
-    ``lr`` at update ``warmup_steps``, then follows a cosine to ``lr * min_lr_ratio``
-    at ``total_steps``. Levanter's default schedule is the same.
+    The schedule is ``_schedule``, the one ``learning_rate`` reads: the learning rate
+    rises linearly from ``lr / warmup_steps`` at update 0 to ``lr`` at update
+    ``warmup_steps``, then follows a cosine to ``lr * min_lr_ratio`` at ``total_steps``.
+    Starting above 0 departs from optax's and Levanter's default, so update 1 moves
+    the parameters (D9).
     """
-    schedule = optax.warmup_cosine_decay_schedule(
-        init_value=0.0, peak_value=train_config.lr, warmup_steps=train_config.warmup_steps,
-        decay_steps=train_config.total_steps, end_value=train_config.lr * train_config.min_lr_ratio)
+    schedule = _schedule(train_config)
     b1, b2 = train_config.betas
     return optax.chain(
         optax.clip_by_global_norm(train_config.clip),
