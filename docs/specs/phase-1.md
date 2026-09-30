@@ -74,7 +74,7 @@ The model lives in `src/nablaframe/model/gpt2.py`, float32 throughout, with name
 The trainer lives in `src/nablaframe/train/`. Proposed defaults, which a D-entry can change:
 
 - AdamW with β = (0.9, 0.95), weight decay 0.1 on matrices only, and gradient clipping at 1.0.
-- Learning rate 1e-3, 500 warmup steps, then cosine decay to 10%.
+- Learning rate 1e-3, 500 warmup steps starting from 1e-3 / 500 so the first update moves the parameters (D9), then cosine decay to 10%.
 - Batch 32 × 256 tokens, float32, no dropout: the run is well under one pass through the data.
 - The reference run is 100 million tokens: 12,208 steps. That's about 20 tokens per parameter, the usual rule of thumb for training a model efficiently, and it fits D5's budget. It takes about 1.8 hours at vocabulary 4,096 or 2.3 hours at 8,192.
 
@@ -142,7 +142,7 @@ Run on the Mac in this order. Each writes one version 2 report under `reports/ph
 | 3 | Reference model | `model/` | None | Opus, high |
 | 4 | Trainer and checkpoints | `train/` | 2, 3 | Opus, high |
 | 5 | Trace engine | `trace/engine.py` | 1, 3, 4 | Opus, high |
-| 6 | Phase 1 gates | `gates/phase1/` | All; stubs come in a later delta | Opus, high |
+| 6 | Phase 1 gates | `gates/phase1/` | All; stubs in phase 1 delta 2 | Opus, high |
 
 Packages 1, 2 and 3 share no files and can run in parallel. The doc fixes ship with the stubs, not as a thread.
 
