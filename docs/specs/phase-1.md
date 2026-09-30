@@ -95,9 +95,11 @@ step 1,200/12,208 | loss 2.431 | 12,100 tokens/s | about 2.3 h left
 
 `src/nablaframe/trace/engine.py` records traces into the Phase 0 store:
 
-- **One manifest per run.** `open_run(root, manifest)` writes `manifest.json` once. Reopening with an identical manifest is allowed; a different one raises.
-- **The oracle runs first.** `record(step, params, probe, taps)` first runs `check_mode_equality` on the probe batch under the D6 policy. If it fails, it raises before any event is written. Then it appends one event per tap: kind `forward`, mode `instrumented`, the tap name, the step and the probe's batch hash.
+- **One manifest per run.** `TraceRun.open(root, manifest, model, checkpoint_dir=..., probe=..., like=...)` takes the store's writer lock with `TraceStore.acquire()`, then writes `manifest.json` once. Reopening with an identical manifest is allowed; a different one raises.
+- **The oracle runs first.** `record(step, taps)` loads the trace checkpoint for `step` from disk, so what is traced is exactly what was saved. It first runs `check_mode_equality` on the probe batch under the D6 policy. If it fails, it raises before any event is written. Then it appends one event per tap: kind `forward`, mode `instrumented`, the tap name, the step and the probe's batch hash.
+- **Provenance.** `record` and `rematerialize` refuse a checkpoint whose sidecar names another run, or no run at all.
 - **Resumable.** Taps already recorded for this step and batch with identical content are skipped, so re-running a trace after a crash adds nothing. It never supersedes an event on its own.
+- **Never two truths.** If a tap already recorded for this step and batch recomputes to a different tensor, `record` raises `NotReproducible` and writes nothing for any tap. Deliberate corrections go through the store's `supersede`.
 - **One compiled program.** `record` and `rematerialize` both run the instrumented pass with every canonical tap, whatever subset is stored. JAX compiles a different program for each set of requested outputs, and only the same program is guaranteed to reproduce a tensor bit for bit.
 - **Recompute on demand.** `rematerialize(event)` loads the trace checkpoint for `event.step`, runs the instrumented forward pass on the probe batch named by `event.batch_hash`, and returns the tensor. `verify(event)` checks that tensor's hash against `event.sha256`.
 
