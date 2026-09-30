@@ -26,16 +26,128 @@ longer than a minute; returns exit code 0 whenever it wrote a valid report,
 whatever the gate's status, and non-zero only when it could not produce one.
 """
 
+# How it measures:
+#
+# * The store starts empty: its folder is created fresh, and an existing one is
+#   removed only with --overwrite, so events_recorded counts this run's events.
+# * The model is built from G1.4's manifest, and every trace checkpoint's sidecar
+#   is checked to name G1.4's run before anything is traced.
+# * The sample is ``default_rng(0).choice(n, 50, replace=False)`` over the events
+#   in the order they were recorded, verified in the order drawn.
+# * If the engine's oracle refuses a checkpoint (``OracleFailure``), tracing stops
+#   there: the report says fail and records the error, and the retrace is not run,
+#   so retrace_new_events is null.
+
 from __future__ import annotations
 
 import sys
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import numpy as np  # noqa: E402
+
+import _common  # noqa: E402
 
 GATE_ID = "G1.6"
 REPORT_PATH = "reports/phase1/g16_trace.json"
 
+SAMPLE_SIZE = 50
+SAMPLE_SEED = 0
+MAX_STORE_DEVIATION = 0.10
+VERSIONS = ("jax", "jaxlib", "equinox", "marin-haliax", "safetensors", "numpy")
+
 
 def main(argv: list[str] | None = None) -> int:
-    raise NotImplementedError
+    args = _common.arg_parser(__doc__).parse_args(argv)
+    report = _common.start(args, REPORT_PATH)
+    _common.require_data()
+    manifest = _common.load_g14_manifest()
+    work = _common.fresh_dir(_common.RUN_DIR / "g16_trace", overwrite=args.overwrite)
+    measurements = measure(manifest, _common.load_split("validation"), work / "store")
+    measurements["versions"] = _common.phase0.package_versions(VERSIONS)
+    return _common.write(GATE_ID, status(measurements), measurements, report, overwrite=args.overwrite)
+
+
+def status(m: dict[str, Any]) -> str:
+    """pass exactly when reports.py's G1.6 rule holds."""
+    stored, expected = m["store_bytes"], m["store_bytes_expected"]
+    ok = (m["sample_matches"] is not None and m["sample_matches"] == m["sample_size"]
+          and m["retrace_new_events"] == 0
+          and stored is not None and abs(stored - expected) <= MAX_STORE_DEVIATION * abs(expected))
+    return "pass" if ok else "fail"
+
+
+def measure(manifest: Any, validation: np.ndarray, store_root: Path) -> dict[str, Any]:
+    from nablaframe.data.corpus import batch_hash
+    from nablaframe.model.gpt2 import GPT2Model, init_params
+    from nablaframe.trace.engine import OracleFailure, TraceRun
+    from nablaframe.trace.registry import tap_names
+
+    config = _common.config_from_manifest(manifest)
+    steps = tuple(manifest.checkpoint_schedule)
+    trace_dir = _common.g14_trace_dir()
+    for step in steps:
+        _common.trace_checkpoint(manifest, step)
+    model = GPT2Model(config)
+    taps = tap_names(config.n_layers)
+    probe = _common.probe(validation, config.seq)
+    per_checkpoint = _common.trace_bytes_per_checkpoint(config, len(probe))
+
+    events: list[Any] = []
+    error, sample, retrace_new = None, [], None
+    with TraceRun.open(store_root, manifest, model, checkpoint_dir=trace_dir, probe=probe,
+                       like=init_params(config, 0)) as run:
+        progress = _common.Progress("tracing checkpoints", len(steps))
+        try:
+            for step in steps:
+                events += run.record(step=step, taps=taps)
+                progress.advance()
+        except OracleFailure as exc:
+            error = _common.scrub(f"OracleFailure: {exc}")
+            print(f"{GATE_ID}: the engine's oracle refused a checkpoint: {exc}", flush=True)
+        print(f"{GATE_ID}: {len(events):,} events recorded", flush=True)
+
+        n = min(SAMPLE_SIZE, len(events))
+        drawn = np.random.default_rng(SAMPLE_SEED).choice(len(events), size=n, replace=False) if n else []
+        progress = _common.Progress("verifying events", n)
+        for index in drawn:
+            event = events[int(index)]
+            sample.append({"index": int(index), "event_id": event.event_id, "step": event.step, "tap": event.tap,
+                           "matches": bool(run.verify(event))})
+            progress.advance()
+        print(f"{GATE_ID}: {sum(e['matches'] for e in sample)} of {n} sampled events recompute to their hash",
+              flush=True)
+
+        if error is None:
+            retrace_new = 0
+            progress = _common.Progress("tracing again", len(steps))
+            for step in steps:
+                retrace_new += len(run.record(step=step, taps=taps))
+                progress.advance()
+            print(f"{GATE_ID}: the second trace wrote {retrace_new} events", flush=True)
+
+    store_bytes = sum(path.stat().st_size for path in (store_root / "shards").glob("*.safetensors"))
+    return {
+        "events_recorded": len(events),
+        "sample_size": SAMPLE_SIZE,
+        "sample_matches": sum(1 for entry in sample if entry["matches"]),
+        "retrace_new_events": retrace_new,
+        "store_bytes": store_bytes,
+        "store_bytes_expected": per_checkpoint * len(steps),
+        "events_expected": len(taps) * len(steps),
+        "trace_checkpoints": len(steps),
+        "taps": len(taps),
+        "bytes_per_checkpoint_expected": per_checkpoint,
+        "sample_seed": SAMPLE_SEED,
+        "sample": sample,
+        "error": error,
+        "run_id": manifest.run_id,
+        "probe_batch_hash": batch_hash(probe),
+        "probe_shape": list(probe.shape),
+        "store": _common.rel(store_root),
+    }
 
 
 if __name__ == "__main__":
