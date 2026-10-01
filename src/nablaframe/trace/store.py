@@ -83,8 +83,8 @@ class TraceStore:
                 if event.supersedes is not None:
                     self._superseded_ids.add(event.supersedes)
 
-    def _acquire_lock(self) -> None:
-        """Hold the writer lock, taking it and rereading the log if this handle doesn't yet."""
+    def acquire(self) -> None:
+        """Takes the writer lock now, exactly as the first append or supersede would: rereads the log once it holds the lock, and does nothing if this handle holds it already. Raises StoreError if another handle holds it, or if the store is read-only."""
         if self.mode == "r":
             raise StoreError(f"store at {self.root} is open read-only")
         if self._lock_file is not None:
@@ -192,7 +192,7 @@ class TraceStore:
           before returning. A rejected append leaves ``events.jsonl`` byte-for-byte
           unchanged and writes no shard.
         """
-        self._acquire_lock()
+        self.acquire()
         return self._record(event, tensor, supersedes=None)
 
     def supersede(
@@ -205,7 +205,7 @@ class TraceStore:
         event already supersedes it. Corrections chain: to correct a correction,
         supersede the correction.
         """
-        self._acquire_lock()
+        self.acquire()
         if original_id not in self._by_id:
             raise KeyError(original_id)
         if original_id in self._superseded_ids:

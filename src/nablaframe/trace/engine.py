@@ -22,10 +22,25 @@ Spec: docs/specs/phase-1.md, "Trace engine".
   instrumented forward pass on the probe batch, and returns the tap's tensor.
   ``verify(event)`` is whether that tensor's hash equals ``event.sha256``.
 * ``close()`` releases the store; ``TraceRun`` is also a context manager.
+
+Phase 1 delta 3 (docs/deltas/phase-1-delta-3.md):
+
+* ``open``: Takes the store's writer lock with `TraceStore.acquire()` before writing
+  `manifest.json`, so the run is the store's one writer from the start.
+* ``record``: Before writing anything, `record` checks every requested tap. If the
+  store's current events already hold one with the same run, step, kind, mode, tap
+  and batch hash but a different `sha256`, it raises `NotReproducible` and writes no
+  event for any tap. An event with identical content is still skipped. Deliberate
+  corrections go through the store's `supersede`, never through `record`.
+* ``record`` and ``rematerialize``: Each reads the checkpoint's sidecar,
+  `step-<n>.json`, and raises ValueError before loading any tensor unless its
+  `run_id` equals the manifest's. A sidecar with no `run_id` is refused too, since a
+  trace needs provenance.
 """
 
 from __future__ import annotations
 
+import json
 import os
 from collections.abc import Sequence
 from pathlib import Path
@@ -47,6 +62,10 @@ MANIFEST_NAME = "manifest.json"
 
 class OracleFailure(Exception):
     """Instrumentation changed what the model computes; nothing was recorded."""
+
+
+class NotReproducible(Exception):
+    """Recomputing a recorded tap gave a different tensor; nothing was written."""
 
 
 class TraceRun:
@@ -71,7 +90,7 @@ class TraceRun:
         store = TraceStore(root)
         try:
             # Be the one writer before touching the manifest, not only at the first event.
-            store._acquire_lock()
+            store.acquire()
             _write_manifest_once(store.root / MANIFEST_NAME, manifest)
             return cls(store, manifest, model, Path(checkpoint_dir), probe, like)
         except BaseException:
@@ -95,17 +114,25 @@ class TraceRun:
         if not result.passed:
             raise OracleFailure(f"step {step}: {result.reason}")
 
+        # Check every tap before writing any, so a conflict leaves the log untouched.
+        current: dict[tuple, set[str | None]] = {}
+        for event in self._store.current():
+            current.setdefault(_fact_key(event), set()).add(event.sha256)
         recorded_ids = {event.event_id for event in self._store.events()}
-        new: list[TraceEvent] = []
+        pending: list[tuple[TraceEvent, np.ndarray]] = []
         for tap in requested:
             tensor = np.asarray(capture.recorded[tap])
             event = TraceEvent(run_id=self.run_id, step=step, kind="forward", tap=tap,
                                batch_hash=self.batch_hash, mode="instrumented", sha256=tensor_sha256(tensor))
+            held = current.get(_fact_key(event), set())
+            if others := held - {event.sha256}:
+                raise NotReproducible(f"step {step}, tap {tap}: recomputed {event.sha256}, but the store"
+                                      f" already holds {sorted(others)}")
             # The store's event id is this content's identity hash, so an equal id is the same fact.
-            if event.identity_hash() in recorded_ids:
+            if event.sha256 in held or event.identity_hash() in recorded_ids:
                 continue
-            new.append(self._store.append(event, tensor))
-        return tuple(new)
+            pending.append((event, tensor))
+        return tuple(self._store.append(event, tensor) for event, tensor in pending)
 
     def rematerialize(self, event: TraceEvent) -> np.ndarray:
         if event.run_id != self.run_id:
@@ -132,8 +159,26 @@ class TraceRun:
         self.close()
 
     def _load(self, step: int) -> Any:
-        """The trace checkpoint for ``step``, exactly as it is on disk."""
-        return load_params(self.checkpoint_dir / f"step-{_step(step)}.safetensors", like=self._like)
+        """The trace checkpoint for ``step``, exactly as it is on disk, once its sidecar names this run."""
+        path = self.checkpoint_dir / f"step-{_step(step)}.safetensors"
+        self._check_provenance(path.with_suffix(".json"))
+        return load_params(path, like=self._like)
+
+    def _check_provenance(self, sidecar_path: Path) -> None:
+        """ValueError unless the sidecar's ``run_id`` is this run's. Reads no tensor."""
+        if not sidecar_path.is_file():
+            raise ValueError(f"{sidecar_path} is missing, so the checkpoint's run is unknown")
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        run_id = sidecar.get("run_id") if isinstance(sidecar, dict) else None
+        if run_id is None:
+            raise ValueError(f"{sidecar_path} names no run_id; a trace needs provenance")
+        if run_id != self.run_id:
+            raise ValueError(f"{sidecar_path} belongs to run {run_id}, not {self.run_id}")
+
+
+def _fact_key(event: TraceEvent) -> tuple:
+    """What one recorded tap is a fact about; two current events with one key must agree."""
+    return (event.run_id, event.step, event.kind, event.mode, event.tap, event.batch_hash)
 
 
 def _step(step: Any) -> int:
