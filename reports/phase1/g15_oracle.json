@@ -1,0 +1,69 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G1.5",
+  "git_commit": "8d4bc4baf109cf4a549df6e3cb4d4fe383782237",
+  "git_dirty": false,
+  "measurements": {
+    "bitwise_equal": true,
+    "defect": {
+      "max_abs_diff": 1.621246337890625e-05,
+      "n_mismatched": 7889474,
+      "passed": false,
+      "reason": "7889474 of 8388608 logits differ bitwise (max abs diff 1.621e-05)",
+      "shift": 0.001,
+      "step": 12208,
+      "tap": "blocks.0.hook_resid_post"
+    },
+    "defect_detected": true,
+    "per_step": [
+      {
+        "max_abs_diff": 0.0,
+        "n_mismatched": 0,
+        "passed": true,
+        "reason": "",
+        "step": 0
+      },
+      {
+        "max_abs_diff": 0.0,
+        "n_mismatched": 0,
+        "passed": true,
+        "reason": "",
+        "step": 6000
+      },
+      {
+        "max_abs_diff": 0.0,
+        "n_mismatched": 0,
+        "passed": true,
+        "reason": "",
+        "step": 12208
+      }
+    ],
+    "policy": "bitwise",
+    "probe_batch_hash": "f3774467b9c4794158230270d0a2bcbe9d90ff20c9f3e74e069b6ae1b6e19a53",
+    "probe_shape": [
+      8,
+      256
+    ],
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "steps_checked": [
+      0,
+      6000,
+      12208
+    ],
+    "taps": 35,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-02T03:47:50Z",
+  "xla_flags": ""
+}

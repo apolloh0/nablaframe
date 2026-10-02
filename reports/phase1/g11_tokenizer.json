@@ -1,0 +1,77 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G1.1",
+  "git_commit": "4e517bf04ca69b91c4ced677806e22b4826f6f20",
+  "git_dirty": false,
+  "measurements": {
+    "builds_identical": true,
+    "builds_identical_by_size": {
+      "4096": true,
+      "8192": true
+    },
+    "corpus_sha256": "5af028c8aa5006733189a7c684e9e87c63ef42602eb335f1d681e23f1d57fc8f",
+    "dataset_files": {
+      "train": {
+        "bytes": 2227753162,
+        "name": "TinyStoriesV2-GPT4-train.txt",
+        "revision": "f54c09fd23315a6f9c86f9dc80f725de7d8f9c64",
+        "sha256": "6418d412de72888f52b5142c761ac21a582f7d1166f0bfbdb5f03ccfdec90443",
+        "url": "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStoriesV2-GPT4-train.txt"
+      },
+      "validation": {
+        "bytes": 22502601,
+        "name": "TinyStoriesV2-GPT4-valid.txt",
+        "revision": "f54c09fd23315a6f9c86f9dc80f725de7d8f9c64",
+        "sha256": "6874bae9a4c1a4e7edcf0e53b86c17817e9cf881fc75ff2368da457b80c0585d",
+        "url": "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStoriesV2-GPT4-valid.txt"
+      }
+    },
+    "outputs": {
+      "tokenizer": "data/tinystories/tokenizer.json",
+      "train": "data/tinystories/train.bin",
+      "validation": "data/tinystories/validation.bin"
+    },
+    "stories_dropped": 85,
+    "stories_dropped_train": 84,
+    "stories_dropped_validation": 1,
+    "stories_kept_train": 2717411,
+    "stories_kept_validation": 27629,
+    "tokenizer_json_sha256": "d274e3d37bf3efefc21d4a59025cb3c77a575bda83f7f71af5f19d37ee73f1f0",
+    "tokenizer_sha256": "d274e3d37bf3efefc21d4a59025cb3c77a575bda83f7f71af5f19d37ee73f1f0",
+    "train_bin_sha256": "1c9bfa731e6a194b464cbb85d4b976c005d91964ab790f9838486996e0fac683",
+    "train_tokens": 525224441,
+    "unk_counts": {
+      "4096": {
+        "tokens": 5275486,
+        "unknown": 26492
+      },
+      "8192": {
+        "tokens": 5275486,
+        "unknown": 4946
+      }
+    },
+    "unk_counts_4096_cased": {
+      "tokens": 5275486,
+      "unknown": 36853,
+      "vocab_types": 4094
+    },
+    "unk_limit": 0.01,
+    "unk_rate_4096": 0.00502171743039409,
+    "unk_rate_4096_cased": 0.006985707098834117,
+    "unk_rate_8192": 0.0009375439532964356,
+    "validation_bin_sha256": "096bc07bcd5b69da552ab20e874d780c3789b34ea71d9bf7a46b65bd3ecc74c1",
+    "validation_tokens": 5303115,
+    "vocab_selected": 4096,
+    "vocab_sizes_built": {
+      "4096": 4096,
+      "8192": 8192
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-01T00:27:15Z",
+  "xla_flags": ""
+}

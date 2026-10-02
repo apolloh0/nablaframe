@@ -1,0 +1,46 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G1.2",
+  "git_commit": "8d4bc4baf109cf4a549df6e3cb4d4fe383782237",
+  "git_dirty": false,
+  "measurements": {
+    "error": null,
+    "error_stage": null,
+    "hf_export_dir": "runs/phase1/g12_parity/hf",
+    "levanter_n_params": 4273664,
+    "max_abs_logit_diff": 0.0,
+    "n_params": 4273664,
+    "n_params_expected": 4273664,
+    "nonfinite_logits": false,
+    "param_seed": 0,
+    "positions_compared": 2048,
+    "positions_near_tie": 2025,
+    "probe_batch_hash": "f3774467b9c4794158230270d0a2bcbe9d90ff20c9f3e74e069b6ae1b6e19a53",
+    "probe_shape": [
+      8,
+      256
+    ],
+    "tie_margin": 0.001,
+    "tokenizer_sha256": "d274e3d37bf3efefc21d4a59025cb3c77a575bda83f7f71af5f19d37ee73f1f0",
+    "top1_agreement": 1.0,
+    "top1_disagreements_near_tie": 0,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "marin-levanter": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2",
+      "tokenizers": "0.22.2",
+      "transformers": "5.12.1"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-01T06:21:35Z",
+  "xla_flags": ""
+}

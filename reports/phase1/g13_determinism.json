@@ -1,0 +1,71 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G1.3",
+  "git_commit": "8d4bc4baf109cf4a549df6e3cb4d4fe383782237",
+  "git_dirty": false,
+  "measurements": {
+    "attempts": [
+      {
+        "hash_resumed": "477bce9a78eed17555953f616f4cec192a5625c53478baad11b56aac3265f5f2",
+        "hash_run_a": "477bce9a78eed17555953f616f4cec192a5625c53478baad11b56aac3265f5f2",
+        "hash_run_b": "477bce9a78eed17555953f616f4cec192a5625c53478baad11b56aac3265f5f2",
+        "identical": true,
+        "max_abs_param_diff": 0.0,
+        "resumed_from_step": 300,
+        "single_threaded": false,
+        "xla_flags": ""
+      }
+    ],
+    "hash_resumed": "477bce9a78eed17555953f616f4cec192a5625c53478baad11b56aac3265f5f2",
+    "hash_run_a": "477bce9a78eed17555953f616f4cec192a5625c53478baad11b56aac3265f5f2",
+    "hash_run_b": "477bce9a78eed17555953f616f4cec192a5625c53478baad11b56aac3265f5f2",
+    "identical": true,
+    "kill_step": 300,
+    "max_abs_param_diff": 0.0,
+    "model_config": {
+      "d_mlp": 1024,
+      "d_model": 256,
+      "n_heads": 4,
+      "n_layers": 4,
+      "seq": 256,
+      "vocab": 4096
+    },
+    "single_threaded": false,
+    "steps": 600,
+    "tokenizer_sha256": "d274e3d37bf3efefc21d4a59025cb3c77a575bda83f7f71af5f19d37ee73f1f0",
+    "train_config": {
+      "batch": 32,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "clip": 1.0,
+      "data_seed": 0,
+      "eps": 1e-08,
+      "lr": 0.001,
+      "min_lr_ratio": 0.1,
+      "param_seed": 0,
+      "seq": 256,
+      "total_steps": 600,
+      "warmup_steps": 500,
+      "weight_decay": 0.1
+    },
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    },
+    "xla_flags": ""
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-01T06:40:52Z",
+  "xla_flags": ""
+}

@@ -1,0 +1,257 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G1.4",
+  "git_commit": "8d4bc4baf109cf4a549df6e3cb4d4fe383782237",
+  "git_dirty": false,
+  "measurements": {
+    "bigram_val_loss": 3.595841589503002,
+    "checkpoint_schedule": [
+      0,
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1000,
+      1024,
+      2000,
+      2048,
+      3000,
+      4000,
+      4096,
+      5000,
+      6000,
+      7000,
+      8000,
+      8192,
+      9000,
+      10000,
+      11000,
+      12000,
+      12208
+    ],
+    "checkpoints_scheduled": 28,
+    "checkpoints_written": 28,
+    "eval_tokens": 262144,
+    "eval_windows": 1023,
+    "final_val_loss": 1.6756459568952187,
+    "first_nonfinite_step": null,
+    "manifest": "runs/phase1/g14_reference/manifest.json",
+    "model_config": {
+      "d_mlp": 1024,
+      "d_model": 256,
+      "n_heads": 4,
+      "n_layers": 4,
+      "seq": 256,
+      "vocab": 4096
+    },
+    "nonfinite_seen": false,
+    "resume_checkpoints_scheduled": 24,
+    "resume_checkpoints_written": 24,
+    "resumed_from": [],
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "steps": 12208,
+    "tokenizer_sha256": "d274e3d37bf3efefc21d4a59025cb3c77a575bda83f7f71af5f19d37ee73f1f0",
+    "tokens": 100007936,
+    "train_config": {
+      "batch": 32,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "clip": 1.0,
+      "data_seed": 0,
+      "eps": 1e-08,
+      "lr": 0.001,
+      "min_lr_ratio": 0.1,
+      "param_seed": 0,
+      "seq": 256,
+      "total_steps": 12208,
+      "warmup_steps": 500,
+      "weight_decay": 0.1
+    },
+    "val_loss_curve": [
+      {
+        "loss": 8.320226555579103,
+        "step": 0
+      },
+      {
+        "loss": 8.316925168153944,
+        "step": 1
+      },
+      {
+        "loss": 8.310412335139448,
+        "step": 2
+      },
+      {
+        "loss": 8.28803077914032,
+        "step": 4
+      },
+      {
+        "loss": 8.20959031150721,
+        "step": 8
+      },
+      {
+        "loss": 7.983252874916949,
+        "step": 16
+      },
+      {
+        "loss": 7.543310499144672,
+        "step": 32
+      },
+      {
+        "loss": 6.605189691657311,
+        "step": 64
+      },
+      {
+        "loss": 4.924991298164674,
+        "step": 128
+      },
+      {
+        "loss": 3.948098265646956,
+        "step": 256
+      },
+      {
+        "loss": 3.2049173931222508,
+        "step": 500
+      },
+      {
+        "loss": 3.173671666478132,
+        "step": 512
+      },
+      {
+        "loss": 2.566417757483638,
+        "step": 1000
+      },
+      {
+        "loss": 2.5478356623346623,
+        "step": 1024
+      },
+      {
+        "loss": 2.323778005173013,
+        "step": 1500
+      },
+      {
+        "loss": 2.1912185131979127,
+        "step": 2000
+      },
+      {
+        "loss": 2.1793033006953353,
+        "step": 2048
+      },
+      {
+        "loss": 2.1011576535997736,
+        "step": 2500
+      },
+      {
+        "loss": 2.0401718236600663,
+        "step": 3000
+      },
+      {
+        "loss": 1.9947170171802928,
+        "step": 3500
+      },
+      {
+        "loss": 1.9542896349059522,
+        "step": 4000
+      },
+      {
+        "loss": 1.9531139474460457,
+        "step": 4096
+      },
+      {
+        "loss": 1.9240736378719148,
+        "step": 4500
+      },
+      {
+        "loss": 1.8942758107115447,
+        "step": 5000
+      },
+      {
+        "loss": 1.8675395559122603,
+        "step": 5500
+      },
+      {
+        "loss": 1.8467183229627264,
+        "step": 6000
+      },
+      {
+        "loss": 1.8211521659545302,
+        "step": 6500
+      },
+      {
+        "loss": 1.8031196780684873,
+        "step": 7000
+      },
+      {
+        "loss": 1.7827514916920593,
+        "step": 7500
+      },
+      {
+        "loss": 1.765378375906399,
+        "step": 8000
+      },
+      {
+        "loss": 1.757868631610889,
+        "step": 8192
+      },
+      {
+        "loss": 1.7475265398519597,
+        "step": 8500
+      },
+      {
+        "loss": 1.7322638428688981,
+        "step": 9000
+      },
+      {
+        "loss": 1.7174148746016904,
+        "step": 9500
+      },
+      {
+        "loss": 1.706617797225102,
+        "step": 10000
+      },
+      {
+        "loss": 1.6955557941574737,
+        "step": 10500
+      },
+      {
+        "loss": 1.688431129194541,
+        "step": 11000
+      },
+      {
+        "loss": 1.6801369891721365,
+        "step": 11500
+      },
+      {
+        "loss": 1.6774045099610806,
+        "step": 12000
+      },
+      {
+        "loss": 1.6756459568952187,
+        "step": 12208
+      }
+    ],
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-02T02:20:08Z",
+  "xla_flags": ""
+}
