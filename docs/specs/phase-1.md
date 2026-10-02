@@ -1,6 +1,6 @@
 # Phase 1 spec: the reference model, its trainer, and the trace engine
 
-Status: ready for implementation once D7 and D8 are committed. Charter: [../charter.md](../charter.md). Decisions: [../decisions.md](../decisions.md).
+Status: complete. Ruled at human gate H1 on 2026-10-02: see D10 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
