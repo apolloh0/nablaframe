@@ -16,6 +16,11 @@ checkpoint (``events_recorded``, expected 980). Then:
 Progress: a ``Progress`` line per checkpoint recorded and per event verified.
 Measurements: REQUIRED_MEASUREMENTS["G1.6"].
 
+* If `record` raises `NotReproducible` during either trace, G1.6 writes a fail
+  report: `error_stage` names the trace (`first` or `retrace`), `error` holds the
+  message, and any measurement it could not take is null. A provenance `ValueError`
+  from the engine is a setup error: the gate exits non-zero without a report.
+
 
 Every gate: runs on the Mac only, in nf-jax
 (``UV_PROJECT_ENVIRONMENT=.venv-jax uv run --extra jax python gates/phase1/<script>``);
@@ -33,10 +38,23 @@ whatever the gate's status, and non-zero only when it could not produce one.
 # * The model is built from G1.4's manifest, and every trace checkpoint's sidecar
 #   is checked to name G1.4's run before anything is traced.
 # * The sample is ``default_rng(0).choice(n, 50, replace=False)`` over the events
-#   in the order they were recorded, verified in the order drawn.
+#   in the order they were recorded, verified in the order drawn. sample_size is the
+#   number of events actually sampled, which is fewer than 50 only when the first
+#   trace stopped early; sample_size_planned is always 50.
 # * If the engine's oracle refuses a checkpoint (``OracleFailure``), tracing stops
 #   there: the report says fail and records the error, and the retrace is not run,
-#   so retrace_new_events is null.
+#   so retrace_new_events is null. error_stage is "first", the only trace that
+#   catches it.
+# * NotReproducible in the first trace is handled the same way: the events recorded
+#   before it are still sampled and verified, and the retrace is not run.
+# * In the retrace, OracleFailure and NotReproducible both stop the retrace and make
+#   the report fail with error_stage "retrace"; retrace_new_events is null, since the
+#   retrace never finished, and every other measurement is taken as usual.
+# * error holds "<exception class>: <message>", with absolute paths shortened.
+# * A ValueError from record or verify (the engine's provenance check on a
+#   checkpoint's sidecar) is raised again as SystemExit, so the gate exits 1 with no
+#   report. The gate checks every sidecar before tracing, so this only fires if a
+#   sidecar changes during the run.
 
 from __future__ import annotations
 
@@ -82,7 +100,7 @@ def status(m: dict[str, Any]) -> str:
 def measure(manifest: Any, validation: np.ndarray, store_root: Path) -> dict[str, Any]:
     from nablaframe.data.corpus import batch_hash
     from nablaframe.model.gpt2 import GPT2Model, init_params
-    from nablaframe.trace.engine import OracleFailure, TraceRun
+    from nablaframe.trace.engine import NotReproducible, OracleFailure, TraceRun
     from nablaframe.trace.registry import tap_names
 
     config = _common.config_from_manifest(manifest)
@@ -96,17 +114,20 @@ def measure(manifest: Any, validation: np.ndarray, store_root: Path) -> dict[str
     per_checkpoint = _common.trace_bytes_per_checkpoint(config, len(probe))
 
     events: list[Any] = []
-    error, sample, retrace_new = None, [], None
+    error, error_stage, sample, retrace_new = None, None, [], None
     with TraceRun.open(store_root, manifest, model, checkpoint_dir=trace_dir, probe=probe,
                        like=init_params(config, 0)) as run:
         progress = _common.Progress("tracing checkpoints", len(steps))
         try:
             for step in steps:
-                events += run.record(step=step, taps=taps)
+                events += _engine(run.record, step=step, taps=taps)
                 progress.advance()
         except OracleFailure as exc:
-            error = _common.scrub(f"OracleFailure: {exc}")
+            error, error_stage = _common.scrub(f"OracleFailure: {exc}"), "first"
             print(f"{GATE_ID}: the engine's oracle refused a checkpoint: {exc}", flush=True)
+        except NotReproducible as exc:
+            error, error_stage = _common.scrub(f"NotReproducible: {exc}"), "first"
+            print(f"{GATE_ID}: the first trace found a tap that does not reproduce: {exc}", flush=True)
         print(f"{GATE_ID}: {len(events):,} events recorded", flush=True)
 
         n = min(SAMPLE_SIZE, len(events))
@@ -115,7 +136,7 @@ def measure(manifest: Any, validation: np.ndarray, store_root: Path) -> dict[str
         for index in drawn:
             event = events[int(index)]
             sample.append({"index": int(index), "event_id": event.event_id, "step": event.step, "tap": event.tap,
-                           "matches": bool(run.verify(event))})
+                           "matches": bool(_engine(run.verify, event))})
             progress.advance()
         print(f"{GATE_ID}: {sum(e['matches'] for e in sample)} of {n} sampled events recompute to their hash",
               flush=True)
@@ -123,15 +144,23 @@ def measure(manifest: Any, validation: np.ndarray, store_root: Path) -> dict[str
         if error is None:
             retrace_new = 0
             progress = _common.Progress("tracing again", len(steps))
-            for step in steps:
-                retrace_new += len(run.record(step=step, taps=taps))
-                progress.advance()
-            print(f"{GATE_ID}: the second trace wrote {retrace_new} events", flush=True)
+            try:
+                for step in steps:
+                    retrace_new += len(_engine(run.record, step=step, taps=taps))
+                    progress.advance()
+                print(f"{GATE_ID}: the second trace wrote {retrace_new} events", flush=True)
+            except OracleFailure as exc:
+                error, error_stage, retrace_new = _common.scrub(f"OracleFailure: {exc}"), "retrace", None
+                print(f"{GATE_ID}: the engine's oracle refused a checkpoint during the retrace: {exc}", flush=True)
+            except NotReproducible as exc:
+                error, error_stage, retrace_new = _common.scrub(f"NotReproducible: {exc}"), "retrace", None
+                print(f"{GATE_ID}: the retrace found a tap that does not reproduce: {exc}", flush=True)
 
     store_bytes = sum(path.stat().st_size for path in (store_root / "shards").glob("*.safetensors"))
     return {
         "events_recorded": len(events),
-        "sample_size": SAMPLE_SIZE,
+        "sample_size": len(sample),
+        "sample_size_planned": SAMPLE_SIZE,
         "sample_matches": sum(1 for entry in sample if entry["matches"]),
         "retrace_new_events": retrace_new,
         "store_bytes": store_bytes,
@@ -143,11 +172,22 @@ def measure(manifest: Any, validation: np.ndarray, store_root: Path) -> dict[str
         "sample_seed": SAMPLE_SEED,
         "sample": sample,
         "error": error,
+        "error_stage": error_stage,
         "run_id": manifest.run_id,
         "probe_batch_hash": batch_hash(probe),
         "probe_shape": list(probe.shape),
         "store": _common.rel(store_root),
     }
+
+
+def _engine(call: Any, *args: Any, **kwargs: Any) -> Any:
+    """``call(*args, **kwargs)``, with the engine's ValueError (a checkpoint without this run's
+    provenance) turned into a setup error: SystemExit, so no report is written."""
+    try:
+        return call(*args, **kwargs)
+    except ValueError as exc:
+        raise SystemExit(f"{GATE_ID}: setup error, the engine refused a checkpoint: {exc}."
+                         " No report written.") from exc
 
 
 if __name__ == "__main__":
