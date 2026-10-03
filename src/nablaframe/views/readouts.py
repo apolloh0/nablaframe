@@ -27,28 +27,60 @@ from pathlib import Path
 
 import numpy as np
 
+from ..data.corpus import batch_hash as probe_batch_hash
+from ..trace.store import TraceStore
+
 
 class TraceReader:
     def __init__(self, root: str | Path) -> None:
-        raise NotImplementedError
+        self._store = TraceStore(root, mode="r")
+        self._events: dict[tuple[int, str], list] = {}
+        self._steps = set()
+        for event in self._store.current():
+            if event.tensor_ref is not None:
+                self._steps.add(event.step)
+                self._events.setdefault((event.step, event.tap), []).append(event)
 
     def steps(self) -> tuple[int, ...]:
-        raise NotImplementedError
+        return tuple(sorted(self._steps))
 
     def tensor(self, step: int, tap: str) -> np.ndarray:
-        raise NotImplementedError
+        matches = self._events.get((step, tap), [])
+        if not matches:
+            raise KeyError((step, tap))
+        if len(matches) > 1:
+            raise ValueError(f"step {step} has {len(matches)} current events for tap {tap!r}")
+        return self._store.load_tensor(matches[0])
 
     def batch_hash(self, step: int) -> str:
-        raise NotImplementedError
+        hashes = {e.batch_hash for (s, _), events in self._events.items() if s == step for e in events}
+        if not hashes:
+            raise KeyError(step)
+        if len(hashes) > 1:
+            raise ValueError(f"step {step} has events recorded on different batches: {sorted(hashes)}")
+        return hashes.pop()
 
 
 def attention_pattern(reader: TraceReader, step: int, layer: int, head: int, sequence: int) -> np.ndarray:
-    raise NotImplementedError
+    pattern = reader.tensor(step, f"blocks.{layer}.attn.hook_pattern")
+    return np.array(pattern[sequence, head])
 
 
 def residual_norms(reader: TraceReader, step: int, n_layers: int) -> np.ndarray:
-    raise NotImplementedError
+    taps = [f"blocks.{layer}.hook_resid_pre" for layer in range(n_layers)]
+    taps.append(f"blocks.{n_layers - 1}.hook_resid_post")
+    rows = [np.linalg.norm(reader.tensor(step, tap).astype(np.float64), axis=-1) for tap in taps]
+    return np.stack(rows).astype(np.float32)
 
 
 def per_token_loss(reader: TraceReader, step: int, probe: np.ndarray) -> np.ndarray:
-    raise NotImplementedError
+    probe = np.asarray(probe)
+    if probe_batch_hash(probe) != reader.batch_hash(step):
+        raise ValueError(f"probe does not match the batch step {step} was recorded on")
+    logits = reader.tensor(step, "logits").astype(np.float64)
+    shifted = logits - logits.max(axis=-1, keepdims=True)
+    log_probs = shifted - np.log(np.exp(shifted).sum(axis=-1, keepdims=True))
+    loss = np.full(probe.shape, np.nan, dtype=np.float32)
+    nll = -np.take_along_axis(log_probs[:, :-1], probe[:, 1:, None].astype(np.intp), axis=-1)[..., 0]
+    loss[:, :-1] = nll
+    return loss
