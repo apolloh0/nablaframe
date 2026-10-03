@@ -29,20 +29,50 @@ LN_EPS = 1e-5
 
 
 def lens_params(params: Any) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    raise NotImplementedError
+    return (
+        np.asarray(params.ln_f.weight, dtype=np.float32),
+        np.asarray(params.ln_f.bias, dtype=np.float32),
+        np.asarray(params.wte, dtype=np.float32),
+    )
 
 
 def logit_lens(resid: np.ndarray, ln_weight: np.ndarray, ln_bias: np.ndarray, wte: np.ndarray) -> np.ndarray:
-    raise NotImplementedError
+    resid = np.asarray(resid, dtype=np.float32)
+    centered = resid - resid.mean(axis=-1, keepdims=True, dtype=np.float32)
+    variance = (centered * centered).mean(axis=-1, keepdims=True, dtype=np.float32)
+    normed = centered / np.sqrt(variance + np.float32(LN_EPS), dtype=np.float32)
+    normed = normed * np.asarray(ln_weight, dtype=np.float32) + np.asarray(ln_bias, dtype=np.float32)
+    return (normed @ np.asarray(wte, dtype=np.float32).T).astype(np.float32, copy=False)
 
 
 def lens_readings(reader: Any, step: int, params: Any, n_layers: int) -> np.ndarray:
-    raise NotImplementedError
+    ln_w, ln_b, wte = lens_params(params)
+    taps = ["blocks.0.hook_resid_pre"] + [f"blocks.{layer}.hook_resid_post" for layer in range(n_layers)]
+    return np.stack([logit_lens(reader.tensor(step, tap), ln_w, ln_b, wte) for tap in taps])
+
+
+def _log_softmax(logits: np.ndarray) -> np.ndarray:
+    shifted = logits.astype(np.float64)
+    shifted -= shifted.max(axis=-1, keepdims=True)
+    return shifted - np.log(np.exp(shifted).sum(axis=-1, keepdims=True))
 
 
 def lens_meter(readings: np.ndarray, final_logits: np.ndarray) -> list[dict[str, float]]:
-    raise NotImplementedError
+    log_p = _log_softmax(final_logits)
+    p = np.exp(log_p)
+    final_top1 = final_logits.argmax(axis=-1)
+    meter = []
+    for layer, reading in enumerate(readings):
+        log_q = _log_softmax(reading)
+        kl = (p * (log_p - log_q)).sum(axis=-1)
+        meter.append({
+            "layer": layer,
+            "kl_mean": float(kl.mean()),
+            "top1_agreement": float((reading.argmax(axis=-1) == final_top1).mean()),
+        })
+    return meter
 
 
 def next_token_accuracy(lens_logits: np.ndarray, tokens: np.ndarray) -> float:
-    raise NotImplementedError
+    predicted = lens_logits[:, :-1].argmax(axis=-1)
+    return float((predicted == np.asarray(tokens)[:, 1:]).mean())
