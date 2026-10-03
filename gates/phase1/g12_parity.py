@@ -8,6 +8,12 @@ format with Levanter's own converter, the path G0.4 used. Loads the export with
 ``load_hf_gpt2`` and compares logits with Levanter's on the probe batch:
 ``probe_batch(validation, EVAL_TOKENS, PROBE_SEED, PROBE_SEQUENCES, 256)``.
 
+Before building the export, G1.2 sets `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1`
+in its own process. If the export then fails for want of something online, the gate
+writes a fail report with `error_stage: "export"`, naming what was requested, so a
+network dependency is stated rather than silent. A passing report records
+`hf_offline: true`.
+
 * ``n_params``: the loaded params' element count. ``n_params_expected``:
   ``GPT2Config.from_size("S", vocab).n_params()``.
 * ``max_abs_logit_diff`` over every position and vocabulary entry.
@@ -38,6 +44,18 @@ whatever the gate's status, and non-zero only when it could not produce one.
 #   vocabulary as a word-level Hugging Face tokenizer in a local folder, through
 #   ``Gpt2Config.tokenizer``, so the export never needs the GPT-2 tokenizer from
 #   the Hub. The tokenizer is not saved with the export.
+# * Offline mode is set first thing in ``main``, because huggingface_hub reads it
+#   once, when first imported; ``hf_offline`` is the value huggingface_hub then
+#   holds. Levanter's converter also reads the reference ``gpt2`` config to copy its
+#   ``architectures``; offline, that comes from the local Hugging Face cache, and
+#   when the cache lacks it Levanter warns and derives ``architectures`` from the
+#   model type instead. Warnings raised during the export are recorded as
+#   ``export_warnings``, so that fallback shows in the report.
+# * ``hub_requests`` names what a failed stage asked Hugging Face for: each URL
+#   offline mode refused, from huggingface_hub's ``Cannot reach <url>`` errors, and
+#   each ``<repo>/<file>@<revision>`` that ``hf_hub_download`` was asked for in the
+#   failing call chain, read from its frames, because transformers' own error does
+#   not name the file.
 # * Levanter's logits come from the model it built, under ``local_cpu_mesh`` with a
 #   causal mask, as in G0.4. Ours come from ``GPT2Model.fast`` on the loaded export.
 # * An export or load error is the path under test failing: the report says fail,
@@ -47,8 +65,11 @@ whatever the gate's status, and non-zero only when it could not produce one.
 
 from __future__ import annotations
 
+import os
+import re
 import sys
 import traceback
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +95,9 @@ class CouldNotMeasure(Exception):
 
 def main(argv: list[str] | None = None) -> int:
     args = _common.arg_parser(__doc__).parse_args(argv)
+    if not go_offline():
+        raise SystemExit("huggingface_hub was imported before G1.2 set its offline mode, so offline mode is not in"
+                         " effect. Run the gate as a script.")
     report = _common.start(args, REPORT_PATH)
     _common.require_data()
     work = _common.fresh_dir(_common.RUN_DIR / "g12_parity", overwrite=args.overwrite)
@@ -85,8 +109,22 @@ def main(argv: list[str] | None = None) -> int:
     except CouldNotMeasure as exc:
         print(f"{GATE_ID} could not measure: {exc}\nNo report written.", file=sys.stderr)
         return 1
-    measurements.update(tokenizer_sha256=tokenizer.sha256, versions=_common.phase0.package_versions(VERSIONS))
+    measurements.update(tokenizer_sha256=tokenizer.sha256, versions=_common.phase0.package_versions(VERSIONS),
+                        hf_offline=hub_offline())
     return _common.write(GATE_ID, status(measurements), measurements, report, overwrite=args.overwrite)
+
+
+def go_offline() -> bool:
+    """Sets Hugging Face's offline mode for this process. Whether huggingface_hub holds it."""
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    return hub_offline()
+
+
+def hub_offline() -> bool:
+    from huggingface_hub import constants
+
+    return bool(constants.HF_HUB_OFFLINE)
 
 
 def status(m: dict[str, Any]) -> str:
@@ -114,20 +152,54 @@ def measure(config: Any, vocab: tuple[str, ...], probe: np.ndarray, work: Path) 
             "probe_shape": list(probe.shape), "probe_batch_hash": _batch_hash(probe), "param_seed": PARAM_SEED,
             "tie_margin": TIE_MARGIN, "hf_export_dir": _common.rel(work / "hf")}
     stage = "export"
+    caught: list[warnings.WarningMessage] = []
     try:
-        _stage(f"exporting to Hugging Face format in {_common.rel(work / 'hf')}")
-        export(levanter_model, levanter_config, work / "hf")
+        _stage(f"exporting to Hugging Face format in {_common.rel(work / 'hf')}, offline")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            export(levanter_model, levanter_config, work / "hf")
+        base["export_warnings"] = _warning_texts(caught)
         stage = "load"
         _stage("loading the export into our model")
         params = load_hf_gpt2(work / "hf", config)
         stage = "forward"
         _stage("comparing logits")
         ours = np.asarray(GPT2Model(config).fast(params, probe))
-    except Exception:  # noqa: BLE001  the export and load path is what this gate tests
+    except Exception as exc:  # noqa: BLE001  the export and load path is what this gate tests
+        base.setdefault("export_warnings", _warning_texts(caught))
         return {**base, "n_params": None, "max_abs_logit_diff": None, "top1_agreement": None,
                 "positions_near_tie": None, "positions_compared": None,
-                "error_stage": stage, "error": _common.scrub(traceback.format_exc()[-4000:])}
-    return {**base, "n_params": n_params(params), **compare(levanter_logits, ours), "error_stage": None, "error": None}
+                "error_stage": stage, "error": _common.scrub(traceback.format_exc()[-4000:]),
+                "hub_requests": hub_requests(exc)}
+    return {**base, "n_params": n_params(params), **compare(levanter_logits, ours), "error_stage": None, "error": None,
+            "hub_requests": []}
+
+
+def _warning_texts(caught: list[warnings.WarningMessage]) -> list[str]:
+    """Each warning as ``<category>: <message>``, also printed, since recording them keeps them off stderr."""
+    texts = [f"{w.category.__name__}: {_common.scrub(str(w.message))}" for w in caught]
+    for text in texts:
+        print(f"{GATE_ID}: export warning: {text}", file=sys.stderr, flush=True)
+    return texts
+
+
+def hub_requests(exc: BaseException) -> list[str]:
+    """What the failing call chain asked Hugging Face for, sorted: refused URLs and ``<repo>/<file>@<revision>``."""
+    found: set[str] = set()
+    seen: set[int] = set()
+    error: BaseException | None = exc
+    while error is not None and id(error) not in seen:
+        seen.add(id(error))
+        found.update(re.findall(r"Cannot reach (\S+): offline mode", str(error)))
+        tb = error.__traceback__
+        while tb is not None:
+            local = tb.tb_frame.f_locals
+            repo, filename, revision = local.get("repo_id"), local.get("filename"), local.get("revision")
+            if tb.tb_frame.f_code.co_name == "hf_hub_download" and isinstance(repo, str) and isinstance(filename, str):
+                found.add(f"{repo}/{filename}@{revision if isinstance(revision, str) else 'main'}")
+            tb = tb.tb_next
+        error = error.__cause__ or error.__context__
+    return sorted(found)
 
 
 def _stage(text: str) -> None:

@@ -4,7 +4,22 @@ Spec: docs/specs/phase-1.md, Gates table, G1.1 row. Report: reports/phase1/g11_t
 
 Downloads ``TinyStoriesV2-GPT4-train.txt`` and ``TinyStoriesV2-GPT4-valid.txt`` from
 ``roneneldan/TinyStories`` on Hugging Face into ``data/tinystories/raw/`` and records
-each file's SHA-256. Cleans both with ``clean_stories``. Then:
+each file's SHA-256.
+
+`download_url(repo, name, revision)` returns
+`https://huggingface.co/datasets/<repo>/resolve/<revision>/<name>`. G1.1 takes
+`--revision`. Without it, G1.1 first resolves the current commit of `main` from
+Hugging Face's `X-Repo-Commit` header, then downloads both files from that commit,
+so both always come from one recorded revision. Raw files already in place are still
+reused.
+
+G1.1 refuses, with no report, when the raw files it would use don't share one recorded
+revision: a file in place whose ``.source.json`` names a different commit from the one
+the other file would be downloaded at, files in place that differ from ``--revision``,
+or a file in place with no recorded revision. The message names the revisions and says
+to delete the stale file or pass the matching ``--revision``.
+
+Cleans both files with ``clean_stories``. Then:
 
 * Builds the tokenizer twice at 4,096 and twice at 8,192 from the cleaned train
   stories; ``builds_identical`` is whether each pair has equal JSON.
@@ -34,10 +49,18 @@ whatever the gate's status, and non-zero only when it could not produce one.
 
 # How it measures:
 #
-# * Each raw file is downloaded to ``<name>.tmp`` and renamed into place when
-#   complete, beside a ``<name>.source.json`` recording the URL and the dataset
-#   revision Hugging Face resolved it to. A file already in place is reused, and
-#   its hash is what the report records either way.
+# * The revision of ``main`` is resolved with a HEAD request for the first missing
+#   file at ``main``, without following the redirect to Hugging Face's file store:
+#   the ``X-Repo-Commit`` header comes with the redirect. It is resolved only when a
+#   file has to be downloaded, so a rerun with both raw files in place needs no
+#   network. A file already in place keeps the revision its ``.source.json`` records,
+#   and the refusal compares those revisions, exactly as recorded, with each other and
+#   with the revision any download would use, before anything is downloaded.
+# * Each raw file is downloaded from its revision's URL to ``<name>.tmp`` and
+#   renamed into place when complete, beside a ``<name>.source.json`` recording the
+#   URL and the commit Hugging Face served it from (its ``X-Repo-Commit``, or the
+#   revision asked for if it sent none). A file already in place is reused, and its
+#   hash is what the report records either way.
 # * Cleaning streams each file in blocks cut just after a ``<|endoftext|>``, so it
 #   gives exactly what ``clean_stories`` gives on the whole file, without holding
 #   the raw text in memory twice.
@@ -56,6 +79,7 @@ import codecs
 import json
 import re
 import sys
+import urllib.error
 import urllib.request
 from collections import Counter
 from collections.abc import Iterable, Iterator
@@ -73,7 +97,7 @@ REPORT_PATH = "reports/phase1/g11_tokenizer.json"
 
 REPO = "roneneldan/TinyStories"
 FILES = {"train": "TinyStoriesV2-GPT4-train.txt", "validation": "TinyStoriesV2-GPT4-valid.txt"}
-URL = "https://huggingface.co/datasets/{repo}/resolve/main/{name}"
+URL = "https://huggingface.co/datasets/{repo}/resolve/{revision}/{name}"
 SIZES = (4096, 8192)
 UNK_LIMIT = 0.01  # D8
 CASED_WORD = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)*|\S")
@@ -82,14 +106,17 @@ ENCODE_CHUNK = 20_000  # stories per encode_split call, so progress shows while 
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _common.arg_parser(__doc__).parse_args(argv)
+    parser = _common.arg_parser(__doc__)
+    parser.add_argument("--revision", help="the dataset revision to download from; by default the current commit of"
+                        " main, resolved once for both files")
+    args = parser.parse_args(argv)
     report = _common.start(args, REPORT_PATH)
     outputs = [_common.tokenizer_path(), _common.split_path("train"), _common.split_path("validation")]
     existing = [_common.rel(p) for p in outputs if p.exists()]
     if existing and not args.overwrite:
         raise SystemExit(f"{', '.join(existing)} already exist. Pass --overwrite to rebuild them.")
     try:
-        raw = {split: download(REPO, name, raw_dir()) for split, name in FILES.items()}
+        raw = download_all(REPO, FILES, raw_dir(), args.revision)
         measurements = measure(raw["train"], raw["validation"], _common.DATA_DIR)
     except (OSError, ValueError, UnicodeDecodeError) as exc:
         print(f"{GATE_ID} could not measure: {type(exc).__name__}: {exc}. No report written.", file=sys.stderr)
@@ -282,21 +309,92 @@ class _RevisionRecorder(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def download(repo: str, name: str, folder: Path) -> Path:
-    """``folder/name``, downloaded from URL unless it is already there."""
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Stops at the first redirect, which urllib then raises as an HTTPError carrying its headers."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001  urllib's signature
+        return None
+
+
+def download_url(repo: str, name: str, revision: str) -> str:
+    """Where Hugging Face serves dataset file ``name`` of ``repo`` at ``revision``."""
+    return URL.format(repo=repo, name=name, revision=revision)
+
+
+def resolve_revision(repo: str, name: str, ref: str = "main") -> str:
+    """The commit ``ref`` points to now, from the ``X-Repo-Commit`` header Hugging Face sends for ``name``."""
+    url = download_url(repo, name, ref)
+    opener = urllib.request.build_opener(_NoRedirect())
+    try:
+        with opener.open(urllib.request.Request(url, method="HEAD"), timeout=60) as response:
+            commit = response.headers.get("X-Repo-Commit")
+    except urllib.error.HTTPError as exc:
+        if not 300 <= exc.code < 400:
+            raise
+        commit = exc.headers.get("X-Repo-Commit")
+        exc.close()
+    if not commit:
+        raise OSError(f"{url} sent no X-Repo-Commit header, so the commit of {ref} is unknown")
+    return commit
+
+
+def download_all(repo: str, files: dict[str, str], folder: Path, revision: str | None = None) -> dict[str, Path]:
+    """Each of ``files`` in ``folder``, the missing ones downloaded from ``revision``.
+
+    Without ``revision``, the current commit of ``main``, resolved once before the first download.
+    """
+    given = revision is not None
+    in_place = {name: recorded_revision(folder / name) for name in files.values() if (folder / name).exists()}
+    missing = [name for name in files.values() if name not in in_place]
+    unrecorded = [name for name, recorded in in_place.items() if recorded is None]
+    if unrecorded:
+        raise SystemExit(f"{', '.join(unrecorded)} in {_common.rel(folder)} records no revision, so G1.1 can't tell"
+                         " which commit it came from. Delete the stale file. No report written.")
+    if missing and revision is None:
+        revision = resolve_revision(repo, missing[0])
+        print(f"{GATE_ID}: main is at {revision}", flush=True)
+    require_one_revision(in_place, revision, folder, given=given)
+    return {split: download(repo, name, folder, revision) for split, name in files.items()}
+
+
+def recorded_revision(path: Path) -> str | None:
+    """The revision ``path``'s ``.source.json`` records, or None when there is none."""
+    source = path.with_name(path.name + ".source.json")
+    if not source.exists():
+        return None
+    return json.loads(source.read_text(encoding="utf-8")).get("revision") or None
+
+
+def require_one_revision(in_place: dict[str, str], revision: str | None, folder: Path, *, given: bool) -> None:
+    """Exits, with no report, unless the files in place and ``revision`` (when set) name one commit."""
+    revisions = set(in_place.values()) | ({revision} if revision is not None else set())
+    if len(revisions) <= 1:
+        return
+    found = "; ".join(f"{name} records {recorded}" for name, recorded in sorted(in_place.items()))
+    if revision is not None:
+        found += f"; {'--revision is' if given else 'the download would use'} {revision}"
+    matching = " or ".join(sorted(set(in_place.values())))
+    raise SystemExit(f"The raw files in {_common.rel(folder)} would not share one revision: {found}. Delete the"
+                     f" stale file, or pass the matching --revision ({matching}). No report written.")
+
+
+def download(repo: str, name: str, folder: Path, revision: str | None) -> Path:
+    """``folder/name``, downloaded from ``revision`` unless it is already there."""
     path = folder / name
     if path.exists():
         print(f"{GATE_ID}: using {_common.rel(path)}, already downloaded", flush=True)
         return path
+    if revision is None:
+        raise ValueError(f"{name} must be downloaded, and no revision was given")
     folder.mkdir(parents=True, exist_ok=True)
-    url = URL.format(repo=repo, name=name)
+    url = download_url(repo, name, revision)
     recorder = _RevisionRecorder()
     opener = urllib.request.build_opener(recorder)
     tmp = path.with_name(path.name + ".tmp")
     print(f"{GATE_ID}: downloading {url}", flush=True)
     try:
         with opener.open(url, timeout=60) as response, open(tmp, "wb") as out:
-            revision = recorder.revision or response.headers.get("X-Repo-Commit")
+            served = recorder.revision or response.headers.get("X-Repo-Commit") or revision
             length = int(response.headers.get("Content-Length") or 0)
             progress = _common.Progress(f"downloading {name}", length)
             while block := response.read(1 << 20):
@@ -308,7 +406,7 @@ def download(repo: str, name: str, folder: Path) -> Path:
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise
-    source = {"url": url, "revision": revision}
+    source = {"url": url, "revision": served}
     path.with_name(path.name + ".source.json").write_text(json.dumps(source, indent=2) + "\n", encoding="utf-8")
     return path
 
