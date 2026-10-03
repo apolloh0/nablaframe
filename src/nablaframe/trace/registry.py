@@ -10,6 +10,15 @@ without a translation table. The vendored list in
 verified, and ``scripts/check_tl_names.py`` confirms them at runtime in nf-torch.
 
 This module never imports TransformerLens.
+
+Phase 2 delta 1 (docs/deltas/phase-2-delta-1.md):
+
+* `LOGITS = "logits"`: the model's output, recorded by the engine (D12). It is the
+  one canonical tap that isn't a TransformerLens hook, so `tap_names` does not
+  include it; those stay TransformerLens names only.
+* `tap_spec` gains a keyword `vocab: int | None = None`: For `LOGITS`, the axes are
+  Batch, Pos and Vocab, and the site is `unembed`; `vocab` is required, and
+  omitting it raises ValueError. Other names ignore it.
 """
 
 from __future__ import annotations
@@ -34,6 +43,10 @@ PER_LAYER_TAPS: tuple[str, ...] = (
 # Taps after the last block, in forward order.
 GLOBAL_TAPS_AFTER: tuple[str, ...] = ("ln_final.hook_normalized",)
 
+# The model's output, recorded by the engine (D12). Not a TransformerLens hook, so
+# not in tap_names.
+LOGITS = "logits"
+
 
 def tap_names(n_layers: int) -> tuple[str, ...]:
     """Every canonical tap name for a model with ``n_layers`` blocks, in forward order.
@@ -56,6 +69,7 @@ def tap_spec(
     n_heads: int,
     d_head: int,
     dtype: str = "float32",
+    vocab: int | None = None,
 ) -> TapSpec:
     """The TapSpec for one canonical tap name.
 
@@ -72,11 +86,20 @@ def tap_spec(
     blocks.L.ln2.hook_normalized            Batch, Pos, Embed                    mlp
     blocks.L.hook_mlp_out                   Batch, Pos, Embed                    mlp
     ln_final.hook_normalized                Batch, Pos, Embed                    final_norm
+    logits (D12)                            Batch, Pos, Vocab                    unembed
     ======================================  ===================================  ===========
 
     Sizes: Batch=batch, Pos=QPos=KPos=seq, Embed=d_model, Head=n_heads,
-    HeadDim=d_head. Raises KeyError for a name that is not canonical.
+    HeadDim=d_head, Vocab=vocab. Raises KeyError for a name that is not canonical.
+
+    For ``LOGITS``, the axes are Batch, Pos and Vocab, and the site is ``unembed``;
+    ``vocab`` is required, and omitting it raises ValueError. Other names ignore it.
     """
+    if name == LOGITS:
+        if vocab is None:
+            raise ValueError(f"tap_spec({LOGITS!r}) needs vocab")
+        return TapSpec(name, (Axis("Batch", batch), Axis("Pos", seq), Axis("Vocab", vocab)), dtype, "unembed")
+
     tap = name
     if name.startswith("blocks."):
         parts = name.split(".", 2)

@@ -17,6 +17,10 @@ Encoding rules, fixed here so both lanes agree byte for byte:
 Records are immutable after construction. Mapping-valued fields are not copied
 defensively; never mutate them after building a record. Records holding mappings
 are not hashable.
+
+Phase 2 delta 1 (docs/deltas/phase-2-delta-1.md):
+
+* `SITES` gains `"unembed"`: The site of the model's logits (D12).
 """
 
 from __future__ import annotations
@@ -29,7 +33,8 @@ from typing import Any
 
 import numpy as np
 
-SITES: tuple[str, ...] = ("embedding", "residual", "attention", "mlp", "final_norm")
+# "unembed" is the site of the model's logits (D12).
+SITES: tuple[str, ...] = ("embedding", "residual", "attention", "mlp", "final_norm", "unembed")
 EVENT_KINDS: tuple[str, ...] = ("forward", "grad", "update", "checkpoint", "intervention")
 MODES: tuple[str, ...] = ("fast", "instrumented")
 

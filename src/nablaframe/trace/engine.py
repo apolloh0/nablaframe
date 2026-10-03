@@ -36,6 +36,14 @@ Phase 1 delta 3 (docs/deltas/phase-1-delta-3.md):
   `step-<n>.json`, and raises ValueError before loading any tensor unless its
   `run_id` equals the manifest's. A sidecar with no `run_id` is refused too, since a
   trace needs provenance.
+
+Phase 2 delta 1 (docs/deltas/phase-2-delta-1.md):
+
+* `record` and `rematerialize` also accept `LOGITS`. Its tensor is the logits output
+  of the same instrumented pass that produces every other tap, with every canonical
+  tap requested, so recording logits changes neither the compiled program nor any
+  existing event. A store recorded before D12 gains only the `logits` events on a
+  retrace.
 """
 
 from __future__ import annotations
@@ -51,7 +59,7 @@ import numpy as np
 from ..data.corpus import batch_hash
 from ..oracle.mode_equality import check_mode_equality
 from ..train.checkpoint import load_params
-from .registry import tap_names
+from .registry import LOGITS, tap_names
 from .schema import RunManifest, TraceEvent, tensor_sha256
 from .store import TraceStore
 
@@ -81,6 +89,8 @@ class TraceRun:
         self.batch_hash = batch_hash(probe)
         self._like = like
         self._all_taps = tap_names(model.config.n_layers)
+        # What record and rematerialize accept: every canonical tap, plus the logits (D12).
+        self._recordable = self._all_taps + (LOGITS,)
 
     @classmethod
     def open(cls, root: str | Path, manifest: RunManifest, model: Any, *, checkpoint_dir: str | Path,
@@ -101,7 +111,7 @@ class TraceRun:
         if isinstance(taps, str):
             raise TypeError("taps must be a sequence of tap names, not one string")
         requested = tuple(dict.fromkeys(taps))
-        unknown = sorted(set(requested) - set(self._all_taps))
+        unknown = sorted(set(requested) - set(self._recordable))
         if unknown:
             raise KeyError(f"not canonical tap names for a {self.model.config.n_layers}-layer model: {unknown}")
 
@@ -121,7 +131,7 @@ class TraceRun:
         recorded_ids = {event.event_id for event in self._store.events()}
         pending: list[tuple[TraceEvent, np.ndarray]] = []
         for tap in requested:
-            tensor = np.asarray(capture.recorded[tap])
+            tensor = np.asarray(capture.logits if tap == LOGITS else capture.recorded[tap])
             event = TraceEvent(run_id=self.run_id, step=step, kind="forward", tap=tap,
                                batch_hash=self.batch_hash, mode="instrumented", sha256=tensor_sha256(tensor))
             held = current.get(_fact_key(event), set())
@@ -141,10 +151,11 @@ class TraceRun:
             raise ValueError(f"event was recorded on batch {event.batch_hash}, not this run's probe {self.batch_hash}")
         if (event.kind, event.mode) != ("forward", "instrumented"):
             raise ValueError(f"only forward instrumented events can be recomputed, got {event.kind} {event.mode}")
-        if event.tap not in self._all_taps:
+        if event.tap not in self._recordable:
             raise KeyError(event.tap)
-        _, recorded = self.model.instrumented(self._load(event.step), self.probe, self._all_taps)
-        return np.array(recorded[event.tap])
+        # The same program record ran: every canonical tap requested, logits included as its output.
+        logits, recorded = self.model.instrumented(self._load(event.step), self.probe, self._all_taps)
+        return np.array(logits if event.tap == LOGITS else recorded[event.tap])
 
     def verify(self, event: TraceEvent) -> bool:
         return tensor_sha256(self.rematerialize(event)) == event.sha256
@@ -188,18 +199,19 @@ def _step(step: Any) -> int:
 
 
 class _Capture:
-    """Passes the oracle's calls through to ``model`` and keeps the instrumented taps."""
+    """Passes the oracle's calls through to ``model`` and keeps the instrumented logits and taps."""
 
     def __init__(self, model: Any) -> None:
         self.model = model
+        self.logits: Any = None
         self.recorded: dict[str, Any] = {}
 
     def fast(self, params: Any, tokens: Any) -> Any:
         return self.model.fast(params, tokens)
 
     def instrumented(self, params: Any, tokens: Any, taps: Sequence[str]) -> tuple[Any, dict[str, Any]]:
-        logits, self.recorded = self.model.instrumented(params, tokens, taps)
-        return logits, self.recorded
+        self.logits, self.recorded = self.model.instrumented(params, tokens, taps)
+        return self.logits, self.recorded
 
 
 def _write_manifest_once(path: Path, manifest: RunManifest) -> None:
