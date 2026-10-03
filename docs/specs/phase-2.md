@@ -110,7 +110,7 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase2/`.
 | 3 | Logit lens and its meter | `views/lens.py` | 1 |
 | 4 | Direct logit attribution | `views/attribution.py` | 1 |
 | 5 | Caches and export (D11) | `views/cache.py`, `views/export.py` | 2, 3, 4 |
-| 6 | Viewer | `viewer/index.html`, `viewer/app.js` | 5 |
+| 6 | Viewer | `views/shards.py`, `viewer/index.html`, `viewer/app.js` | 5 |
 | 7 | J-lens probe | `views/jlens_probe.py` | 1 |
 | 8 | Phase 2 gates | `gates/phase2/` | All |
 
