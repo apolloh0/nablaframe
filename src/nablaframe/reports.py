@@ -1,8 +1,8 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates".
 
-Each gate script writes one JSON report under ``reports/phase0/`` or ``reports/phase1/``. The Phase 0
+Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/`` or ``reports/phase2/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
 status must agree with its own measurements.
 
@@ -10,7 +10,7 @@ Report fields, all required, no others allowed (version 2 adds two; see below):
 
 ==================  =============================================================
 schema_version      1 or 2
-gate_id             one of GATE_IDS or PHASE1_GATE_IDS
+gate_id             one of GATE_IDS, PHASE1_GATE_IDS or PHASE2_GATE_IDS
 status              one of STATUSES; see STATUS RULES below
 measurements        JSON object containing at least REQUIRED_MEASUREMENTS[gate_id];
                     every number finite
@@ -26,6 +26,8 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `GATE_IDS` stays the Phase 0 tuple, because Phase 0's tests and summary loop over it. Phase 1's gates are `PHASE1_GATE_IDS = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")`, and the validator accepts both.
 
+`PHASE2_GATE_IDS = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6")`. The validator accepts them, and a Phase 2 report must use schema version 2.
+
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
 * G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
@@ -36,7 +38,7 @@ STATUS RULES (a report whose status contradicts its measurements is invalid):
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
-* fail is allowed for any gate except G0.6
+* fail is allowed for any gate except G0.6 and G2.5
 
 Status rules for Phase 1:
 
@@ -46,6 +48,15 @@ Status rules for Phase 1:
 * G1.4 pass requires `nonfinite_seen` is false, `checkpoints_written == checkpoints_scheduled` and `final_val_loss < bigram_val_loss`.
 * G1.5 pass requires `bitwise_equal` and `defect_detected` both true.
 * G1.6 pass requires `sample_matches == sample_size`, `retrace_new_events == 0` and `store_bytes` within 10% of `store_bytes_expected`.
+
+Status rules for Phase 2:
+
+* G2.1 pass requires `logits_events == logits_events_expected`, `other_events_written == 0`, `sample_matches == sample_size` and `logits_bytes` within 1% of `logits_bytes_expected`.
+* G2.2 pass requires `sample_matches == sample_size` and `builds_identical` is true.
+* G2.3 pass requires `planted_recovery >= 0.99`, `random_max_accuracy <= 2 * random_chance` and `last_layer_kl_max <= 1e-5`.
+* G2.4 pass requires `planted_aligned_credit >= 0.99`, `planted_perpendicular_quiet >= 0.99` and `decomposition_error_max <= 1e-3`.
+* G2.5's status is always `pass`, as G0.6's is.
+* G2.6 pass requires `builds_identical` is true and `external_urls == 0`.
 
 Measurements:
 
@@ -59,6 +70,15 @@ Required measurements for Phase 1:
 * G1.4: `steps`, `tokens`, `nonfinite_seen`, `checkpoints_written`, `checkpoints_scheduled`, `final_val_loss`, `bigram_val_loss`
 * G1.5: `bitwise_equal`, `steps_checked`, `defect_detected`
 * G1.6: `events_recorded`, `sample_size`, `sample_matches`, `retrace_new_events`, `store_bytes`, `store_bytes_expected`
+
+Required measurements for Phase 2:
+
+* G2.1: `logits_events`, `logits_events_expected`, `other_events_written`, `sample_size`, `sample_matches`, `logits_bytes`, `logits_bytes_expected`
+* G2.2: `sample_size`, `sample_matches`, `builds_identical`
+* G2.3: `planted_recovery`, `random_max_accuracy`, `random_chance`, `last_layer_kl_max`
+* G2.4: `planted_aligned_credit`, `planted_perpendicular_quiet`, `decomposition_error_max`
+* G2.5: `exact_positions`, `estimator_errors`, `fit_sizes`, `fit_change_per_doubling`, `projected_seconds`, `crosscheck_feasible`
+* G2.6: `builds_identical`, `external_urls`, `export_bytes`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
@@ -78,7 +98,10 @@ import numpy as np
 SCHEMA_VERSIONS: tuple[int, ...] = (1, 2)
 GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
 PHASE1_GATE_IDS: tuple[str, ...] = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")
-_ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS
+PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6")
+_ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS
+# Gates written from Phase 1 on, which must use schema version 2.
+_V2_ONLY_GATE_IDS: tuple[str, ...] = PHASE1_GATE_IDS + PHASE2_GATE_IDS
 STATUSES: tuple[str, ...] = ("pass", "conditional_pass", "fail")
 ENV_NAMES: tuple[str, ...] = ("nf-jax", "nf-metal", "nf-torch")
 
@@ -119,7 +142,21 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
         "events_recorded", "sample_size", "sample_matches", "retrace_new_events", "store_bytes",
         "store_bytes_expected",
     ),
+    "G2.1": (
+        "logits_events", "logits_events_expected", "other_events_written", "sample_size", "sample_matches",
+        "logits_bytes", "logits_bytes_expected",
+    ),
+    "G2.2": ("sample_size", "sample_matches", "builds_identical"),
+    "G2.3": ("planted_recovery", "random_max_accuracy", "random_chance", "last_layer_kl_max"),
+    "G2.4": ("planted_aligned_credit", "planted_perpendicular_quiet", "decomposition_error_max"),
+    "G2.5": (
+        "exact_positions", "estimator_errors", "fit_sizes", "fit_change_per_doubling", "projected_seconds",
+        "crosscheck_feasible",
+    ),
+    "G2.6": ("builds_identical", "external_urls", "export_bytes"),
 }
+# Gates whose status is always "pass": their measurements set a policy rather than test one.
+_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5")
 # Gates whose three final-state hashes must agree with ``identical`` under every status.
 _HASH_GATES: tuple[str, ...] = ("G0.2", "G1.3")
 
@@ -162,8 +199,9 @@ def validate_report(report: Mapping[str, Any]) -> list[str]:
         check("git_dirty", lambda v: isinstance(v, bool), "a bool")
 
     gate_id, status = report.get("gate_id"), report.get("status")
-    if isinstance(gate_id, str) and gate_id in PHASE1_GATE_IDS and _is_int(version) and version < 2:
-        problems.append(f"{gate_id} is a Phase 1 gate and must use schema version 2, got {version!r}")
+    if isinstance(gate_id, str) and gate_id in _V2_ONLY_GATE_IDS and _is_int(version) and version < 2:
+        phase = gate_id[1]
+        problems.append(f"{gate_id} is a Phase {phase} gate and must use schema version 2, got {version!r}")
 
     measurements = report.get("measurements")
     if "measurements" in report:
@@ -267,8 +305,8 @@ def _hash_consistency_problems(gate_id: str, m: Mapping[str, Any]) -> list[str]:
 
 def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[str]:
     """The STATUS RULES in the module docstring, for a known gate and status."""
-    if gate_id == "G0.6":
-        return [] if status == "pass" else [f'G0.6 status is always "pass", got {status!r}']
+    if gate_id in _ALWAYS_PASS_GATES:
+        return [] if status == "pass" else [f'{gate_id} status is always "pass", got {status!r}']
     if status == "fail":
         return []
     if status == "conditional_pass" and gate_id not in _HASH_GATES:
@@ -303,6 +341,11 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         ok = _is_number(v) and _is_number(w) and abs(v - w) <= fraction * abs(w)
         return ok, f"{key} within {fraction:.0%} of {other}", f"{v!r} and {w!r}"
 
+    def at_most_times_key(key: str, factor: float, other: str) -> tuple[bool, str, str]:
+        v, w = m.get(key), m.get(other)
+        ok = _is_number(v) and _is_number(w) and v <= factor * w
+        return ok, f"{key} <= {factor:g} * {other}", f"{v!r} and {w!r}"
+
     def d8_vocabulary() -> tuple[bool, str, str]:
         v, rate = m.get("vocab_selected"), m.get("unk_rate_4096")
         ok = _is_number(v) and _is_number(rate) and v == (4096 if rate <= 0.01 else 8192)
@@ -334,6 +377,21 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
             equals_key("sample_matches", "sample_size"), equals("retrace_new_events", 0),
             within_fraction_of("store_bytes", "store_bytes_expected", 0.10),
         ],
+        ("G2.1", "pass"): [
+            equals_key("logits_events", "logits_events_expected"), equals("other_events_written", 0),
+            equals_key("sample_matches", "sample_size"),
+            within_fraction_of("logits_bytes", "logits_bytes_expected", 0.01),
+        ],
+        ("G2.2", "pass"): [equals_key("sample_matches", "sample_size"), is_("builds_identical", True)],
+        ("G2.3", "pass"): [
+            at_least("planted_recovery", 0.99), at_most_times_key("random_max_accuracy", 2, "random_chance"),
+            at_most("last_layer_kl_max", 1e-5),
+        ],
+        ("G2.4", "pass"): [
+            at_least("planted_aligned_credit", 0.99), at_least("planted_perpendicular_quiet", 0.99),
+            at_most("decomposition_error_max", 1e-3),
+        ],
+        ("G2.6", "pass"): [is_("builds_identical", True), equals("external_urls", 0)],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
 
