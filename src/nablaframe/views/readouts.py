@@ -6,6 +6,8 @@ tensor comes from ``TraceStore.load_tensor``, which verifies its SHA-256.
 * ``TraceReader(root)`` opens the store read-only. ``steps()`` is the sorted
   tuple of steps with current events. ``tensor(step, tap)`` returns the current
   event's tensor for that step and tap (KeyError if there is none).
+  ``event(step, tap)`` returns the current event for that step and tap, under the same
+  rules as ``tensor``: KeyError if there is none, ValueError if there are several.
   ``batch_hash(step)`` is the probe hash of that step's events; ValueError if they
   disagree.
 * ``attention_pattern(reader, step, layer, head, sequence)``: the traced
@@ -28,6 +30,7 @@ from pathlib import Path
 import numpy as np
 
 from ..data.corpus import batch_hash as probe_batch_hash
+from ..trace.schema import TraceEvent
 from ..trace.store import TraceStore
 
 
@@ -44,13 +47,16 @@ class TraceReader:
     def steps(self) -> tuple[int, ...]:
         return tuple(sorted(self._steps))
 
-    def tensor(self, step: int, tap: str) -> np.ndarray:
+    def event(self, step: int, tap: str) -> TraceEvent:
         matches = self._events.get((step, tap), [])
         if not matches:
             raise KeyError((step, tap))
         if len(matches) > 1:
             raise ValueError(f"step {step} has {len(matches)} current events for tap {tap!r}")
-        return self._store.load_tensor(matches[0])
+        return matches[0]
+
+    def tensor(self, step: int, tap: str) -> np.ndarray:
+        return self._store.load_tensor(self.event(step, tap))
 
     def batch_hash(self, step: int) -> str:
         hashes = {e.batch_hash for (s, _), events in self._events.items() if s == step for e in events}
