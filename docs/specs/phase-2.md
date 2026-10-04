@@ -1,6 +1,6 @@
 # Phase 2 spec: read-only views and the timeline scrubber
 
-Status: ready for stubs and tests once D11 to D15 are committed. Charter: [../charter.md](../charter.md). Decisions: [../decisions.md](../decisions.md).
+Status: views ruled at human gate H2 on 2026-10-03: see D16 in [../decisions.md](../decisions.md). The J-lens views follow in a later delta under D17. Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
