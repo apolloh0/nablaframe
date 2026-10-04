@@ -1,0 +1,91 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G2.5",
+  "git_commit": "ce66a30dca92afb208c055cdf5ee08b164c54411",
+  "git_dirty": false,
+  "measurements": {
+    "crosscheck_feasible": true,
+    "crosscheck_notes": [
+      "from_hf recognises the GPT-2 layout our export uses (transformer.h, ln_f, wte, lm_head)",
+      "its dependencies (torch, huggingface_hub, transformers>=5.5, numpy) are met by the nf-torch lane; jlens itself is in no lane, so adding it needs a ruling",
+      "from_hf and fit ran in the nf-torch lane on a size-S GPT-2 saved with save_pretrained and a word-level tokenizer, a file load_hf_gpt2 also reads (checked in a scratch folder by the implementing thread)",
+      "no tool exports the reference run's checkpoints to Hugging Face format yet; G1.2 exports a fresh Levanter model, and our parameter names map one to one onto GPT-2's",
+      "fit takes text prompts, so the export needs our word-level tokenizer saved with it, or a LensModel that takes token ids",
+      "it computes a different J_l: summed over current and later target positions, from block l's output, skipping the first 16 positions and the last; a cross-check must compute the same estimator on both sides"
+    ],
+    "estimator_draws": [
+      1,
+      8,
+      32
+    ],
+    "estimator_errors": {
+      "1": 0.02488420134640422,
+      "32": 0.0044765383801253006,
+      "8": 0.008802091850094148
+    },
+    "estimator_seconds": {
+      "1": 7.335985249839723,
+      "32": 226.81057966686785,
+      "8": 57.03034337516874
+    },
+    "estimator_seed": 0,
+    "exact_bytes_per_sequence": 268435456,
+    "exact_norm": 16.053759110030587,
+    "exact_positions": 2048,
+    "exact_prefix": 32,
+    "exact_seconds": 121.24749008426443,
+    "exact_sequences": 64,
+    "fit_change_per_doubling": {
+      "2048->8192": 0.07099081599315674,
+      "8192->32768": 0.03648395557043507
+    },
+    "fit_draws": 1,
+    "fit_seconds": {
+      "2048": 9.987331707961857,
+      "32768": 142.25626883329824,
+      "8192": 33.17068766709417
+    },
+    "fit_seed": 1,
+    "fit_sizes": [
+      2048,
+      8192,
+      32768
+    ],
+    "fit_vs_exact_errors": {
+      "2048": 0.14338253004451956,
+      "32768": 0.12486096100333892,
+      "8192": 0.12612359973316697
+    },
+    "full_sequence_bytes": 17179869184,
+    "layer": 2,
+    "projected_basis": "the 32,768-position fit's time, times 28 checkpoints, times 10 blocks run over all 4 layers, over the 2 run here",
+    "projected_checkpoints": 28,
+    "projected_layers": 4,
+    "projected_seconds": 19915.877636661753,
+    "projected_seconds_flat": 15932.702109329402,
+    "reference_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "reference_method": "For each output dimension, a one-hot cotangent is placed at every valid target position at once and backpropagated with torch autograd from the last block's output to block l's output (forward hooks), giving at each source position p the sum over p' >= p of d h_final[p'] / d h_l[p]; J_l's rows are that gradient averaged over source positions 16 to T - 2, then averaged over prompts.",
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "source_tap": "blocks.2.hook_resid_pre",
+    "step": 12208,
+    "summed_positions": 32768,
+    "summed_seconds": 160.15518333297223,
+    "summed_vs_same_position": 1.2850216006003943,
+    "target_tap": "blocks.3.hook_resid_post",
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-04T04:07:43Z",
+  "xla_flags": ""
+}

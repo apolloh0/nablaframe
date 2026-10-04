@@ -1,0 +1,2498 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G2.2",
+  "git_commit": "ce66a30dca92afb208c055cdf5ee08b164c54411",
+  "git_dirty": false,
+  "measurements": {
+    "arrays_compared": 3640,
+    "arrays_differing": 0,
+    "builds_identical": true,
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "sample": [
+      {
+        "index": [
+          4,
+          69
+        ],
+        "matches": true,
+        "shown": 1.5083080530166626,
+        "step": 4096,
+        "traced": 1.5083080530166626,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 0,
+        "index": [
+          208,
+          135
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 1,
+        "shown": 0.0033819754607975483,
+        "step": 1,
+        "traced": 0.0033819754607975483,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          248
+        ],
+        "matches": true,
+        "shown": 0.14626777172088623,
+        "step": 2048,
+        "traced": 0.14626777172088623,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          143
+        ],
+        "matches": true,
+        "shown": 0.01079082116484642,
+        "step": 4096,
+        "traced": 0.01079082116484642,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          6,
+          171
+        ],
+        "matches": true,
+        "shown": 5.634892463684082,
+        "step": 64,
+        "traced": 5.634892463684082,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 2,
+        "index": [
+          195,
+          143
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 0,
+        "shown": 0.0005424258997663856,
+        "step": 1000,
+        "traced": 0.0005424258997663856,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          220
+        ],
+        "matches": true,
+        "shown": 8.015554428100586,
+        "step": 8,
+        "traced": 8.015554428100586,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 1,
+        "index": [
+          108,
+          43
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 3,
+        "shown": 0.0003391415812075138,
+        "step": 3000,
+        "traced": 0.0003391415812075138,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          134,
+          87
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.00838129036128521,
+        "step": 0,
+        "traced": 0.00838129036128521,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 1,
+        "index": [
+          255,
+          206
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 3,
+        "shown": 4.793475341102749e-07,
+        "step": 4096,
+        "traced": 4.793475341102749e-07,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          5,
+          243
+        ],
+        "matches": true,
+        "shown": 0.43295416235923767,
+        "step": 512,
+        "traced": 0.43295416235923767,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          5,
+          99
+        ],
+        "matches": true,
+        "shown": 28.22298240661621,
+        "step": 9000,
+        "traced": 28.22298240661621,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          184
+        ],
+        "matches": true,
+        "shown": 7.740461826324463,
+        "step": 4,
+        "traced": 7.740461826324463,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          79
+        ],
+        "matches": true,
+        "shown": 2.766874074935913,
+        "step": 2048,
+        "traced": 2.766874074935913,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          7,
+          18
+        ],
+        "matches": true,
+        "shown": 31.181028366088867,
+        "step": 2000,
+        "traced": 31.181028366088867,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          172
+        ],
+        "matches": true,
+        "shown": 2.04288649559021,
+        "step": 2048,
+        "traced": 2.04288649559021,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          1,
+          5,
+          152
+        ],
+        "matches": true,
+        "shown": 19.01839256286621,
+        "step": 64,
+        "traced": 19.01839256286621,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          3,
+          84
+        ],
+        "matches": true,
+        "shown": 30.103561401367188,
+        "step": 256,
+        "traced": 30.103561401367188,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          1,
+          182
+        ],
+        "matches": true,
+        "shown": 4.3256707191467285,
+        "step": 64,
+        "traced": 4.3256707191467285,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          3,
+          213
+        ],
+        "matches": true,
+        "shown": 0.36973273754119873,
+        "step": 1,
+        "traced": 0.36973273754119873,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          1,
+          1,
+          202
+        ],
+        "matches": true,
+        "shown": 14.597871780395508,
+        "step": 8192,
+        "traced": 14.597871780395508,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          171
+        ],
+        "matches": true,
+        "shown": 8.32582950592041,
+        "step": 2,
+        "traced": 8.32582950592041,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          6,
+          115
+        ],
+        "matches": true,
+        "shown": 1.049676537513733,
+        "step": 4000,
+        "traced": 1.049676537513733,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          5,
+          59
+        ],
+        "matches": true,
+        "shown": 0.7939653992652893,
+        "step": 8192,
+        "traced": 0.7939653992652893,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          103
+        ],
+        "matches": true,
+        "shown": 7.886340618133545,
+        "step": 1,
+        "traced": 7.886340618133545,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          7,
+          23
+        ],
+        "matches": true,
+        "shown": 7.3797125816345215,
+        "step": 16,
+        "traced": 7.3797125816345215,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          2,
+          230
+        ],
+        "matches": true,
+        "shown": 40.74098587036133,
+        "step": 4000,
+        "traced": 40.74098587036133,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          1,
+          194
+        ],
+        "matches": true,
+        "shown": 0.020644523203372955,
+        "step": 10000,
+        "traced": 0.020644523203372955,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          162
+        ],
+        "matches": true,
+        "shown": 8.572879791259766,
+        "step": 1,
+        "traced": 8.572879791259766,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 3,
+        "index": [
+          104,
+          46
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 7,
+        "shown": 1.6341649171011663e-12,
+        "step": 2048,
+        "traced": 1.6341649171011663e-12,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          3,
+          12
+        ],
+        "matches": true,
+        "shown": 1.0016231536865234,
+        "step": 12000,
+        "traced": 1.0016231536865234,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          2,
+          254
+        ],
+        "matches": true,
+        "shown": 20.807029724121094,
+        "step": 12000,
+        "traced": 20.807029724121094,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          3,
+          213
+        ],
+        "matches": true,
+        "shown": 0.939346432685852,
+        "step": 12000,
+        "traced": 0.939346432685852,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          107
+        ],
+        "matches": true,
+        "shown": 0.013140510767698288,
+        "step": 1000,
+        "traced": 0.013140510767698288,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          0,
+          106
+        ],
+        "matches": true,
+        "shown": 37.44223403930664,
+        "step": 32,
+        "traced": 37.44223403930664,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          238,
+          44
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 7,
+        "shown": 3.8101864794056055e-20,
+        "step": 7000,
+        "traced": 3.8101864794056055e-20,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 3,
+        "index": [
+          171,
+          166
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 7,
+        "shown": 0.00578277138993144,
+        "step": 4,
+        "traced": 0.00578277138993144,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          221
+        ],
+        "matches": true,
+        "shown": 8.211675643920898,
+        "step": 0,
+        "traced": 8.211675643920898,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 3,
+        "index": [
+          38,
+          20
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.02464449405670166,
+        "step": 12208,
+        "traced": 0.02464449405670166,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          7,
+          98
+        ],
+        "matches": true,
+        "shown": 2.1259379386901855,
+        "step": 512,
+        "traced": 2.1259379386901855,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          83
+        ],
+        "matches": true,
+        "shown": 6.59478235244751,
+        "step": 32,
+        "traced": 6.59478235244751,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 0,
+        "index": [
+          248,
+          66
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 7,
+        "shown": 4.0307366333536265e-09,
+        "step": 10000,
+        "traced": 4.0307366333536265e-09,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          3,
+          38
+        ],
+        "matches": true,
+        "shown": 30.125181198120117,
+        "step": 3000,
+        "traced": 30.125181198120117,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          208
+        ],
+        "matches": true,
+        "shown": 3.272528648376465,
+        "step": 6000,
+        "traced": 3.272528648376465,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          128
+        ],
+        "matches": true,
+        "shown": 8.164064407348633,
+        "step": 16,
+        "traced": 8.164064407348633,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 1,
+        "index": [
+          23,
+          18
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 0,
+        "shown": 0.005189772229641676,
+        "step": 11000,
+        "traced": 0.005189772229641676,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 3,
+        "index": [
+          16,
+          8
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.010848432779312134,
+        "step": 2048,
+        "traced": 0.010848432779312134,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          166
+        ],
+        "matches": true,
+        "shown": 0.038841363042593,
+        "step": 4096,
+        "traced": 0.038841363042593,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          6,
+          247
+        ],
+        "matches": true,
+        "shown": 28.255319595336914,
+        "step": 32,
+        "traced": 28.255319595336914,
+        "view": "residual_norms"
+      },
+      {
+        "head": 1,
+        "index": [
+          61,
+          12
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 2,
+        "shown": 9.688656064099632e-06,
+        "step": 3000,
+        "traced": 9.688656064099632e-06,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          1,
+          32
+        ],
+        "matches": true,
+        "shown": 7.813832759857178,
+        "step": 32,
+        "traced": 7.813832759857178,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 3,
+        "index": [
+          219,
+          121
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 4,
+        "shown": 0.0002899659739341587,
+        "step": 8000,
+        "traced": 0.0002899659739341587,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          143
+        ],
+        "matches": true,
+        "shown": 0.8558933138847351,
+        "step": 8192,
+        "traced": 0.8558933138847351,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          3,
+          125
+        ],
+        "matches": true,
+        "shown": 28.73109245300293,
+        "step": 128,
+        "traced": 28.73109245300293,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          5,
+          181
+        ],
+        "matches": true,
+        "shown": 2.416839361190796,
+        "step": 9000,
+        "traced": 2.416839361190796,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          21
+        ],
+        "matches": true,
+        "shown": 0.9878553748130798,
+        "step": 4096,
+        "traced": 0.9878553748130798,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          0,
+          217
+        ],
+        "matches": true,
+        "shown": 27.286588668823242,
+        "step": 32,
+        "traced": 27.286588668823242,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          6,
+          104
+        ],
+        "matches": true,
+        "shown": 8.645310401916504,
+        "step": 8,
+        "traced": 8.645310401916504,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 0,
+        "index": [
+          210,
+          166
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 4,
+        "shown": 0.00018796919903252274,
+        "step": 11000,
+        "traced": 0.00018796919903252274,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          0,
+          2
+        ],
+        "matches": true,
+        "shown": 36.23728561401367,
+        "step": 10000,
+        "traced": 36.23728561401367,
+        "view": "residual_norms"
+      },
+      {
+        "head": 0,
+        "index": [
+          167,
+          88
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.0075792670249938965,
+        "step": 512,
+        "traced": 0.0075792670249938965,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 2,
+        "index": [
+          201,
+          25
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 7,
+        "shown": 2.788684338857679e-20,
+        "step": 12000,
+        "traced": 2.788684338857679e-20,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          97,
+          42
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 3,
+        "shown": 2.7799521831184393e-06,
+        "step": 10000,
+        "traced": 2.7799521831184393e-06,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          3,
+          249
+        ],
+        "matches": true,
+        "shown": 28.096134185791016,
+        "step": 128,
+        "traced": 28.096134185791016,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          79
+        ],
+        "matches": true,
+        "shown": 0.01088953297585249,
+        "step": 8000,
+        "traced": 0.01088953297585249,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          220
+        ],
+        "matches": true,
+        "shown": 6.591224193572998,
+        "step": 64,
+        "traced": 6.591224193572998,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          4,
+          162
+        ],
+        "matches": true,
+        "shown": 0.94293212890625,
+        "step": 10000,
+        "traced": 0.94293212890625,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          5,
+          80
+        ],
+        "matches": true,
+        "shown": 42.11185836791992,
+        "step": 4000,
+        "traced": 42.11185836791992,
+        "view": "residual_norms"
+      },
+      {
+        "head": 3,
+        "index": [
+          207,
+          56
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.004711662884801626,
+        "step": 16,
+        "traced": 0.004711662884801626,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          7,
+          144
+        ],
+        "matches": true,
+        "shown": 1.274515986442566,
+        "step": 2048,
+        "traced": 1.274515986442566,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          5,
+          160
+        ],
+        "matches": true,
+        "shown": 1.6673946380615234,
+        "step": 12000,
+        "traced": 1.6673946380615234,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          1,
+          144
+        ],
+        "matches": true,
+        "shown": 2.4979350566864014,
+        "step": 12208,
+        "traced": 2.4979350566864014,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 0,
+        "index": [
+          210,
+          35
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.003292896319180727,
+        "step": 2,
+        "traced": 0.003292896319180727,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          7,
+          233
+        ],
+        "matches": true,
+        "shown": 2.4851109981536865,
+        "step": 1000,
+        "traced": 2.4851109981536865,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          4,
+          190
+        ],
+        "matches": true,
+        "shown": 30.788768768310547,
+        "step": 3000,
+        "traced": 30.788768768310547,
+        "view": "residual_norms"
+      },
+      {
+        "head": 3,
+        "index": [
+          78,
+          7
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 4,
+        "shown": 1.3524787843485764e-13,
+        "step": 8000,
+        "traced": 1.3524787843485764e-13,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          4,
+          114
+        ],
+        "matches": true,
+        "shown": 0.916713297367096,
+        "step": 12208,
+        "traced": 0.916713297367096,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          135,
+          80
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 7,
+        "shown": 7.430104460581788e-07,
+        "step": 3000,
+        "traced": 7.430104460581788e-07,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          6,
+          48
+        ],
+        "matches": true,
+        "shown": 5.931807994842529,
+        "step": 128,
+        "traced": 5.931807994842529,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          1,
+          168
+        ],
+        "matches": true,
+        "shown": 28.36819076538086,
+        "step": 5000,
+        "traced": 28.36819076538086,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          7,
+          246
+        ],
+        "matches": true,
+        "shown": 19.413694381713867,
+        "step": 11000,
+        "traced": 19.413694381713867,
+        "view": "residual_norms"
+      },
+      {
+        "head": 1,
+        "index": [
+          190,
+          60
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 4,
+        "shown": 0.007667040452361107,
+        "step": 2,
+        "traced": 0.007667040452361107,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 3,
+        "index": [
+          181,
+          132
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 0,
+        "shown": 0.001805216888897121,
+        "step": 6000,
+        "traced": 0.001805216888897121,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 1,
+        "index": [
+          223,
+          51
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 7,
+        "shown": 0.0005338033079169691,
+        "step": 2,
+        "traced": 0.0005338033079169691,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          1,
+          196
+        ],
+        "matches": true,
+        "shown": 43.85533905029297,
+        "step": 4000,
+        "traced": 43.85533905029297,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          32
+        ],
+        "matches": true,
+        "shown": 0.7604836225509644,
+        "step": 11000,
+        "traced": 0.7604836225509644,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          0,
+          53
+        ],
+        "matches": true,
+        "shown": 0.3434738218784332,
+        "step": 2,
+        "traced": 0.3434738218784332,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          5,
+          252
+        ],
+        "matches": true,
+        "shown": 0.01295185275375843,
+        "step": 5000,
+        "traced": 0.01295185275375843,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          2,
+          172
+        ],
+        "matches": true,
+        "shown": 0.3483341932296753,
+        "step": 1,
+        "traced": 0.3483341932296753,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          5,
+          6
+        ],
+        "matches": true,
+        "shown": 0.46364331245422363,
+        "step": 128,
+        "traced": 0.46364331245422363,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          5,
+          202
+        ],
+        "matches": true,
+        "shown": 23.14225196838379,
+        "step": 7000,
+        "traced": 23.14225196838379,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          50,
+          37
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.005830259993672371,
+        "step": 2,
+        "traced": 0.005830259993672371,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          133
+        ],
+        "matches": true,
+        "shown": 4.106504440307617,
+        "step": 12000,
+        "traced": 4.106504440307617,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          1,
+          65
+        ],
+        "matches": true,
+        "shown": 0.4285057783126831,
+        "step": 2048,
+        "traced": 0.4285057783126831,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          6,
+          165
+        ],
+        "matches": true,
+        "shown": 8.320323944091797,
+        "step": 1,
+        "traced": 8.320323944091797,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          3,
+          154
+        ],
+        "matches": true,
+        "shown": 34.18091583251953,
+        "step": 9000,
+        "traced": 34.18091583251953,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          233
+        ],
+        "matches": true,
+        "shown": 3.5695130825042725,
+        "step": 5000,
+        "traced": 3.5695130825042725,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          213
+        ],
+        "matches": true,
+        "shown": 8.63890552520752,
+        "step": 1,
+        "traced": 8.63890552520752,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 1,
+        "index": [
+          254,
+          92
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 5,
+        "shown": 2.6075438697148456e-08,
+        "step": 512,
+        "traced": 2.6075438697148456e-08,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          1
+        ],
+        "matches": true,
+        "shown": 8.60096263885498,
+        "step": 4,
+        "traced": 8.60096263885498,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          7,
+          22
+        ],
+        "matches": true,
+        "shown": 26.04291534423828,
+        "step": 0,
+        "traced": 26.04291534423828,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          202
+        ],
+        "matches": true,
+        "shown": 4.881746768951416,
+        "step": 6000,
+        "traced": 4.881746768951416,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          5,
+          82
+        ],
+        "matches": true,
+        "shown": 4.3539533615112305,
+        "step": 8192,
+        "traced": 4.3539533615112305,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          1,
+          105
+        ],
+        "matches": true,
+        "shown": 25.6163387298584,
+        "step": 8192,
+        "traced": 25.6163387298584,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          3,
+          138
+        ],
+        "matches": true,
+        "shown": 24.96308708190918,
+        "step": 6000,
+        "traced": 24.96308708190918,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          3,
+          44
+        ],
+        "matches": true,
+        "shown": 28.88236427307129,
+        "step": 4,
+        "traced": 28.88236427307129,
+        "view": "residual_norms"
+      },
+      {
+        "head": 1,
+        "index": [
+          51,
+          7
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 6,
+        "shown": 7.25803250833934e-10,
+        "step": 1024,
+        "traced": 7.25803250833934e-10,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          1,
+          6,
+          5
+        ],
+        "matches": true,
+        "shown": 20.983129501342773,
+        "step": 6000,
+        "traced": 20.983129501342773,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          6,
+          0
+        ],
+        "matches": true,
+        "shown": 8.500154495239258,
+        "step": 1,
+        "traced": 8.500154495239258,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          5,
+          249
+        ],
+        "matches": true,
+        "shown": 63.70077896118164,
+        "step": 128,
+        "traced": 63.70077896118164,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          6,
+          130
+        ],
+        "matches": true,
+        "shown": 29.849103927612305,
+        "step": 2048,
+        "traced": 29.849103927612305,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          63
+        ],
+        "matches": true,
+        "shown": 8.702587127685547,
+        "step": 16,
+        "traced": 8.702587127685547,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          5,
+          233
+        ],
+        "matches": true,
+        "shown": 7.918244361877441,
+        "step": 4,
+        "traced": 7.918244361877441,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 2,
+        "index": [
+          226,
+          21
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 4,
+        "shown": 0.003993745893239975,
+        "step": 64,
+        "traced": 0.003993745893239975,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          121,
+          1
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 3,
+        "shown": 1.7613053238108023e-09,
+        "step": 512,
+        "traced": 1.7613053238108023e-09,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          2,
+          150
+        ],
+        "matches": true,
+        "shown": 26.907438278198242,
+        "step": 5000,
+        "traced": 26.907438278198242,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          239
+        ],
+        "matches": true,
+        "shown": 8.704351425170898,
+        "step": 4,
+        "traced": 8.704351425170898,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 3,
+        "index": [
+          229,
+          146
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 4,
+        "shown": 0.000450842606369406,
+        "step": 6000,
+        "traced": 0.000450842606369406,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          0,
+          182
+        ],
+        "matches": true,
+        "shown": 0.9127334356307983,
+        "step": 2000,
+        "traced": 0.9127334356307983,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          6,
+          203
+        ],
+        "matches": true,
+        "shown": 1.0271267890930176,
+        "step": 3000,
+        "traced": 1.0271267890930176,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          4,
+          255
+        ],
+        "matches": true,
+        "shown": 77.249267578125,
+        "step": 64,
+        "traced": 77.249267578125,
+        "view": "residual_norms"
+      },
+      {
+        "head": 0,
+        "index": [
+          100,
+          73
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.003819001605734229,
+        "step": 256,
+        "traced": 0.003819001605734229,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          157
+        ],
+        "matches": true,
+        "shown": 2.3130545616149902,
+        "step": 8192,
+        "traced": 2.3130545616149902,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          2,
+          185
+        ],
+        "matches": true,
+        "shown": 0.8479769229888916,
+        "step": 8000,
+        "traced": 0.8479769229888916,
+        "view": "residual_norms"
+      },
+      {
+        "head": 0,
+        "index": [
+          220,
+          34
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 7,
+        "shown": 0.005692995153367519,
+        "step": 64,
+        "traced": 0.005692995153367519,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          4,
+          230
+        ],
+        "matches": true,
+        "shown": 32.40446090698242,
+        "step": 256,
+        "traced": 32.40446090698242,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          1,
+          178
+        ],
+        "matches": true,
+        "shown": 8.240689277648926,
+        "step": 2,
+        "traced": 8.240689277648926,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 0,
+        "index": [
+          172,
+          39
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 7,
+        "shown": 0.0005996240652166307,
+        "step": 256,
+        "traced": 0.0005996240652166307,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          1,
+          4,
+          241
+        ],
+        "matches": true,
+        "shown": 20.050430297851562,
+        "step": 5000,
+        "traced": 20.050430297851562,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          1,
+          4,
+          142
+        ],
+        "matches": true,
+        "shown": 11.289788246154785,
+        "step": 16,
+        "traced": 11.289788246154785,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          49,
+          39
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 7,
+        "shown": 0.03471905365586281,
+        "step": 5000,
+        "traced": 0.03471905365586281,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          142,
+          59
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 6,
+        "shown": 2.6809250078165675e-14,
+        "step": 3000,
+        "traced": 2.6809250078165675e-14,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 1,
+        "index": [
+          246,
+          159
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.007829270325601101,
+        "step": 4,
+        "traced": 0.007829270325601101,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          18
+        ],
+        "matches": true,
+        "shown": 0.6277894973754883,
+        "step": 4096,
+        "traced": 0.6277894973754883,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          4,
+          156
+        ],
+        "matches": true,
+        "shown": 0.37488916516304016,
+        "step": 32,
+        "traced": 0.37488916516304016,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          6,
+          236
+        ],
+        "matches": true,
+        "shown": 40.368003845214844,
+        "step": 4096,
+        "traced": 40.368003845214844,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          178,
+          162
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.0033879780676215887,
+        "step": 8,
+        "traced": 0.0033879780676215887,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          105,
+          95
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.008975627832114697,
+        "step": 8,
+        "traced": 0.008975627832114697,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          210,
+          62
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 6,
+        "shown": 6.204693363542901e-06,
+        "step": 256,
+        "traced": 6.204693363542901e-06,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          7,
+          65
+        ],
+        "matches": true,
+        "shown": 19.26944923400879,
+        "step": 10000,
+        "traced": 19.26944923400879,
+        "view": "residual_norms"
+      },
+      {
+        "head": 0,
+        "index": [
+          148,
+          65
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 1,
+        "shown": 0.012053382582962513,
+        "step": 2,
+        "traced": 0.012053382582962513,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 3,
+        "index": [
+          192,
+          87
+        ],
+        "layer": 3,
+        "matches": true,
+        "sequence": 0,
+        "shown": 0.0013160781236365438,
+        "step": 2048,
+        "traced": 0.0013160781236365438,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          1,
+          149
+        ],
+        "matches": true,
+        "shown": 35.24740219116211,
+        "step": 1000,
+        "traced": 35.24740219116211,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          5,
+          30
+        ],
+        "matches": true,
+        "shown": 4.246635913848877,
+        "step": 1000,
+        "traced": 4.246635913848877,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          75
+        ],
+        "matches": true,
+        "shown": 1.5439002513885498,
+        "step": 128,
+        "traced": 1.5439002513885498,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          6,
+          109
+        ],
+        "matches": true,
+        "shown": 27.700786590576172,
+        "step": 5000,
+        "traced": 27.700786590576172,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          49
+        ],
+        "matches": true,
+        "shown": 8.656325340270996,
+        "step": 1,
+        "traced": 8.656325340270996,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          1,
+          104
+        ],
+        "matches": true,
+        "shown": 0.9104666113853455,
+        "step": 12000,
+        "traced": 0.9104666113853455,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          6,
+          199
+        ],
+        "matches": true,
+        "shown": 8.108866691589355,
+        "step": 0,
+        "traced": 8.108866691589355,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          5,
+          210
+        ],
+        "matches": true,
+        "shown": 18.501195907592773,
+        "step": 1,
+        "traced": 18.501195907592773,
+        "view": "residual_norms"
+      },
+      {
+        "head": 3,
+        "index": [
+          193,
+          165
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 5,
+        "shown": 1.5301831808756106e-05,
+        "step": 6000,
+        "traced": 1.5301831808756106e-05,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          7,
+          142
+        ],
+        "matches": true,
+        "shown": 0.8533918857574463,
+        "step": 1000,
+        "traced": 0.8533918857574463,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          1,
+          140
+        ],
+        "matches": true,
+        "shown": 8.21167278289795,
+        "step": 2,
+        "traced": 8.21167278289795,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          220
+        ],
+        "matches": true,
+        "shown": 4.645442962646484,
+        "step": 12000,
+        "traced": 4.645442962646484,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          1,
+          7,
+          51
+        ],
+        "matches": true,
+        "shown": 11.671754837036133,
+        "step": 12000,
+        "traced": 11.671754837036133,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          0,
+          37
+        ],
+        "matches": true,
+        "shown": 26.698354721069336,
+        "step": 12000,
+        "traced": 26.698354721069336,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          214,
+          56
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 7,
+        "shown": 1.508886384726793e-06,
+        "step": 12000,
+        "traced": 1.508886384726793e-06,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          1,
+          240
+        ],
+        "matches": true,
+        "shown": 20.206947326660156,
+        "step": 9000,
+        "traced": 20.206947326660156,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          4,
+          183
+        ],
+        "matches": true,
+        "shown": 37.776573181152344,
+        "step": 8000,
+        "traced": 37.776573181152344,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          147
+        ],
+        "matches": true,
+        "shown": 0.17971326410770416,
+        "step": 12208,
+        "traced": 0.17971326410770416,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          214
+        ],
+        "matches": true,
+        "shown": 0.10303773730993271,
+        "step": 12208,
+        "traced": 0.10303773730993271,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 3,
+        "index": [
+          161,
+          22
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 2,
+        "shown": 1.2590486448971205e-06,
+        "step": 8000,
+        "traced": 1.2590486448971205e-06,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          7,
+          57
+        ],
+        "matches": true,
+        "shown": 18.434419631958008,
+        "step": 2,
+        "traced": 18.434419631958008,
+        "view": "residual_norms"
+      },
+      {
+        "head": 0,
+        "index": [
+          147,
+          74
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 1,
+        "shown": 6.409252932826348e-07,
+        "step": 8000,
+        "traced": 6.409252932826348e-07,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          2,
+          194
+        ],
+        "matches": true,
+        "shown": 26.500879287719727,
+        "step": 0,
+        "traced": 26.500879287719727,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          159
+        ],
+        "matches": true,
+        "shown": 8.692046165466309,
+        "step": 4,
+        "traced": 8.692046165466309,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 2,
+        "index": [
+          177,
+          56
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 5,
+        "shown": 2.8033662147208815e-06,
+        "step": 1000,
+        "traced": 2.8033662147208815e-06,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          6,
+          133
+        ],
+        "matches": true,
+        "shown": 23.851032257080078,
+        "step": 8192,
+        "traced": 23.851032257080078,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          3,
+          2,
+          117
+        ],
+        "matches": true,
+        "shown": 32.44893264770508,
+        "step": 1024,
+        "traced": 32.44893264770508,
+        "view": "residual_norms"
+      },
+      {
+        "head": 3,
+        "index": [
+          44,
+          8
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 5,
+        "shown": 2.702642814256251e-05,
+        "step": 2048,
+        "traced": 2.702642814256251e-05,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          0,
+          5,
+          75
+        ],
+        "matches": true,
+        "shown": 0.9433295726776123,
+        "step": 12208,
+        "traced": 0.9433295726776123,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          6,
+          124
+        ],
+        "matches": true,
+        "shown": 27.830455780029297,
+        "step": 2,
+        "traced": 27.830455780029297,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          5,
+          66
+        ],
+        "matches": true,
+        "shown": 2.975001096725464,
+        "step": 2000,
+        "traced": 2.975001096725464,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 2,
+        "index": [
+          216,
+          41
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 6,
+        "shown": 0.005395151674747467,
+        "step": 8,
+        "traced": 0.005395151674747467,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          2,
+          94
+        ],
+        "matches": true,
+        "shown": 4.272493839263916,
+        "step": 64,
+        "traced": 4.272493839263916,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          2,
+          0,
+          239
+        ],
+        "matches": true,
+        "shown": 28.58657455444336,
+        "step": 4000,
+        "traced": 28.58657455444336,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          42
+        ],
+        "matches": true,
+        "shown": 0.18732905387878418,
+        "step": 512,
+        "traced": 0.18732905387878418,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          4,
+          7,
+          14
+        ],
+        "matches": true,
+        "shown": 37.99897766113281,
+        "step": 10000,
+        "traced": 37.99897766113281,
+        "view": "residual_norms"
+      },
+      {
+        "head": 0,
+        "index": [
+          15,
+          12
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.023763658478856087,
+        "step": 7000,
+        "traced": 0.023763658478856087,
+        "view": "attention_pattern"
+      },
+      {
+        "head": 0,
+        "index": [
+          30,
+          30
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 3,
+        "shown": 0.029091592878103256,
+        "step": 4000,
+        "traced": 0.029091592878103256,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          5,
+          55
+        ],
+        "matches": true,
+        "shown": 29.0483341217041,
+        "step": 8,
+        "traced": 29.0483341217041,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          2,
+          4,
+          13
+        ],
+        "matches": true,
+        "shown": 18.03425407409668,
+        "step": 2,
+        "traced": 18.03425407409668,
+        "view": "residual_norms"
+      },
+      {
+        "head": 2,
+        "index": [
+          181,
+          149
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 6,
+        "shown": 0.05441630259156227,
+        "step": 1024,
+        "traced": 0.05441630259156227,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          3,
+          75
+        ],
+        "matches": true,
+        "shown": 0.21918398141860962,
+        "step": 1000,
+        "traced": 0.21918398141860962,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 1,
+        "index": [
+          147,
+          98
+        ],
+        "layer": 2,
+        "matches": true,
+        "sequence": 7,
+        "shown": 0.0067937616258859634,
+        "step": 64,
+        "traced": 0.0067937616258859634,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          1,
+          4,
+          163
+        ],
+        "matches": true,
+        "shown": 14.964435577392578,
+        "step": 8192,
+        "traced": 14.964435577392578,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          142
+        ],
+        "matches": true,
+        "shown": 0.7636746168136597,
+        "step": 5000,
+        "traced": 0.7636746168136597,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 2,
+        "index": [
+          151,
+          75
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 2,
+        "shown": 0.00024088243662845343,
+        "step": 512,
+        "traced": 0.00024088243662845343,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          1,
+          1,
+          139
+        ],
+        "matches": true,
+        "shown": 23.348453521728516,
+        "step": 2048,
+        "traced": 23.348453521728516,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          156
+        ],
+        "matches": true,
+        "shown": 5.817383766174316,
+        "step": 4096,
+        "traced": 5.817383766174316,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          3,
+          144
+        ],
+        "matches": true,
+        "shown": 0.788864254951477,
+        "step": 512,
+        "traced": 0.788864254951477,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          3,
+          53
+        ],
+        "matches": true,
+        "shown": 0.9991366863250732,
+        "step": 12208,
+        "traced": 0.9991366863250732,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          0,
+          47
+        ],
+        "matches": true,
+        "shown": 3.2814979553222656,
+        "step": 3000,
+        "traced": 3.2814979553222656,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          7,
+          23
+        ],
+        "matches": true,
+        "shown": 0.5721355080604553,
+        "step": 1024,
+        "traced": 0.5721355080604553,
+        "view": "per_token_loss"
+      },
+      {
+        "head": 1,
+        "index": [
+          60,
+          11
+        ],
+        "layer": 0,
+        "matches": true,
+        "sequence": 3,
+        "shown": 8.664565393701196e-05,
+        "step": 3000,
+        "traced": 8.664565393701196e-05,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          229
+        ],
+        "matches": true,
+        "shown": 0.5363926291465759,
+        "step": 12208,
+        "traced": 0.5363926291465759,
+        "view": "per_token_loss"
+      },
+      {
+        "index": [
+          0,
+          4,
+          10
+        ],
+        "matches": true,
+        "shown": 0.8437129259109497,
+        "step": 12000,
+        "traced": 0.8437129259109497,
+        "view": "residual_norms"
+      },
+      {
+        "index": [
+          4,
+          1,
+          167
+        ],
+        "matches": true,
+        "shown": 29.061155319213867,
+        "step": 10000,
+        "traced": 29.061155319213867,
+        "view": "residual_norms"
+      },
+      {
+        "head": 3,
+        "index": [
+          112,
+          23
+        ],
+        "layer": 1,
+        "matches": true,
+        "sequence": 5,
+        "shown": 0.0045234630815684795,
+        "step": 32,
+        "traced": 0.0045234630815684795,
+        "view": "attention_pattern"
+      },
+      {
+        "index": [
+          4,
+          167
+        ],
+        "matches": true,
+        "shown": 1.6205554008483887,
+        "step": 4000,
+        "traced": 1.6205554008483887,
+        "view": "per_token_loss"
+      }
+    ],
+    "sample_matches": 200,
+    "sample_seed": 0,
+    "sample_size": 200,
+    "steps": [
+      0,
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1000,
+      1024,
+      2000,
+      2048,
+      3000,
+      4000,
+      4096,
+      5000,
+      6000,
+      7000,
+      8000,
+      8192,
+      9000,
+      10000,
+      11000,
+      12000,
+      12208
+    ],
+    "store": "runs/phase1/g16_trace/store",
+    "versions": {
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-04T03:54:34Z",
+  "xla_flags": ""
+}

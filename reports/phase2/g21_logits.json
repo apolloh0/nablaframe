@@ -1,0 +1,165 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_name": "nf-jax",
+  "gate_id": "G2.1",
+  "git_commit": "ce66a30dca92afb208c055cdf5ee08b164c54411",
+  "git_dirty": false,
+  "measurements": {
+    "error": null,
+    "error_stage": null,
+    "logits_bytes": 939526560,
+    "logits_bytes_expected": 939524096,
+    "logits_events": 28,
+    "logits_events_expected": 28,
+    "logits_events_written": 28,
+    "logits_steps_missing": [],
+    "other_events_written": 0,
+    "probe_batch_hash": "f3774467b9c4794158230270d0a2bcbe9d90ff20c9f3e74e069b6ae1b6e19a53",
+    "probe_shape": [
+      8,
+      256
+    ],
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "sample": [
+      {
+        "event_id": "ff864a5778e6563beaddf8ad970886cce0bcdce1dec30d5a96c7200b154e91b2",
+        "index": 18,
+        "matches": true,
+        "step": 5000
+      },
+      {
+        "event_id": "7368a56bf13681cab7012a8a1cf818a75652d3a555009297610292a28b655255",
+        "index": 4,
+        "matches": true,
+        "step": 8
+      },
+      {
+        "event_id": "79cec2aadfc4fc518f1df9546cee36b8e887f225573fdeccab16513ac62d5624",
+        "index": 3,
+        "matches": true,
+        "step": 4
+      },
+      {
+        "event_id": "e1a3d441497be1f245cdfc94f6c47d46f8d9dbac9b9c770771e1d5cb3e24e98a",
+        "index": 27,
+        "matches": true,
+        "step": 12208
+      },
+      {
+        "event_id": "dc4339e8c13ec17d6f936beb90288d3e7350e2e3545e5de43fff1675bb33bbd9",
+        "index": 5,
+        "matches": true,
+        "step": 16
+      },
+      {
+        "event_id": "5bc7a624f4e7f4b7569a130bcee334666602faccacbece401f8f2c6a45763fd6",
+        "index": 13,
+        "matches": true,
+        "step": 2000
+      },
+      {
+        "event_id": "bcb2d5736ce97a2377c78591b04544d70d671eba0cc4eb5ed38c7e08e2f781aa",
+        "index": 26,
+        "matches": true,
+        "step": 12000
+      },
+      {
+        "event_id": "360bb1b03c18f863ed9650e16cd7e209e16d9f90725c76c032f62d4cff42b9f3",
+        "index": 22,
+        "matches": true,
+        "step": 8192
+      },
+      {
+        "event_id": "9b0f4e776a84c2621ef1962859e828ca23686eadb5c11da701095141d7b5c1ce",
+        "index": 6,
+        "matches": true,
+        "step": 32
+      },
+      {
+        "event_id": "35182af48ab1350c22a035d14f4a558485fae62430dc1c599edeafd2e1320c05",
+        "index": 12,
+        "matches": true,
+        "step": 1024
+      },
+      {
+        "event_id": "03b518a60e503af7742fa4b37f8a3378d076b4e1e1bc1f67b6b6841cdf88a416",
+        "index": 2,
+        "matches": true,
+        "step": 2
+      },
+      {
+        "event_id": "59241cdf07e253eee246aa6bbc1f8b97000c9426d47629053709f52f619ab8a6",
+        "index": 14,
+        "matches": true,
+        "step": 2048
+      },
+      {
+        "event_id": "7d40c021e07a55ed3b5dafaf00f2f38959c61248e80ce100b000a79cfd261ba1",
+        "index": 24,
+        "matches": true,
+        "step": 10000
+      },
+      {
+        "event_id": "3217174c4491a0f537c0c64a7c20cb6ed9e09dc4a9677f3498fd23ff8a9780dc",
+        "index": 15,
+        "matches": true,
+        "step": 3000
+      },
+      {
+        "event_id": "66de57dbb39aa1a3a4a00487d4af91b74937dee7562dc498623ba083645bf0ed",
+        "index": 25,
+        "matches": true,
+        "step": 11000
+      },
+      {
+        "event_id": "caaa6726a55ea41e7454ae5afb055e896cec3ef8d748abd41e1f2b67ddce5573",
+        "index": 1,
+        "matches": true,
+        "step": 1
+      },
+      {
+        "event_id": "5b3356158260e0a87cf787de733d8141888f5dcc218fa1810f7e3c39dc36afe3",
+        "index": 7,
+        "matches": true,
+        "step": 64
+      },
+      {
+        "event_id": "7e54ba88689970784f5fd2a58e30eed66ea5a745cc43513896b1b82c85c5ec27",
+        "index": 10,
+        "matches": true,
+        "step": 512
+      },
+      {
+        "event_id": "736a7d47684592c054247f8045e8dbb0e1ca4cd2a17dfa1cf315651fea888be7",
+        "index": 17,
+        "matches": true,
+        "step": 4096
+      },
+      {
+        "event_id": "c29a98f74eacae3904ada8a0148b7aadd0abb96c740155c734a7a07e0359cdc6",
+        "index": 0,
+        "matches": true,
+        "step": 0
+      }
+    ],
+    "sample_matches": 20,
+    "sample_seed": 0,
+    "sample_size": 20,
+    "sample_size_planned": 20,
+    "store": "runs/phase1/g16_trace/store",
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-04T03:53:58Z",
+  "xla_flags": ""
+}
