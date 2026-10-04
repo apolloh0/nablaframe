@@ -40,6 +40,9 @@ metal = [
 torch = [
     "torch",
     "transformer_lens",
+    # The J-lens reference implementation, for the cross-check (D19). Pinned to one commit in
+    # [tool.uv.sources] below. Torch lane only: the JAX and Metal lanes must resolve identically.
+    "jlens",
 ]
 
 [dependency-groups]
@@ -72,3 +75,7 @@ required-environments = [
     "sys_platform == 'darwin' and platform_machine == 'arm64'",
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
+
+[tool.uv.sources]
+# anthropics/jacobian-lens is unmaintained, so pinned to the commit G2.5 read (D19). Apache-2.0.
+jlens = { git = "https://github.com/anthropics/jacobian-lens", rev = "581d398613e5602a5af361e1c34d3a92ea82ba8e" }
