@@ -2,14 +2,257 @@
 <!--
   Nablaframe viewer (Phase 2, D13). One static page, plain JavaScript, no build step,
   no network beyond the local server that serves it. Contract: see app.js.
+
+  From the repo root: python3 -m http.server, then open localhost:8000/viewer/ in a browser.
+  Use the name localhost (or 127.0.0.1): Web Crypto, which the hash checks need, only
+  runs in a secure context, and the page says so on every readout if it can't.
 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Nablaframe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nablaframe viewer</title>
+  <link rel="icon" href="../docs/brand/nablaframe-icon-32.png">
+  <style>
+    :root {
+      color-scheme: light;
+      --surface-0: #f4f4f2;
+      --surface-1: #fcfcfb;
+      --surface-2: #efeeea;
+      --border: #dcdbd6;
+      --text-primary: #0b0b0b;
+      --text-secondary: #52514e;
+      --text-muted: #7a7974;
+      --accent: #2a78d6;
+      --grid: #e6e5e0;
+      --good: #0ca30c;
+      --good-text: #006300;
+      --warning: #fab219;
+      --warning-text: #7a5200;
+      --critical: #d03b3b;
+      --critical-text: #b02a2a;
+      --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+      --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+      --positive: #2a78d6;
+      --negative: #e34948;
+      --mask: #e9e8e4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --surface-0: #121211;
+        --surface-1: #1a1a19;
+        --surface-2: #242422;
+        --border: #3a3a37;
+        --text-primary: #ffffff;
+        --text-secondary: #c3c2b7;
+        --text-muted: #94938a;
+        --accent: #3987e5;
+        --grid: #2c2c2a;
+        --good-text: #4fd14f;
+        --warning-text: #fab219;
+        --critical-text: #f07a7a;
+        --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+        --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+        --positive: #3987e5;
+        --negative: #e66767;
+        --mask: #262624;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --surface-0: #121211;
+      --surface-1: #1a1a19;
+      --surface-2: #242422;
+      --border: #3a3a37;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #94938a;
+      --accent: #3987e5;
+      --grid: #2c2c2a;
+      --good-text: #4fd14f;
+      --warning-text: #fab219;
+      --critical-text: #f07a7a;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+      --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+      --positive: #3987e5;
+      --negative: #e66767;
+      --mask: #262624;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--surface-0);
+      color: var(--text-primary);
+      font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+    header {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-1);
+      position: sticky; top: 0; z-index: 5;
+    }
+    header h1 { font-size: 18px; margin: 0; }
+    header .facts { color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+    header .facts span { white-space: nowrap; }
+    main { padding: 12px 16px 48px; display: grid; gap: 12px; max-width: 1600px; margin: 0 auto; }
+    .grid2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); }
+    .panel {
+      background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 14px; min-width: 0;
+    }
+    .panel h2 { font-size: 15px; margin: 0 0 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+    .panel h2 .sub { font-weight: normal; color: var(--text-secondary); font-size: 13px; }
+    .panel.bad { border-color: var(--critical); box-shadow: 0 0 0 1px var(--critical) inset; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 6px 0; color: var(--text-secondary); }
+    .controls label { display: inline-flex; align-items: center; gap: 4px; }
+    button, select, input { font: inherit; color: inherit; }
+    button, select {
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; cursor: pointer;
+    }
+    button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    input[type="range"] { flex: 1 1 240px; accent-color: var(--accent); }
+    .muted { color: var(--text-muted); }
+    .secondary { color: var(--text-secondary); }
+    .note { color: var(--text-secondary); font-size: 13px; margin: 4px 0; }
+    .error { color: var(--critical-text); font-weight: 600; white-space: pre-wrap; }
+
+    /* Meters and badges */
+    .meter { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 8px; font-size: 13px; }
+    .meter .row { display: flex; gap: 6px; align-items: baseline; }
+    .meter .icon { font-weight: 700; width: 1.2em; text-align: center; flex: none; }
+    .meter .ok .icon { color: var(--good); }
+    .meter .ok .label { color: var(--good-text); font-weight: 600; }
+    .meter .bad .icon, .meter .bad .label { color: var(--critical-text); font-weight: 700; }
+    .meter .warn .icon { color: var(--warning); }
+    .meter .warn .label { color: var(--warning-text); font-weight: 600; }
+    .meter .info .icon { color: var(--text-muted); }
+    .meter .info .label { font-weight: 600; }
+    .meter .detail { color: var(--text-secondary); overflow-wrap: anywhere; }
+    .badge {
+      border-left: 3px solid var(--accent); background: var(--surface-2); padding: 4px 8px; margin: 4px 0 8px;
+      font-size: 13px; color: var(--text-secondary); border-radius: 0 4px 4px 0;
+    }
+    .badge b { color: var(--text-primary); }
+
+    /* Probe text */
+    .probe { line-height: 1.95; max-height: 260px; overflow: auto; padding: 4px; border: 1px solid var(--border); border-radius: 6px; }
+    .tok {
+      display: inline-block; padding: 0 3px; margin: 0 1px; border-radius: 3px; cursor: pointer;
+      line-height: 1.5; border: 1px solid transparent;
+    }
+    .tok.special { font-style: italic; }
+    .tok.blank { background-image: repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px); }
+    .tok.sel { border-color: var(--text-primary); box-shadow: 0 0 0 1px var(--text-primary); }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+    .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+    .legend .ramp { display: inline-block; width: 120px; height: 10px; border-radius: 3px; vertical-align: -1px; margin: 0 4px; }
+
+    /* Tables */
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+    th { color: var(--text-secondary); font-weight: 600; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .scrollx { overflow-x: auto; }
+    td.cell { border-radius: 3px; }
+    td.cell.target { outline: 2px solid var(--text-primary); outline-offset: -2px; font-weight: 700; }
+
+    /* Charts */
+    svg text { fill: var(--text-secondary); font-size: 11px; }
+    svg .axis { stroke: var(--border); }
+    svg .gridline { stroke: var(--grid); }
+    .heat-wrap { position: relative; display: inline-block; max-width: 100%; }
+    canvas { display: block; image-rendering: pixelated; max-width: 100%; }
+    .tooltip {
+      position: fixed; pointer-events: none; z-index: 20; background: var(--surface-1); color: var(--text-primary);
+      border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.18);
+      display: none; max-width: 360px;
+    }
+    .small-multiples { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+
+    /* Loads */
+    #loads {
+      position: fixed; right: 12px; bottom: 12px; z-index: 10; width: min(420px, calc(100vw - 24px));
+      display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+    }
+    .load {
+      pointer-events: auto; background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .load .name { display: flex; justify-content: space-between; gap: 8px; }
+    .load .name span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .load progress { width: 100%; height: 6px; accent-color: var(--accent); }
+    .load.failed { border-color: var(--critical); color: var(--critical-text); }
+    .load button { font-size: 11px; padding: 0 6px; }
+  </style>
 </head>
 <body>
-  <main id="app">Not implemented yet.</main>
+  <header>
+    <h1>Nablaframe</h1>
+    <div class="facts" id="facts"><span>Loading the view index…</span></div>
+  </header>
+  <main id="app">
+    <section class="panel" id="timeline-panel">
+      <h2>Timeline <span class="sub" id="step-label"></span></h2>
+      <div id="timeline"></div>
+      <div class="controls">
+        <button type="button" id="prev-step" title="Previous checkpoint (left arrow)">◀</button>
+        <input type="range" id="step-slider" min="0" max="0" value="0" aria-label="Checkpoint">
+        <button type="button" id="next-step" title="Next checkpoint (right arrow)">▶</button>
+      </div>
+    </section>
+
+    <section class="panel" id="probe-panel">
+      <h2>Probe text and per-token loss <span class="sub">readout of the traced logits</span></h2>
+      <div class="meter" id="loss-meter"></div>
+      <div class="controls" id="seq-buttons"></div>
+      <div class="probe" id="probe-text"></div>
+      <div class="legend" id="loss-legend"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="panel" id="lens-panel">
+        <h2>Logit lens <span class="sub" id="lens-sub"></span></h2>
+        <div class="meter" id="lens-meter"></div>
+        <div id="lens-badge"></div>
+        <div id="lens-body"></div>
+      </section>
+      <section class="panel" id="attr-panel">
+        <h2>Direct logit attribution <span class="sub" id="attr-sub"></span></h2>
+        <div class="meter" id="attr-meter"></div>
+        <div id="attr-badge"></div>
+        <div id="attr-body"></div>
+      </section>
+    </div>
+
+    <div class="grid2">
+      <section class="panel" id="attn-panel">
+        <h2>Attention pattern <span class="sub" id="attn-sub"></span></h2>
+        <div class="controls">
+          <label>Layer <select id="attn-layer"></select></label>
+          <label>Head <select id="attn-head"></select></label>
+          <label><input type="checkbox" id="attn-sqrt" checked> square-root color scale</label>
+        </div>
+        <div class="meter" id="attn-meter"></div>
+        <div id="attn-body"></div>
+      </section>
+      <section class="panel" id="resid-panel">
+        <h2>Residual stream norm <span class="sub" id="resid-sub"></span></h2>
+        <div class="meter" id="resid-meter"></div>
+        <div id="resid-body"></div>
+      </section>
+    </div>
+
+    <section class="panel" id="layers-panel">
+      <h2>Layer structure <span class="sub">across every checkpoint</span></h2>
+      <div class="meter" id="layers-meter"></div>
+      <div id="layers-body"></div>
+    </section>
+  </main>
+  <div id="loads" aria-live="polite"></div>
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+  <noscript>The viewer needs JavaScript.</noscript>
   <script src="app.js"></script>
 </body>
 </html>
