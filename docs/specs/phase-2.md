@@ -84,11 +84,11 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase2/`.
 
 | Gate | Measures | Pass | On failure |
 | --- | --- | --- | --- |
-| G2.1 Logits in the trace | Retraces run `b9258e47fef4` with D12's `logits` tap; recomputes a seeded sample of 20 logits events | 28 new events, 0 others written; all 20 recompute bit for bit; store growth within 1% of 939,524,096 bytes | Diagnose the engine |
+| G2.1 Logits in the trace | Records D12's `logits` tap at every trace step of run `b9258e47fef4`; recomputes a seeded sample of 20 logits events | 28 logits events in the store and 0 other events written; all 20 recompute bit for bit; logits shards within 1% of 939,524,096 bytes. Counting totals, not new events, lets a rerun after success pass again | Diagnose the engine |
 | G2.2 Readout fidelity | Builds the readout views for all 28 checkpoints, twice; checks a seeded sample of displayed values against the trace | Every sampled value equals the traced tensor bit for bit; both builds are byte-identical | Diagnose the decoder |
-| G2.3 Logit lens | Decoder-level planted recovery; the lens on a freshly initialized model, over the 262,144-token evaluation slice; the meter on the reference run's probe | Planted token recovered at 99% or more of positions; on random weights, next-token accuracy at most twice chance at every layer; last-layer KL within the measured tolerance | Diagnose before shipping the view |
-| G2.4 Direct logit attribution | Decoder-level planted recovery; the decomposition error on the reference run | A planted component receives 99% or more of the attribution; decomposition error recorded per checkpoint | Diagnose before shipping the view |
-| G2.5 J-lens cost probe | At one checkpoint and one layer: the exact same-position Jacobian on a small sample, against the estimator below at fit sizes of about 2,000, 8,000 and 32,000 positions; wall time for each. Also, read from its source: how the reference implementation in `anthropics/jacobian-lens` computes J, and whether it can run on our model's Hugging Face export | Always passes: records the error at each size, the change per doubling, the times, a projected cost for 4 layers and 28 checkpoints, and the cross-check's feasibility | Not applicable; the results set D15's method and size |
+| G2.3 Logit lens | Decoder-level planted recovery; the lens on a freshly initialized model, over the 262,144-token evaluation slice; the meter on the reference run's probe | Planted token recovered at 99% or more of positions; on random weights, next-token accuracy at most twice chance at every layer; last-layer KL at most 1e-5 nats at every trace step | Diagnose before shipping the view |
+| G2.4 Direct logit attribution | Decoder-level planted recovery with two equally strong parts, one along each target's direction and one perpendicular to it; the decomposition error on the reference run | The aligned part credited at 99% or more of positions, the perpendicular part under 0.1% of the aligned part's credit at 99% or more; decomposition error at most 1e-3 at every trace step | Diagnose before shipping the view |
+| G2.5 J-lens cost probe | At one checkpoint and one layer: the exact same-position Jacobian on causal prefixes (the model is causal, so on each sequence's first 32 positions the exact computation is exact for those positions, at 268 MB rather than 17 GB per sequence), against the estimator below at fit sizes of about 2,000, 8,000 and 32,000 positions; wall time for each. Also, read from its source: how the reference implementation in `anthropics/jacobian-lens` computes J, and whether it can run on our model's Hugging Face export | Always passes: records the error at each size, the change per doubling, the times, a projected cost for 4 layers and 28 checkpoints, and the cross-check's feasibility | Not applicable; the results set D15's method and size |
 | G2.6 Viewer | Builds every derived view twice; checks the page references nothing outside the repo | Byte-identical builds; no external URL in the viewer's files | Diagnose the export |
 
 **Why G2.3's random-weights check uses the evaluation slice.** At a 4,096-word vocabulary, chance is 1 in 4,096. Over the probe's 2,048 positions, that's about half a correct guess, so a threshold of twice chance would rest on counts of 0 to 3. Over the evaluation slice, chance is about 64 correct guesses and twice chance about 128, a real measurement. The check runs a freshly initialized model rather than reading traced data, so it can use any tokens. The displayed meters stay on the probe, since they describe what's on screen.
@@ -107,14 +107,15 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase2/`.
 | 0 | Phase 1 carry-overs | `gates/phase1/g11_tokenizer.py`, `gates/phase1/g12_parity.py` | None |
 | 1 | Logits in the trace (D12) | `trace/schema.py` (new site), `trace/registry.py`, `trace/engine.py` | None |
 | 2 | Readout views | `views/readouts.py` | 1 |
-| 3 | Logit lens and its meter | `views/lens.py` | 1 |
-| 4 | Direct logit attribution | `views/attribution.py` | 1 |
-| 5 | Caches and export (D11) | `views/cache.py`, `views/export.py` | 2, 3, 4 |
-| 6 | Viewer | `views/shards.py`, `viewer/index.html`, `viewer/app.js` | 5 |
-| 7 | J-lens probe | `views/jlens_probe.py` | 1 |
+| 3 | Logit lens and its meter | `views/lens.py` | 1, 2 |
+| 4 | Direct logit attribution | `views/attribution.py` | 1, 2, 3 |
+| 5 | Caches and export (D11) | `views/cache.py`, `views/export.py` | None |
+| 6 | Viewer | `views/shards.py`, `viewer/index.html`, `viewer/app.js` | 1, 2, 9 |
+| 7 | J-lens probe | `views/jlens_probe.py` | None |
 | 8 | Phase 2 gates | `gates/phase2/` | All |
+| 9 | View builder | `views/build.py`, and `TraceReader.event` in `views/readouts.py` | 2, 3, 4, 5 |
 
-Packages 0 and 1 can start at once. Packages 2, 3, 4 and 7 share no files and can run in parallel once package 1 merges. The J-lens views themselves, and the torch-lane cross-check if G2.5 finds it feasible, come in a later Phase 2 delta after D15's method is ruled.
+Packages 0, 1, 5 and 7 need nothing and can start at once. Package 2 needs 1; 3 needs 2; 4 needs 2 and 3; the builder, 9, needs 2 to 5; the viewer needs 9. The J-lens views themselves, and the torch-lane cross-check if G2.5 finds it feasible, come in a later Phase 2 delta after D15's method is ruled.
 
 ## Tests
 
@@ -124,10 +125,12 @@ Written with the stubs, after D11 to D15 are committed. Proposed names:
 - **1:** `test_logits_tap_is_registered`, `test_logits_event_matches_model_output`, `test_retrace_adds_only_logits`
 - **2:** `test_readout_equals_traced_tensor`, `test_per_token_loss_leaves_last_position_blank`, `test_readout_build_is_deterministic`
 - **3:** `test_lens_recovers_planted_token`, `test_lens_is_empty_on_random_weights`, `test_last_layer_lens_matches_logits`, `test_lens_meter_is_reported_per_layer`
-- **4:** `test_attribution_parts_sum_to_residual`, `test_attribution_recovers_planted_component`, `test_attribution_error_is_reported`
+- **4:** `test_attribution_parts_sum_to_residual`, `test_attribution_recovers_planted_component`, `test_attribution_error_is_reported`, `test_attribution_refuses_a_different_probe`
 - **5:** `test_cache_key_covers_inputs_and_code`, `test_deleting_cache_then_rebuilding_is_identical`, `test_derived_view_without_meter_is_refused`
 - **6:** `test_viewer_has_no_external_urls`, `test_viewer_hash_check_matches_tensor_sha256` (the page's hashing, cross-checked against `tensor_sha256` on fixed bytes)
 - **7:** `test_estimator_matches_exact_jacobian_on_linear_model`, where the exact Jacobian is known in closed form
+- **8:** `test_logits_bytes_formula`, `test_random_weights_bound`, `test_exact_reference_uses_causal_prefixes`, `test_phase2_status_rules`
+- **9:** `test_build_writes_every_view_with_a_meter`, `test_build_payloads_match_the_views`, `test_build_is_deterministic`, `test_build_reports_progress`
 
 ## Out of scope
 
