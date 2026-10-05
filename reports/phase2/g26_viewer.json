@@ -1,19 +1,20 @@
 {
   "chip": "Apple M2 Max",
-  "env_lock_sha256": "4d2c65c9a7387e6e8131825bffbf4f9416a166897cd57e5067e3fef7fb37df4f",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
   "env_name": "nf-jax",
   "gate_id": "G2.6",
-  "git_commit": "ce66a30dca92afb208c055cdf5ee08b164c54411",
+  "git_commit": "beb3eb60520e15130f136bb863f990e9440dbb5f",
   "git_dirty": false,
   "measurements": {
     "builds_identical": true,
-    "export_bytes": 49483765,
+    "export_bytes": 90858602,
     "external_url_matches": [],
     "external_urls": 0,
-    "files_compared": 113,
+    "files_compared": 141,
     "files_differing": [],
-    "files_written": 113,
+    "files_written": 141,
     "first_build_dir": "runs/phase2/g26_viewer/first-build",
+    "jlens_included": true,
     "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
     "versions": {
       "equinox": "0.13.8",
@@ -32,6 +33,6 @@
   "schema_version": 2,
   "status": "pass",
   "thread_count": 12,
-  "timestamp_utc": "2026-10-04T04:10:25Z",
+  "timestamp_utc": "2026-10-05T04:59:31Z",
   "xla_flags": ""
 }
