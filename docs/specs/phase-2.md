@@ -1,6 +1,6 @@
 # Phase 2 spec: read-only views and the timeline scrubber
 
-Status: views ruled at human gate H2 on 2026-10-03: see D16 in [../decisions.md](../decisions.md). The J-lens views follow in a later delta under D17. Charter: [../charter.md](../charter.md).
+Status: complete. The views were ruled at human gate H2 on 2026-10-03 (D16), the J-lens views shipped under D17 and D20, and Phase 2 closed on 2026-10-04: see D21 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
