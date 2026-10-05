@@ -1,0 +1,68 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-torch",
+  "gate_id": "G2.8",
+  "git_commit": "7a150fa4b888cc6407592fab5028d283ea499bed",
+  "git_dirty": false,
+  "measurements": {
+    "code_identity": "546315cb59fe6549e9cc25af59342b0dc717afbe",
+    "export": "runs/phase2/jlens/hf-step-12208",
+    "export_lm_head_tied": true,
+    "export_logit_max_abs_diff": 2.6702880859375e-05,
+    "jacobian_key": "b42245c115fcb9e62b1af59e4d46d19ea41655e4c381e260012a9a0c5099fd3d",
+    "jacobian_max_abs_difference": 2.384185791015625e-07,
+    "jacobian_relative_difference": 1.1256405628757183e-07,
+    "layer": 0,
+    "max_seq_len": 256,
+    "ours_norm": 27.47032677220963,
+    "probe_shape": [
+      8,
+      256
+    ],
+    "reference_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "reference_norm": 27.470326613777768,
+    "reference_seconds": 9.28371849982068,
+    "reference_seq_lens": [
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256
+    ],
+    "reference_valid_positions": [
+      239,
+      239,
+      239,
+      239,
+      239,
+      239,
+      239,
+      239
+    ],
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "skip_first": 16,
+    "step": 12208,
+    "target_layer": 3,
+    "tokens_identical": true,
+    "tokens_match_fit_sample": true,
+    "tokens_route": "adapter",
+    "tokens_seen_identical": true,
+    "versions": {
+      "jlens": "0.1.0",
+      "numpy": "2.5.3",
+      "safetensors": "0.8.0",
+      "torch": "2.14.0",
+      "transformers": "5.17.0"
+    },
+    "windows": 8
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-04T11:08:27Z",
+  "xla_flags": ""
+}
