@@ -3,7 +3,7 @@
   "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
   "env_name": "nf-torch",
   "gate_id": "G2.8",
-  "git_commit": "7a150fa4b888cc6407592fab5028d283ea499bed",
+  "git_commit": "bf39cd0f5876e153c81d0fc13d1b5184bc3c39ee",
   "git_dirty": false,
   "measurements": {
     "code_identity": "546315cb59fe6549e9cc25af59342b0dc717afbe",
@@ -22,7 +22,7 @@
     ],
     "reference_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
     "reference_norm": 27.470326613777768,
-    "reference_seconds": 9.28371849982068,
+    "reference_seconds": 8.833158541936427,
     "reference_seq_lens": [
       256,
       256,
@@ -47,6 +47,8 @@
     "skip_first": 16,
     "step": 12208,
     "target_layer": 3,
+    "tokenizer": "data/tinystories/tokenizer.json",
+    "tokenizer_sha256": "d274e3d37bf3efefc21d4a59025cb3c77a575bda83f7f71af5f19d37ee73f1f0",
     "tokens_identical": true,
     "tokens_match_fit_sample": true,
     "tokens_route": "adapter",
@@ -63,6 +65,6 @@
   "schema_version": 2,
   "status": "pass",
   "thread_count": 12,
-  "timestamp_utc": "2026-10-04T11:08:27Z",
+  "timestamp_utc": "2026-10-05T04:51:46Z",
   "xla_flags": ""
 }
