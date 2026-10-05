@@ -48,6 +48,7 @@ All views cover the 8-sequence probe batch at each of the 28 trace checkpoints o
 | Logit lens | Each layer's top predictions per position, read through `ln_final` and the tied unembedding | Explanation | KL from the model's own prediction, and top-1 agreement with it |
 | Direct logit attribution | Each component's push on the logit of the actual next token, at a chosen position | Explanation | Decomposition error |
 | Layer structure | Per-layer and per-head summaries across all 28 checkpoints: residual norms, lens KL, attention entropy | Readouts and logit lens | Each underlying view's meter |
+| J-lens | Each block output's top predictions per position, read through D17's summed Jacobian, `ln_final` and the unembedding | Explanation | KL from the model's own prediction and top-1 agreement; divergence from the logit lens |
 
 **Per-token loss** covers positions 0 to 254 of each probe window. Position 255 has no next token inside the window, so it's shown as blank, not guessed.
 
@@ -65,6 +66,8 @@ At the last layer, the lens is the model's own computation, so its KL should be 
 - **The same positions at every checkpoint.** Redrawing it per checkpoint would make the lens appear to change over training partly because the sample changed. With fixed positions, every change the scrubber shows is the model's.
 - **Drawn from the training stream with seed 1,** distinct from data seed 0 and probe seed 0, so it never touches the probe or the evaluation slice. Every position in the drawn windows counts.
 - **Sized by D17:** 128 windows of 256 tokens, 32,768 positions. G2.5's convergence measurements put its error at most about 1.6%.
+
+**The J-lens view** reads blocks 0 to 3's outputs; block 3's J is the identity, so its last reading is the logit lens's. Its meter is the logit lens's kind: KL from the model's own prediction and top-1 agreement. Beside it, per reading, the view shows its Jensen-Shannon divergence and top-1 agreement with the logit lens at the same residual stream: the measurement D17 promised, of how far the two lenses' readings actually differ. Both lens tables also give the actual next token's rank and probability, so it stays visible outside the top 5.
 
 ## The scrubber
 
@@ -93,6 +96,7 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase2/`.
 | G2.7 J-lens inputs | At step 12,208, layer 0: exports the checkpoint to Hugging Face format and compares every tensor; computes the summed J on 8 fit windows and recomputes it | Export equals the parameters; J recomputes bit for bit | Diagnose the export or the computation |
 | G2.8 J-lens cross-check | In the torch lane: the reference implementation's J on the same 8 windows, from the same token ids; the export's logits on the probe | Same tokens; J within 1e-4 relative; logits within 1e-4 of the trace | Diagnose the definition before G2.9 runs |
 | G2.9 J-lens fit | The summed J for layers 0 to 2 at all 28 trace steps on the full fit sample, about 4 hours; refuses to start until G2.8 passes | All 84 written; one recomputes bit for bit | Diagnose the computation |
+| G2.10 J-lens view | Decoder-level planted transport; the identity J against the logit lens; the J-lens on a freshly initialized model, over the evaluation slice; the meter and the comparison with the logit lens on the reference run's probe | Planted tokens recovered at 99% or more; the identity J equals the logit lens bit for bit; on random weights, next-token accuracy at most twice chance; last-reading KL at most 1e-5; the comparison recorded, not judged | Diagnose before shipping the view |
 
 **Why G2.3's random-weights check uses the evaluation slice.** At a 4,096-word vocabulary, chance is 1 in 4,096. Over the probe's 2,048 positions, that's about half a correct guess, so a threshold of twice chance would rest on counts of 0 to 3. Over the evaluation slice, chance is about 64 correct guesses and twice chance about 128, a real measurement. The check runs a freshly initialized model rather than reading traced data, so it can use any tokens. The displayed meters stay on the probe, since they describe what's on screen.
 
@@ -120,6 +124,11 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase2/`.
 | 10 | Summed Jacobian (D17) | `views/jlens.py` | None |
 | 11 | Hugging Face export | `model/hf_export.py` | None |
 | 12 | J-lens gates and their report rules | `gates/phase2/g27_jlens_prep.py` to `g29_jlens_fit.py`, `summarize.py`, `reports.py` | 10, 11 |
+| 13 | J-lens view | `views/jlens_view.py` | 10 |
+| 14 | Builder: the J-lens view and the next token's rank | `views/build.py` | 9, 13 |
+| 15 | Export tokenizer | `model/hf_export.py` | 11 |
+| 16 | Viewer: the J-lens panel, the next token's rank, the log-scale lens KL | `viewer/app.js`, `viewer/index.html` | 14 |
+| 17 | G2.10, the J-lens rebuild in G2.6, the summary, their report rules | `gates/phase2/g210_jlens_view.py`, `g26_viewer.py`, `summarize.py`, `reports.py` | 13, 14 |
 
 Packages 0, 1, 5 and 7 need nothing and can start at once. Package 2 needs 1; 3 needs 2; 4 needs 2 and 3; the builder, 9, needs 2 to 5; the viewer needs 9. The J-lens views themselves, and the torch-lane cross-check if G2.5 finds it feasible, come in a later Phase 2 delta after D15's method is ruled.
 
