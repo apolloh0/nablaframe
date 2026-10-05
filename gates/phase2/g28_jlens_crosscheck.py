@@ -26,13 +26,15 @@ Measurements: ``windows``, ``tokens_identical``, ``export_logit_max_abs_diff``,
 #   G2.7's export folder.
 # * Setup checks, each an exit 1 with no report: G2.7's ``inputs.json`` and the files it names
 #   exist; it names G1.4's run and its last trace step; the export's ``model.safetensors``
-#   still has the SHA-256 G2.7 recorded; the installed ``jlens`` is D19's pinned commit, read
+#   still has the SHA-256 G2.7 recorded; G1.1's ``data/tinystories/tokenizer.json`` has the
+#   manifest's ``tokenizer_sha256``; the installed ``jlens`` is D19's pinned commit, read
 #   from its ``direct_url.json``; G1.6's store holds logits at that step on the probe.
 # * Loading: ``GPT2LMHeadModel.from_pretrained`` on the export folder, float32, with eager
-#   attention, then ``jlens.hf.from_hf``, the reference's loader. The export's
-#   ``tokenizer.json`` is the run's word-level vocabulary (G2.7 copies it), not a Hugging Face
-#   tokenizer file, so ``from_hf`` gets our ``Tokenizer``, which provides the ``decode`` its
-#   protocol asks for; fitting never calls the tokenizer.
+#   attention, then ``jlens.hf.from_hf``, the reference's loader. ``from_hf`` gets the run's
+#   own ``Tokenizer``, loaded from G1.1's ``data/tinystories/tokenizer.json`` after the
+#   SHA-256 check above, which provides the ``decode`` its protocol asks for; fitting never
+#   calls the tokenizer. The export's ``tokenizer.json`` is a Hugging Face tokenizer, which
+#   our ``Tokenizer`` can't read; G2.7 records whether it round-trips the windows.
 # * Tokens, by the adapter route: ``TokenIds`` wraps the reference's ``HFLensModel`` and
 #   answers ``encode(name, max_length)`` with G2.7's ids for window ``name``, truncated to
 #   ``max_length`` as the Hugging Face tokenizer would truncate, and records every
@@ -97,6 +99,9 @@ def main(argv: list[str] | None = None) -> int:
     if p1.sha256_file(export / "model.safetensors") != inputs["export_model_sha256"]:
         raise SystemExit(f"{p1.rel(export / 'model.safetensors')} changed after G2.7 wrote it. Run G2.7 again with"
                          " --overwrite. No report written.")
+    tokenizer_file = p1.tokenizer_path()
+    if p1.sha256_file(tokenizer_file) != manifest.tokenizer_sha256:
+        raise SystemExit(f"{p1.rel(tokenizer_file)} is not the tokenizer G1.4's run recorded. No report written.")
     commit = installed_jlens_commit()
     if commit != REFERENCE_COMMIT:
         raise SystemExit(f"jlens is installed from commit {commit}, not D19's {REFERENCE_COMMIT}. Sync the torch lane"
@@ -109,10 +114,11 @@ def main(argv: list[str] | None = None) -> int:
     tokens = np.load(g27.crosscheck_dir() / inputs["tokens"], allow_pickle=False)
     ours = load_jacobian(g27.crosscheck_dir(), inputs["jacobian_key"])
     fit = g27.fit_windows(p1.load_split("train"), seq)[:inputs["windows"]]
-    measurements = measure(export, tokens, ours, fit, probe, reader.tensor(step, LOGITS),
+    measurements = measure(export, tokens, ours, fit, probe, reader.tensor(step, LOGITS), p1.load_tokenizer(),
                            layer=inputs["layer"], n_layers=n_layers)
     measurements.update(step=step, run_id=manifest.run_id, code_identity=inputs["code_identity"],
                         jacobian_key=inputs["jacobian_key"], export=inputs["export"], reference_commit=commit,
+                        tokenizer=p1.rel(tokenizer_file), tokenizer_sha256=manifest.tokenizer_sha256,
                         versions=p1.phase0.package_versions(VERSIONS))
     return write(status(measurements), measurements, report, overwrite=args.overwrite)
 
@@ -182,13 +188,11 @@ class TokenIds:
 
 
 def measure(export: Path, tokens: np.ndarray, ours: np.ndarray | None, fit: np.ndarray, probe: np.ndarray,
-            traced_logits: np.ndarray, *, layer: int, n_layers: int) -> dict[str, Any]:
+            traced_logits: np.ndarray, tokenizer: Any, *, layer: int, n_layers: int) -> dict[str, Any]:
     import torch
     from jlens.fitting import jacobian_for_prompt
     from jlens.hf import from_hf
     from transformers import GPT2LMHeadModel
-
-    from nablaframe.data.tokenizer import Tokenizer
 
     hf_model = GPT2LMHeadModel.from_pretrained(str(export), dtype=torch.float32, attn_implementation="eager")
     hf_model.eval()
@@ -202,8 +206,7 @@ def measure(export: Path, tokens: np.ndarray, ours: np.ndarray | None, fit: np.n
                   if logits.shape == traced.shape and np.all(np.isfinite(logits)) else None)
     print(f"{GATE_ID}: export's logits on the probe: largest difference from the trace {logit_diff}", flush=True)
 
-    # The reference's J, from our token ids.
-    tokenizer = Tokenizer.from_json((export / "tokenizer.json").read_text(encoding="utf-8"))
+    # The reference's J, from our token ids. The run's own tokenizer serves the loader.
     lens_model = from_hf(hf_model, tokenizer)
     names = [str(i) for i in range(len(tokens))]
     adapter = TokenIds(lens_model, dict(zip(names, tokens)))

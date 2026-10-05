@@ -21,15 +21,19 @@ Measurements: ``step``, ``layer``, ``windows`` (8), ``export_matches_params``,
 #   also starts its two working folders over; without it, existing folders are refused.
 # * The run's tokenizer is G1.1's ``data/tinystories/tokenizer.json``, our word-level
 #   vocabulary format, after checking its SHA-256 is the manifest's ``tokenizer_sha256``.
-#   ``export_hf`` copies it byte for byte, so the export's ``tokenizer.json`` is that format,
-#   not a Hugging Face tokenizer file. ``eos_id`` is ``<eos>``'s index in its vocabulary.
+#   ``export_hf`` builds a Hugging Face tokenizer from it as the export's ``tokenizer.json``.
+#   ``eos_id`` is ``<eos>``'s index in its vocabulary.
 # * ``export_matches_params``: ``model.safetensors`` is read back with
 #   ``safetensors.numpy.load_file`` and must hold exactly GPT-2's tensor names for this
 #   shape (no ``lm_head.weight``: the unembedding is tied), each float32, with its
 #   parameter's shape and the same bytes. The name map is written out here, not taken from
 #   the exporter, so the comparison doesn't share the code it checks. ``export_mismatches``
-#   lists the first 20 differences. ``tokenizer_identical`` records whether the export's
-#   ``tokenizer.json`` is the run's, byte for byte; it is not judged.
+#   lists the first 20 differences.
+# * ``tokenizer_roundtrip``: the export's ``tokenizer.json``, loaded with the ``tokenizers``
+#   library's ``Tokenizer.from_file``, encodes the run tokenizer's ``decode`` of each of the 8
+#   windows, without added special tokens, back to exactly that window's ids. Recorded, not
+#   judged. ``tokenizer_roundtrip_mismatches`` lists each window that doesn't, with its first
+#   differing position and both lengths.
 # * The fit sample is ``fit_windows``: ``batch_for_step(train, 1, 0, 128, seq)``, each
 #   window's first ``seq`` tokens, as in G2.5; 256 at size S. G2.7 takes its first 8.
 #   The residual stream is ``blocks.0.hook_resid_post`` from the instrumented pass on those
@@ -72,7 +76,7 @@ FIT_WINDOWS = 128
 MAX_MISMATCHES = 20
 INPUTS_NAME = "inputs.json"
 TOKENS_NAME = "tokens.npy"
-VERSIONS = ("jax", "jaxlib", "equinox", "marin-haliax", "safetensors", "numpy")
+VERSIONS = ("jax", "jaxlib", "equinox", "marin-haliax", "safetensors", "numpy", "tokenizers")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -160,13 +164,15 @@ def measure(ref: Any, step: int, train: np.ndarray, tokenizer_file: Path, export
     export_hf(params, config, tokenizer_file, export, eos_token=EOS, eos_id=tokenizer.vocab.index(EOS),
               unk_token=UNK)
     mismatches = export_mismatches(params, config, export / "model.safetensors")
-    tokenizer_identical = (export / "tokenizer.json").read_bytes() == Path(tokenizer_file).read_bytes()
     print(f"{GATE_ID}: export to {p1.rel(export)}: "
           + ("every tensor equals its parameter" if not mismatches else f"{len(mismatches)} mismatches"), flush=True)
 
     # The summed J on the first windows of the fit sample, saved, then recomputed.
     tokens = fit_windows(train, config.seq)[:windows]
     fit_sha = batch_hash(tokens)
+    roundtrip = tokenizer_roundtrip_mismatches(export / "tokenizer.json", tokenizer, tokens)
+    print(f"{GATE_ID}: the export's tokenizer encodes the decoded text of {windows - len(roundtrip)} of {windows}"
+          " windows back to their ids", flush=True)
     state_sha = checkpoint_sha256(ref.checkpoint_dir / f"step-{step}.safetensors")
     code = code_identity()
     key = jacobian_key(checkpoint_sha256=state_sha, fit_sha256=fit_sha, layer=layer, code=code)
@@ -202,7 +208,8 @@ def measure(ref: Any, step: int, train: np.ndarray, tokenizer_file: Path, export
         "export_matches_params": not mismatches,
         "jacobian_recompute_identical": identical,
         "export_mismatches": mismatches[:MAX_MISMATCHES],
-        "tokenizer_identical": tokenizer_identical,
+        "tokenizer_roundtrip": not roundtrip,
+        "tokenizer_roundtrip_mismatches": roundtrip,
         "jacobian_seconds": seconds,
         "recompute_seconds": recompute_seconds,
         "jacobian_norm": float(np.linalg.norm(J.astype(np.float64))),
@@ -228,6 +235,21 @@ def jacobian(model: Any, params: Any, tokens: np.ndarray, layer: int) -> np.ndar
     tap = f"blocks.{layer}.hook_resid_post"
     _, recorded = model.instrumented(params, tokens, [tap])
     return summed_jacobian(block_map(model, params, layer, model.config.n_layers), np.asarray(recorded[tap]))
+
+
+def tokenizer_roundtrip_mismatches(path: Path, tokenizer: Any, windows: np.ndarray) -> list[dict[str, Any]]:
+    """Each window whose decoded text the Hugging Face tokenizer at ``path`` doesn't encode back to its ids."""
+    from tokenizers import Tokenizer as HFTokenizer
+
+    hf = HFTokenizer.from_file(str(path))
+    mismatches = []
+    for i, window in enumerate(np.asarray(windows).tolist()):
+        ids = hf.encode(tokenizer.decode(window), add_special_tokens=False).ids
+        if ids != window:
+            first = next((t for t, (a, b) in enumerate(zip(ids, window)) if a != b), min(len(ids), len(window)))
+            mismatches.append({"window": i, "first_difference": first, "encoded_length": len(ids),
+                               "window_length": len(window)})
+    return mismatches
 
 
 def expected_tensors(params: Any, config: Any) -> dict[str, np.ndarray]:

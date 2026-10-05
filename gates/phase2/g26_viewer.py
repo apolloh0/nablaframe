@@ -7,6 +7,10 @@ least every 30 seconds. The second build stays at ``runs/phase2/views/`` for the
 Measurements: ``builds_identical`` (every file byte-identical), ``external_urls``
 (matches in ``viewer/`` for the pattern in ``tests/test_viewer.py``) and ``export_bytes``
 (the export's total size).
+
+If G2.9's report exists and passes, both builds pass `jacobians_for`, loading each step's J's
+for layers 0 to 2 from G2.9's cache with `load_jacobian` under `jacobian_key`; a missing J is a
+setup error. The report records `jlens_included`.
 """
 
 # How it measures:
@@ -29,6 +33,14 @@ Measurements: ``builds_identical`` (every file byte-identical), ``external_urls`
 #   ``external_url_matches`` lists them with their file. The page's own files are
 #   whatever viewer/ holds when the gate runs.
 # * ``export_bytes`` sums the sizes of the second build's files, index.json included.
+# * The J-lens: G2.9's report passes when it exists, passes ``validate_report``, is G2.9's
+#   and says ``pass``, checked as G2.10 checks it. Then every J for layers 0 to
+#   ``n_layers - 2`` at every trace step must be in G2.9's cache, ``runs/phase2/jlens/fit/``,
+#   under ``jacobian_key`` with the checkpoint sidecar's ``state_sha256``, ``batch_hash`` of
+#   D17's 128 fit windows and this checkout's ``code_identity()``, as G2.9 saved them;
+#   G2.10's ``jacobians_for`` loads them. Any missing J is an exit 1 with no report, checked
+#   before either build starts. Without a passing G2.9 report, both builds run without the
+#   J-lens and the gate says why. ``jlens_included`` is whether both builds included it.
 
 from __future__ import annotations
 
@@ -40,6 +52,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import _common  # noqa: E402
+import g210_jlens_view as g210  # noqa: E402
 
 p1 = _common.p1
 
@@ -62,15 +75,18 @@ def main(argv: list[str] | None = None) -> int:
     curve = p1.phase0.load_report(p1.REPO_ROOT / G14_REPORT)["measurements"].get("val_loss_curve")
     if not curve:
         raise SystemExit(f"{G14_REPORT} has no val_loss_curve. No report written.")
+    jacobians_for = jlens(ref)
     first = _common.fresh_dir(_common.RUN_DIR / "g26_viewer" / "first-build", overwrite=args.overwrite)
     second = _common.fresh_dir(_common.RUN_DIR / "views", overwrite=args.overwrite)
 
     vocab = p1.load_tokenizer().vocab
-    builds = {label: build(store_root, out, ref, probe, vocab=vocab, curve=curve, label=label)
+    builds = {label: build(store_root, out, ref, probe, vocab=vocab, curve=curve, label=label,
+                           jacobians_for=jacobians_for)
               for label, out in (("first build", first), ("second build", second))}
     measurements = compare(first, second)
     measurements |= offline(p1.REPO_ROOT / "viewer")
     measurements["export_bytes"] = _common.file_bytes(builds["second build"])
+    measurements["jlens_included"] = jacobians_for is not None
     measurements["files_written"] = len(builds["second build"])
     measurements["views_dir"] = p1.rel(second)
     measurements["first_build_dir"] = p1.rel(first)
@@ -84,7 +100,23 @@ def status(m: dict[str, Any]) -> str:
     return "pass" if m["builds_identical"] is True and m["external_urls"] == 0 else "fail"
 
 
-def build(store_root: Path, out: Path, ref: Any, probe: Any, *, vocab: Any, curve: Any, label: str) -> list[Path]:
+def jlens(ref: Any) -> Any:
+    """G2.9's J's for ``build_views``' ``jacobians_for`` when G2.9's report passes, else None.
+
+    Raises SystemExit, through G2.10's ``jacobians_for``, if the report passes but any J is missing.
+    """
+    problem = g210.fit_report_problem()
+    if problem is not None:
+        print(f"{GATE_ID}: building without the J-lens: {problem}", flush=True)
+        return None
+    jacobians = g210.jacobians_for(ref, p1.load_split("train"))
+    print(f"{GATE_ID}: G2.9's report passes, so both builds include the J-lens, with {len(jacobians.keys)} J's"
+          f" from {p1.rel(jacobians.root)}", flush=True)
+    return jacobians
+
+
+def build(store_root: Path, out: Path, ref: Any, probe: Any, *, vocab: Any, curve: Any, label: str,
+          jacobians_for: Any = None) -> list[Path]:
     """One ``build_views`` of the reference run into ``out``, with a fresh reader and a progress line."""
     from nablaframe.views.build import build_views
     from nablaframe.views.readouts import TraceReader
@@ -93,7 +125,7 @@ def build(store_root: Path, out: Path, ref: Any, probe: Any, *, vocab: Any, curv
     progress = p1.Progress(f"views, {label}, steps", len(reader.steps()))
     paths = build_views(reader, out, params_for=ref.params_for, probe=probe, n_layers=ref.config.n_layers,
                         run_id=ref.manifest.run_id, vocab=vocab, val_loss_curve=curve,
-                        progress=lambda done, total: progress.advance())
+                        progress=lambda done, total: progress.advance(), jacobians_for=jacobians_for)
     print(f"{GATE_ID}: {label}: {len(paths):,} files written to {p1.rel(out)}", flush=True)
     return paths
 
