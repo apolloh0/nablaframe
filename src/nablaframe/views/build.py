@@ -18,6 +18,8 @@ the viewer reads. All floats are plain Python floats; NaN is written as null.
     reading's highest-probability tokens, best first, ties broken by the lower token id;
     ``"top_probs"`` are their softmax probabilities, computed in float64. Meter:
     ``lens_meter(readings, traced logits)``. ``"badge"``: ``BADGES["logit_lens"]``.
+    The `logit_lens` payload gains `target_rank` and `target_prob`, from
+    `jlens_view.target_ranks(readings, probe)`.
   - ``attribution``: ``"parts"`` lists the contribution names in
     ``attribution_from_trace``'s order; ``"contributions"`` (part, Batch, Pos), null at the
     last position. Meter: ``{"kind": "decomposition_error", "max_abs": <its error>}``.
@@ -38,11 +40,16 @@ the viewer reads. All floats are plain Python floats; NaN is written as null.
   "probe", "n_layers", "vocab", "val_loss_curve"}``. The index isn't a view, so it has no
   meter. Returns every path written, the index last. Two builds from the same inputs are
   byte-identical.
+
+  `build_views` takes a keyword `jacobians_for=None`. When given, each step also writes
+  `jlens_payload(reader, step, params_for(step), jacobians_for(step), probe, n_layers)` as
+  `jlens-step-<step>`, and the index's `views` is `VIEWS` followed by `"jlens"`. Without
+  it, nothing changes.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +59,7 @@ from ..trace.schema import canonical_json
 from .attribution import attribution_from_trace
 from .cache import _write_atomic
 from .export import export_view
+from .jlens_view import jlens_payload, target_ranks
 from .lens import lens_meter, lens_readings
 from .readouts import per_token_loss, residual_norms
 
@@ -111,11 +119,14 @@ def view_payloads(reader: Any, step: int, params: Any, probe: np.ndarray, n_laye
     readings = lens_readings(reader, step, params, n_layers)
     meter = lens_meter(readings, reader.tensor(step, "logits"))
     top_tokens, top_probs = _top_tokens(readings)
+    target_rank, target_prob = target_ranks(readings, probe)
     lens = {
         "step": step,
         "layers": _lens_layers(n_layers),
         "top_tokens": top_tokens,
         "top_probs": top_probs,
+        "target_rank": target_rank,
+        "target_prob": target_prob,
         "meter": meter,
         "badge": BADGES["logit_lens"],
     }
@@ -145,15 +156,20 @@ def view_payloads(reader: Any, step: int, params: Any, probe: np.ndarray, n_laye
 def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int], Any], probe: np.ndarray,
                 n_layers: int, run_id: str, vocab: Sequence[str] | None = None,
                 val_loss_curve: Sequence[dict[str, Any]] | None = None,
-                progress: Callable[[int, int], None] | None = None) -> list[Path]:
+                progress: Callable[[int, int], None] | None = None,
+                jacobians_for: Callable[[int], Mapping[int, np.ndarray]] | None = None) -> list[Path]:
     out = Path(out_dir)
     probe = np.asarray(probe)
     steps = reader.steps()
-    files: dict[str, dict[str, str]] = {view: {} for view in VIEWS}
+    views = VIEWS if jacobians_for is None else VIEWS + ("jlens",)
+    files: dict[str, dict[str, str]] = {view: {} for view in views}
     paths: list[Path] = []
     for done, step in enumerate(steps, start=1):
-        payloads = view_payloads(reader, step, params_for(step), probe, n_layers)
-        for view in VIEWS:
+        params = params_for(step)
+        payloads = view_payloads(reader, step, params, probe, n_layers)
+        if jacobians_for is not None:
+            payloads["jlens"] = jlens_payload(reader, step, params, jacobians_for(step), probe, n_layers)
+        for view in views:
             path = export_view(out, f"{view}-step-{step}", payloads[view])
             files[view][str(step)] = path.name
             paths.append(path)
@@ -162,7 +178,7 @@ def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int],
     index = {
         "run_id": run_id,
         "steps": list(steps),
-        "views": list(VIEWS),
+        "views": list(views),
         "files": files,
         "probe": probe.tolist(),
         "n_layers": n_layers,

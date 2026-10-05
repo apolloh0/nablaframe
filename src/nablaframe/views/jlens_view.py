@@ -37,29 +37,112 @@ from typing import Any
 
 import numpy as np
 
+from ..data.corpus import batch_hash as probe_batch_hash
+from .lens import lens_meter, lens_params, logit_lens
+
 JLENS_BADGE = ("Discrimination tests: recovers planted structure at decoder level (a J that carries planted "
                "directions to tokens), and is empty on random weights, checked by G2.10. Its definition matches "
                "anthropics/jacobian-lens to 1.1e-7 (G2.8). Planted structure at model level waits for Phase 4's zoo.")
 
 
+def _softmax(logits: np.ndarray) -> np.ndarray:
+    """Softmax over the last axis in float64, computed as the logit lens payload's top tokens compute it."""
+    p = logits.astype(np.float64)
+    p -= p.max(axis=-1, keepdims=True)
+    p = np.exp(p)
+    p /= p.sum(axis=-1, keepdims=True)
+    return p
+
+
+def _json_ready(value: Any) -> Any:
+    """Plain Python values, with float NaN written as None (null in JSON)."""
+    if isinstance(value, dict):
+        return {key: _json_ready(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [_json_ready(item) for item in value]
+    if isinstance(value, float) and value != value:
+        return None
+    return value
+
+
 def jlens_lens(resid: np.ndarray, J: np.ndarray, ln_weight: np.ndarray, ln_bias: np.ndarray,
                wte: np.ndarray) -> np.ndarray:
-    raise NotImplementedError
+    predicted = np.asarray(resid, dtype=np.float32) @ np.asarray(J, dtype=np.float32).T
+    return logit_lens(predicted, ln_weight, ln_bias, wte)
 
 
 def jlens_readings(reader: Any, step: int, params: Any, jacobians: Mapping[int, np.ndarray],
                    n_layers: int) -> np.ndarray:
-    raise NotImplementedError
+    ln_w, ln_b, wte = lens_params(params)
+    readings = []
+    for layer in range(n_layers):
+        resid = reader.tensor(step, f"blocks.{layer}.hook_resid_post")
+        if layer == n_layers - 1:
+            readings.append(logit_lens(resid, ln_w, ln_b, wte))  # the last block's J is the identity
+        else:
+            readings.append(jlens_lens(resid, jacobians[layer], ln_w, ln_b, wte))
+    return np.stack(readings)
 
 
 def lens_divergence(a: np.ndarray, b: np.ndarray) -> list[dict[str, float]]:
-    raise NotImplementedError
+    if np.shape(a) != np.shape(b):
+        raise ValueError(f"readings have different shapes: {np.shape(a)} and {np.shape(b)}")
+    rows = []
+    for layer, (x, y) in enumerate(zip(a, b)):
+        p, q = _softmax(x), _softmax(y)
+        m = (p + q) / 2
+        # 0 ln 0 = 0: a token with no probability under one reading adds nothing to its term.
+        kl_pm = np.where(p > 0, p * np.log(np.where(p > 0, p, 1.0) / m), 0.0).sum(axis=-1)
+        kl_qm = np.where(q > 0, q * np.log(np.where(q > 0, q, 1.0) / m), 0.0).sum(axis=-1)
+        js = 0.5 * kl_pm + 0.5 * kl_qm
+        rows.append({
+            "layer": layer,
+            "js_mean": float(js.mean()),
+            "top1_agreement": float((x.argmax(axis=-1) == y.argmax(axis=-1)).mean()),
+        })
+    return rows
 
 
 def target_ranks(readings: np.ndarray, probe: np.ndarray) -> tuple[list, list]:
-    raise NotImplementedError
+    readings = np.asarray(readings)
+    probe = np.asarray(probe)
+    if probe.shape != readings.shape[1:3]:
+        raise ValueError(f"probe shape {probe.shape} does not match the readings' (Batch, Pos) {readings.shape[1:3]}")
+    targets = probe[:, 1:, None].astype(np.intp)  # (Batch, Pos - 1, 1): positions with a next token
+    ids = np.arange(readings.shape[-1])
+    ranks_out, probs_out = [], []
+    for reading in readings:  # one reading at a time keeps the float64 copy small
+        p = _softmax(reading)[:, :-1]
+        target_p = np.take_along_axis(p, targets, axis=-1)
+        # 0-based rank by descending probability; an equally probable token ranks above the target only if its
+        # id is lower, as the payloads' top tokens are ordered.
+        ranks = (p > target_p).sum(axis=-1) + ((p == target_p) & (ids < targets)).sum(axis=-1)
+        ranks_out.append([row + [None] for row in ranks.tolist()])
+        probs_out.append([row + [None] for row in target_p[..., 0].tolist()])
+    return ranks_out, probs_out
 
 
 def jlens_payload(reader: Any, step: int, params: Any, jacobians: Mapping[int, np.ndarray], probe: np.ndarray,
                   n_layers: int) -> dict[str, Any]:
-    raise NotImplementedError
+    from .build import _top_tokens  # imported here: build imports this module
+
+    probe = np.asarray(probe)
+    if probe_batch_hash(probe) != reader.batch_hash(step):
+        raise ValueError(f"probe does not match the batch step {step} was recorded on")
+    readings = jlens_readings(reader, step, params, jacobians, n_layers)
+    ln_w, ln_b, wte = lens_params(params)
+    logit = np.stack([logit_lens(reader.tensor(step, f"blocks.{layer}.hook_resid_post"), ln_w, ln_b, wte)
+                      for layer in range(n_layers)])
+    top_tokens, top_probs = _top_tokens(readings)
+    target_rank, target_prob = target_ranks(readings, probe)
+    return _json_ready({
+        "step": step,
+        "layers": [f"blocks.{layer}.hook_resid_post" for layer in range(n_layers)],
+        "top_tokens": top_tokens,
+        "top_probs": top_probs,
+        "target_rank": target_rank,
+        "target_prob": target_prob,
+        "meter": lens_meter(readings, reader.tensor(step, "logits")),
+        "comparison": lens_divergence(readings, logit),
+        "badge": JLENS_BADGE,
+    })
