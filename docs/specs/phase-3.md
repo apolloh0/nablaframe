@@ -121,7 +121,8 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase3/`.
 | 2 | Applying edits at tap sites, including swap (D23, D26) | `interventions/apply.py` | 1 |
 | 3 | Effects, their meters and caches (D24) | `interventions/effects.py` | 2 |
 | 4 | The J-lens experiment | `interventions/jlens_experiment.py` | 3 |
-| 5 | Viewer: compare mode and the J-lens layout fix (D27) | `views/build.py`, `viewer/` | 3 |
+| 5 | Viewer: compare mode (delta 2) and the J-lens layout fix (delta 1) (D27) | `viewer/` | 3 for compare mode; none for the layout fix |
+| 7 | The command line: run a spec on a checkpoint and export its compare payload (D27) | `interventions/cli.py` | 3 |
 | 6 | Phase 3 gates and their report rules | `gates/phase3/`, `reports.py` | All |
 
 ## Out of scope
@@ -137,10 +138,10 @@ Each runs on the Mac and writes one schema-2 report under `reports/phase3/`.
 Written with the stubs. Proposed names:
 
 - **1:** `test_spec_hash_is_canonical`, `test_spec_refers_to_vectors_and_batches_by_hash`, `test_positions_language`
-- **2:** `test_null_edit_is_exact`, `test_zero_alpha_steering_is_exact`, `test_self_swap_is_exact`, `test_full_patch_reproduces_the_source`, `test_full_swap_reproduces_the_other_checkpoint`, `test_edits_only_at_existing_taps`
+- **2:** `test_null_edit_is_exact`, `test_zero_alpha_steering_is_exact`, `test_self_swap_is_exact`, `test_full_patch_reproduces_the_source`, `test_full_swap_reproduces_the_other_checkpoint`, `test_edits_only_at_existing_taps`, `test_edits_respect_positions_and_causality`, `test_mean_and_resample_take_the_reference_values`. A null edit is an edit that selects no positions: it runs the whole edit machinery and changes nothing, so it tests the plumbing without the compiled-program question a self-patch would raise. `attn.hook_pattern` is not editable, because its axes are queries and keys rather than positions
 - **3:** `test_effects_against_the_unintervened_pass`, `test_effect_meter_names_the_identities_checked`, `test_intervention_cache_key_covers_spec_inputs_and_code`
 - **4:** `test_jlens_direction_is_the_pullback_of_the_unembedding`, `test_steering_scales_follow_the_residual_norm`
-- **5:** `test_compare_payload_has_a_meter`, `test_jlens_comparison_columns_come_first`
+- **5:** the compare payload and the viewer's compare mode are tested in delta 2, with the command line that produces them; the J-lens layout fix is checked by hand at H3
 
 ## Settled while drafting
 
