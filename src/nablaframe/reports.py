@@ -1,8 +1,8 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates".
 
-Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/`` or ``reports/phase2/``. The Phase 0
+Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/`` or ``reports/phase3/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
 status must agree with its own measurements.
 
@@ -10,7 +10,7 @@ Report fields, all required, no others allowed (version 2 adds two; see below):
 
 ==================  =============================================================
 schema_version      1 or 2
-gate_id             one of GATE_IDS, PHASE1_GATE_IDS or PHASE2_GATE_IDS
+gate_id             one of GATE_IDS, PHASE1_GATE_IDS, PHASE2_GATE_IDS or PHASE3_GATE_IDS
 status              one of STATUSES; see STATUS RULES below
 measurements        JSON object containing at least REQUIRED_MEASUREMENTS[gate_id];
                     every number finite
@@ -28,6 +28,8 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE2_GATE_IDS = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6")`. The validator accepts them, and a Phase 2 report must use schema version 2. `PHASE2_GATE_IDS` gains G2.7, G2.8 and G2.9. `PHASE2_GATE_IDS` gains G2.10.
 
+`PHASE3_GATE_IDS = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")`. The validator accepts them, and a Phase 3 report must use schema version 2.
+
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
 * G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
@@ -38,7 +40,7 @@ STATUS RULES (a report whose status contradicts its measurements is invalid):
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
-* fail is allowed for any gate except G0.6 and G2.5
+* fail is allowed for any gate except G0.6, G2.5, G3.3 and G3.4
 
 Status rules for Phase 1:
 
@@ -61,6 +63,13 @@ Status rules for Phase 2:
 * G2.8 pass requires `tokens_identical` true, `export_logit_max_abs_diff <= 1e-4` and `jacobian_relative_difference <= 1e-4`.
 * G2.9 pass requires `jacobians_written == jacobians_expected` and `recompute_identical` true.
 * G2.10 pass requires `planted_recovery >= 0.99`, `identity_exact` true, `random_max_accuracy <= 2 * random_chance` and `last_reading_kl_max <= 1e-5`.
+
+Status rules for Phase 3:
+
+* G3.1 pass requires `identities_exact == identities_checked`.
+* G3.2 pass requires `recompute_identical == sample_size` and `cache_keys_distinct` true.
+* G3.3's and G3.4's status is always `pass`: they record, not judge.
+* G3.5 pass requires `builds_identical` true and `external_urls == 0`.
 
 Measurements:
 
@@ -88,6 +97,14 @@ Required measurements for Phase 2:
 * G2.9: `jacobians_written`, `jacobians_expected`, `recompute_identical`, `seconds`
 * G2.10: `planted_recovery`, `identity_exact`, `random_max_accuracy`, `random_chance`, `last_reading_kl_max`, `comparison_by_step`
 
+Required measurements for Phase 3:
+
+* G3.1: `identities_checked`, `identities_exact`, `identities_by_kind`
+* G3.2: `sample_size`, `recompute_identical`, `cache_keys_distinct`
+* G3.3: `layers`, `scale_factors`, `results_by_layer`
+* G3.4: `meters_by_step`
+* G3.5: `builds_identical`, `external_urls`, `payloads`
+
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
 
@@ -107,9 +124,10 @@ SCHEMA_VERSIONS: tuple[int, ...] = (1, 2)
 GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
 PHASE1_GATE_IDS: tuple[str, ...] = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")
 PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6", "G2.7", "G2.8", "G2.9", "G2.10")
-_ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS
+PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
+_ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS
 # Gates written from Phase 1 on, which must use schema version 2.
-_V2_ONLY_GATE_IDS: tuple[str, ...] = PHASE1_GATE_IDS + PHASE2_GATE_IDS
+_V2_ONLY_GATE_IDS: tuple[str, ...] = PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS
 STATUSES: tuple[str, ...] = ("pass", "conditional_pass", "fail")
 ENV_NAMES: tuple[str, ...] = ("nf-jax", "nf-metal", "nf-torch")
 
@@ -169,9 +187,14 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
         "planted_recovery", "identity_exact", "random_max_accuracy", "random_chance", "last_reading_kl_max",
         "comparison_by_step",
     ),
+    "G3.1": ("identities_checked", "identities_exact", "identities_by_kind"),
+    "G3.2": ("sample_size", "recompute_identical", "cache_keys_distinct"),
+    "G3.3": ("layers", "scale_factors", "results_by_layer"),
+    "G3.4": ("meters_by_step",),
+    "G3.5": ("builds_identical", "external_urls", "payloads"),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
-_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5")
+_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4")
 # Gates whose three final-state hashes must agree with ``identical`` under every status.
 _HASH_GATES: tuple[str, ...] = ("G0.2", "G1.3")
 
@@ -417,6 +440,9 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
             at_least("planted_recovery", 0.99), is_("identity_exact", True),
             at_most_times_key("random_max_accuracy", 2, "random_chance"), at_most("last_reading_kl_max", 1e-5),
         ],
+        ("G3.1", "pass"): [equals_key("identities_exact", "identities_checked")],
+        ("G3.2", "pass"): [equals_key("recompute_identical", "sample_size"), is_("cache_keys_distinct", True)],
+        ("G3.5", "pass"): [is_("builds_identical", True), equals("external_urls", 0)],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
 
