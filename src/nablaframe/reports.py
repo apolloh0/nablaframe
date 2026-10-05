@@ -26,7 +26,7 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `GATE_IDS` stays the Phase 0 tuple, because Phase 0's tests and summary loop over it. Phase 1's gates are `PHASE1_GATE_IDS = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")`, and the validator accepts both.
 
-`PHASE2_GATE_IDS = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6")`. The validator accepts them, and a Phase 2 report must use schema version 2. `PHASE2_GATE_IDS` gains G2.7, G2.8 and G2.9.
+`PHASE2_GATE_IDS = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6")`. The validator accepts them, and a Phase 2 report must use schema version 2. `PHASE2_GATE_IDS` gains G2.7, G2.8 and G2.9. `PHASE2_GATE_IDS` gains G2.10.
 
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
@@ -60,6 +60,7 @@ Status rules for Phase 2:
 * G2.7 pass requires `export_matches_params` and `jacobian_recompute_identical` both true.
 * G2.8 pass requires `tokens_identical` true, `export_logit_max_abs_diff <= 1e-4` and `jacobian_relative_difference <= 1e-4`.
 * G2.9 pass requires `jacobians_written == jacobians_expected` and `recompute_identical` true.
+* G2.10 pass requires `planted_recovery >= 0.99`, `identity_exact` true, `random_max_accuracy <= 2 * random_chance` and `last_reading_kl_max <= 1e-5`.
 
 Measurements:
 
@@ -85,6 +86,7 @@ Required measurements for Phase 2:
 * G2.7: `step`, `layer`, `windows`, `export_matches_params`, `jacobian_recompute_identical`
 * G2.8: `windows`, `tokens_identical`, `export_logit_max_abs_diff`, `jacobian_relative_difference`
 * G2.9: `jacobians_written`, `jacobians_expected`, `recompute_identical`, `seconds`
+* G2.10: `planted_recovery`, `identity_exact`, `random_max_accuracy`, `random_chance`, `last_reading_kl_max`, `comparison_by_step`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
@@ -104,7 +106,7 @@ import numpy as np
 SCHEMA_VERSIONS: tuple[int, ...] = (1, 2)
 GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
 PHASE1_GATE_IDS: tuple[str, ...] = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")
-PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6", "G2.7", "G2.8", "G2.9")
+PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6", "G2.7", "G2.8", "G2.9", "G2.10")
 _ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS
 # Gates written from Phase 1 on, which must use schema version 2.
 _V2_ONLY_GATE_IDS: tuple[str, ...] = PHASE1_GATE_IDS + PHASE2_GATE_IDS
@@ -163,6 +165,10 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
     "G2.7": ("step", "layer", "windows", "export_matches_params", "jacobian_recompute_identical"),
     "G2.8": ("windows", "tokens_identical", "export_logit_max_abs_diff", "jacobian_relative_difference"),
     "G2.9": ("jacobians_written", "jacobians_expected", "recompute_identical", "seconds"),
+    "G2.10": (
+        "planted_recovery", "identity_exact", "random_max_accuracy", "random_chance", "last_reading_kl_max",
+        "comparison_by_step",
+    ),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
 _ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5")
@@ -407,6 +413,10 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
             at_most("jacobian_relative_difference", 1e-4),
         ],
         ("G2.9", "pass"): [equals_key("jacobians_written", "jacobians_expected"), is_("recompute_identical", True)],
+        ("G2.10", "pass"): [
+            at_least("planted_recovery", 0.99), is_("identity_exact", True),
+            at_most_times_key("random_max_accuracy", 2, "random_chance"), at_most("last_reading_kl_max", 1e-5),
+        ],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
 
