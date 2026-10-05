@@ -13,6 +13,13 @@
 //   sha256. A mismatch is shown, never hidden. That check is a readout's meter.
 // * The timeline lists the index's steps on its val_loss_curve; every panel follows it.
 //   The probe text is rendered with the index's vocab. Each load shows progress.
+// * When the index lists `jlens`, a J-lens panel sits beside the logit lens. It shows the
+//   same table of top tokens per reading, its meter and badge, and per reading its
+//   Jensen-Shannon divergence and top-1 agreement with the logit lens.
+// * Both lens tables show, per reading, the actual next token's rank and probability from
+//   `target_rank` and `target_prob`, so the next token is visible even outside the top 5.
+// * The layer-structure lens-KL chart uses a log scale, so readings near zero stay
+//   distinguishable.
 //
 // How this page meets it:
 //
@@ -32,6 +39,15 @@
 //   marked as not matching the trace. Without Web Crypto (a page not opened through
 //   localhost), every hash check reads "not checked", never "matches".
 // * Derived payloads without a "meter" are not rendered.
+// * The J-lens panel is hidden unless the index's `views` lists "jlens". Its rows are the
+//   block outputs it reads; each one's comparison is the payload's `comparison` entry for
+//   that reading, a mean over every probe position, against the logit lens at the same
+//   block output. A payload without `comparison` says so in the panel's meter.
+// * Ranks are shown 1-based, as #1 to #5 head the top-token columns, so the outlined next
+//   token in column #k reads rank #k. A view built without `target_rank` and
+//   `target_prob` says so beside its table rather than leaving the columns empty.
+// * On the log-scale chart, a reading at or below zero can't be placed; it is drawn as an
+//   open marker on the bottom edge, and the chart's note says how many there are.
 // * State lives in the address's #fragment (step, sequence, position, layer, head), so a
 //   view can be reopened as it was.
 "use strict";
@@ -647,7 +663,7 @@
     clear($("loss-legend"),
       el("span", {}, "loss on the next token: ", rampLegend("orange", 0, vocabSize ? `ln ${vocabSize} = ${fmt(top, 2)}` : fmt(top, 2), "nats")),
       el("span", {}, el("span", { class: "sw", style: { backgroundImage: "repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px)" } }), "blank: no next token in the window"),
-      el("span", { text: "Click a token to choose its position for the lens and the attribution." }));
+      el("span", { text: "Click a token to choose its position for the lenses and the attribution." }));
   }
 
   async function renderLossMeter(data, atStep) {
@@ -683,6 +699,84 @@
 
   // ---------------------------------------------------------------- logit lens
 
+  const pct = (x) => (x === null || x === undefined || !Number.isFinite(x) ? "?" : `${(100 * x).toFixed(1)}%`);
+
+  // The lens meter's two rows: what it measures, and its last reading.
+  function lensMeterRows(meter, lastNote) {
+    const last = meter[meter.length - 1];
+    return [
+      meterRow("info", "meter", "per reading, over every probe position: KL from the model's own prediction (nats) and top-1 agreement with it, in the “meter” columns"),
+      last ? meterRow("info", "last reading", `KL ${fmt(last.kl_mean)} nats · top-1 agreement ${pct(last.top1_agreement)}. ${lastNote}`)
+        : meterRow("bad", "no per-layer meter in the view", ""),
+    ];
+  }
+
+  const topK = (data) => data.top_tokens?.[0]?.[0]?.[0]?.length ?? 0;
+
+  // The actual next token's rank (1-based on screen) and probability, as two cells.
+  function targetCells(data, l, seq, pos, target) {
+    const rank = data.target_rank?.[l]?.[seq]?.[pos];
+    const prob = data.target_prob?.[l]?.[seq]?.[pos];
+    if (target === null) return [el("td", { class: "num vs muted", text: "none" }), el("td", { class: "num muted", text: "none" })];
+    if (!Number.isInteger(rank)) return [el("td", { class: "num vs", text: "?" }), el("td", { class: "num", text: "?" })];
+    const word = tokenText(target);
+    return [
+      el("td", { class: `num vs${rank < topK(data) ? "" : " outside"}`, title: `“${word}” ranks #${rank + 1} of ${state.index.vocab?.length ?? "the vocabulary"} (0-based ${rank} in the view)`, text: `#${rank + 1}` }),
+      el("td", { class: "num", title: `p(“${word}”) = ${prob}`, text: prob === null || prob === undefined ? "?" : (prob * 100 < 0.1 && prob > 0 ? fmt(prob) : pct(prob)) }),
+    ];
+  }
+
+  // The table both lenses share: top tokens per reading, the next token's rank and probability,
+  // the meter's columns, then any group of columns the caller adds. Groups head the columns, so
+  // their own headings stay short and the table fits beside its neighbour.
+  function lensTable(data, seq, pos, { meter, extra = null }) {
+    const tokens = probeRow();
+    const target = pos + 1 < tokens.length ? tokens[pos + 1] : null;
+    const color = rampFor("blue");
+    const k = topK(data);
+    const group = (text, span, title, cls = "") => el("th", { class: `group ${cls}`, colspan: String(span), title, text });
+    const groups = el("tr", {}, el("th", {}),
+      group(`top ${k} tokens`, k, "each reading's most probable tokens, best first"),
+      group("next token", 2, "the actual next token under this reading", "vs"),
+      group("meter", 2, "probe means: KL from the model's own prediction (nats) and top-1 agreement with it", "vs"),
+      extra ? group(extra.label, extra.heads.length, extra.title, "vs") : null);
+    const head = el("tr", {}, el("th", { text: "reading" }),
+      Array.from({ length: k }, (_, i) => el("th", { text: `#${i + 1}` })),
+      el("th", { class: "num vs", title: "the actual next token's rank under this reading; #1 is the top token", text: "rank" }),
+      el("th", { class: "num", title: "the actual next token's probability under this reading", text: "p" }),
+      el("th", { class: "num vs", title: "KL from the model's own prediction, nats, probe mean", text: "KL" }),
+      el("th", { class: "num", title: "top-1 agreement with the model's own prediction, probe mean", text: "top-1" }),
+      extra ? extra.heads : null);
+    const rows = data.layers.map((layerName, l) => {
+      const ids = data.top_tokens[l][seq][pos];
+      const probs = data.top_probs[l][seq][pos];
+      return el("tr", {},
+        el("td", { class: "mono", title: layerName, text: lensLabel(layerName, l) }),
+        ids.map((id, i) => {
+          const rgb = color(probs[i]);
+          return el("td", {
+            class: `cell${id === target ? " target" : ""}`,
+            style: { background: rgbCss(rgb), color: inkFor(rgb) },
+            title: `token “${tokenText(id)}” (id ${id}) · p = ${probs[i]}${id === target ? " · the actual next token" : ""}`,
+          }, el("div", { text: tokenText(id) }), el("div", { class: "p", text: (probs[i] * 100).toFixed(1) + "%" }));
+        }),
+        targetCells(data, l, seq, pos, target),
+        el("td", { class: "num vs", text: meter[l] ? fmt(meter[l].kl_mean) : "?" }),
+        el("td", { class: "num", text: meter[l] ? pct(meter[l].top1_agreement) : "?" }),
+        extra ? extra.cells(l) : null);
+    });
+    const missingRanks = !Array.isArray(data.target_rank) || !Array.isArray(data.target_prob);
+    return [
+      el("div", { class: "note" }, `Top tokens at “${tokenText(tokens[pos])}”. `,
+        target === null ? "This is the last position, so there's no next token to outline or rank."
+          : `The actual next token, “${tokenText(target)}”, is outlined where it appears, and its rank and probability follow the top ${k}.`),
+      missingRanks ? errorBox("This view has no target_rank or target_prob, so the next token's rank isn't shown. Rebuild the views.") : null,
+      el("div", { class: "scrollx" }, el("table", { class: "lens" }, el("thead", {}, groups, head), el("tbody", {}, rows))),
+      el("div", { class: "legend" }, el("span", {}, "probability ", rampLegend("blue", "0", "1", "")),
+        el("span", {}, el("span", { class: "outside", text: "#n" }), ` next token outside the top ${k}`)),
+    ];
+  }
+
   async function renderLens() {
     const atStep = step();
     const { seq, pos } = state;
@@ -700,39 +794,60 @@
     }
     if (atStep !== step() || seq !== state.seq || pos !== state.pos) return;
     const meter = Array.isArray(data.meter) ? data.meter : [];
-    const last = meter[meter.length - 1];
-    clear($("lens-meter"),
-      meterRow("info", "meter", "per reading, over every probe position: KL from the model's own prediction (nats) and top-1 agreement with it; columns at right"),
-      last ? meterRow("info", "last reading", `KL ${fmt(last.kl_mean)} nats · top-1 agreement ${(100 * last.top1_agreement).toFixed(1)}%. The last reading is the model's own computation.`) : meterRow("bad", "no per-layer meter in the view", ""));
+    clear($("lens-meter"), lensMeterRows(meter, "The last reading is the model's own computation."));
     clear($("lens-badge"), data.badge ? badge(data.badge) : errorBox("This view carries no badge."));
+    clear(body, el("div", { class: "note", text: "What the model would predict if it stopped at each residual stream." }),
+      lensTable(data, seq, pos, { meter }));
+  }
 
-    const tokens = probeRow();
-    const target = pos + 1 < tokens.length ? tokens[pos + 1] : null;
-    const color = rampFor("blue");
-    const head = el("tr", {}, el("th", { text: "reading" }),
-      Array.from({ length: data.top_tokens[0]?.[0]?.[0]?.length ?? 0 }, (_, k) => el("th", { text: `#${k + 1}` })),
-      el("th", { class: "num", text: "KL (nats)" }), el("th", { class: "num", text: "top-1" }));
-    const rows = data.layers.map((layerName, l) => {
-      const ids = data.top_tokens[l][seq][pos];
-      const probs = data.top_probs[l][seq][pos];
-      return el("tr", {},
-        el("td", { class: "mono", title: layerName, text: lensLabel(layerName, l) }),
-        ids.map((id, k) => {
-          const rgb = color(probs[k]);
-          return el("td", {
-            class: `cell${id === target ? " target" : ""}`,
-            style: { background: rgbCss(rgb), color: inkFor(rgb) },
-            title: `token “${tokenText(id)}” (id ${id}) · p = ${probs[k]}${id === target ? " · the actual next token" : ""}`,
-          }, `${tokenText(id)} `, el("span", { style: { opacity: 0.8 }, text: (probs[k] * 100).toFixed(1) + "%" }));
-        }),
-        el("td", { class: "num", text: meter[l] ? fmt(meter[l].kl_mean) : "?" }),
-        el("td", { class: "num", text: meter[l] ? `${(100 * meter[l].top1_agreement).toFixed(1)}%` : "?" }));
-    });
-    clear(body,
-      el("div", { class: "note" }, `Top tokens if the model stopped at each residual stream, at “${tokenText(tokens[pos])}”. `,
-        target === null ? "This is the last position, so there's no next token to outline." : `The actual next token, “${tokenText(target)}”, is outlined where it appears.`),
-      el("div", { class: "scrollx" }, el("table", {}, el("thead", {}, head), el("tbody", {}, rows))),
-      el("div", { class: "legend" }, el("span", {}, "probability ", rampLegend("blue", "0", "1", ""))));
+  // ---------------------------------------------------------------- J-lens
+
+  const hasJLens = () => Array.isArray(state.index?.views) && state.index.views.includes("jlens");
+
+  async function renderJLens() {
+    if (!hasJLens()) return;
+    const atStep = step();
+    const { seq, pos } = state;
+    const body = $("jlens-body");
+    $("jlens-sub").textContent = `sequence ${seq}, position ${pos}`;
+    let data;
+    try {
+      data = await payload("jlens", atStep);
+    } catch (error) {
+      if (atStep !== step()) return;
+      clear($("jlens-meter"), meterRow("bad", "J-lens unavailable", error.message));
+      clear($("jlens-badge"));
+      clear(body);
+      return;
+    }
+    if (atStep !== step() || seq !== state.seq || pos !== state.pos) return;
+    const meter = Array.isArray(data.meter) ? data.meter : [];
+    const comparison = Array.isArray(data.comparison) ? data.comparison : null;
+    const rows = lensMeterRows(meter, "The last block's J is the identity, so the last reading is the logit lens's.");
+    if (comparison) {
+      rows.push(meterRow("info", "vs logit lens", "per reading, over every probe position: Jensen-Shannon divergence (nats) and top-1 agreement with the logit lens at the same block output, in the “vs logit lens” columns"));
+    } else {
+      rows.push(meterRow("bad", "no comparison in the view", "the payload has no comparison with the logit lens, so its columns read ?"));
+    }
+    clear($("jlens-meter"), rows);
+    clear($("jlens-badge"), data.badge ? badge(data.badge) : errorBox("This view carries no badge."));
+    const byLayer = (l) => comparison?.find((c) => c.layer === l);
+    clear(body, el("div", { class: "note", text: "What the model would predict from each block's output, carried to the last block's output by that block's summed Jacobian J (D17), then read as the logit lens reads it." }),
+      lensTable(data, seq, pos, {
+        meter,
+        extra: {
+          label: "vs logit lens",
+          title: "probe means, against the logit lens at the same block output: Jensen-Shannon divergence (nats) and top-1 agreement",
+          heads: [
+            el("th", { class: "num vs", title: "Jensen-Shannon divergence from the logit lens at the same block output, nats, probe mean", text: "JS" }),
+            el("th", { class: "num", title: "top-1 agreement with the logit lens at the same block output, probe mean", text: "top-1" }),
+          ],
+          cells: (l) => {
+            const c = byLayer(l);
+            return [el("td", { class: "num vs", text: c ? fmt(c.js_mean) : "?" }), el("td", { class: "num", text: c ? pct(c.top1_agreement) : "?" })];
+          },
+        },
+      }));
   }
 
   function lensLabel(name, l) {
@@ -1052,16 +1167,26 @@
       (_, i) => (i === 0 ? "embeddings" : `after block ${i - 1}`));
     const charts = [
       lineChart("Mean residual stream norm", "L2 norm", streamNames.map((name, i) => ({ name, points: steps.map((s) => [s, state.layerStructure.get(s).residual_norm_mean[i]]) }))),
-      lineChart("Logit lens KL from the model (probe mean)", "nats", lensNames.map((name, i) => ({ name, points: steps.map((s) => [s, state.layerStructure.get(s).lens_kl[i]]) }))),
+      lineChart("Logit lens KL from the model", "nats", lensNames.map((name, i) => ({ name, points: steps.map((s) => [s, state.layerStructure.get(s).lens_kl[i]]) })), { log: true }),
     ];
     const entropy0 = state.layerStructure.get(steps[0]).attention_entropy;
     const entropyCharts = entropy0.map((heads, l) => lineChart(`Attention entropy, layer ${l}`, "nats",
       heads.map((_, h) => ({ name: `head ${h}`, points: steps.map((s) => [s, state.layerStructure.get(s).attention_entropy[l][h]]) }))));
     clear(body, el("div", { class: "small-multiples" }, charts), el("div", { class: "small-multiples", style: { marginTop: "8px" } }, entropyCharts),
-      el("div", { class: "note", text: "Attention entropy is the mean over sequences and query positions of −Σ p ln p over keys. The dashed line is the current checkpoint." }));
+      el("div", { class: "note", text: "The logit lens KL is its meter's mean over the probe, on a log scale so readings near zero stay apart. Attention entropy is the mean over sequences and query positions of −Σ p ln p over keys. The dashed line is the current checkpoint." }));
   }
 
-  function lineChart(title, unit, series) {
+  // Decades from 10^lo to 10^hi, thinned so at most about four are labelled.
+  function decadeTicks(loExp, hiExp) {
+    const every = Math.max(1, Math.ceil((hiExp - loExp) / 4));
+    const ticks = [];
+    for (let e = hiExp; e >= loExp; e -= every) ticks.push(e);
+    return ticks.reverse();
+  }
+
+  const fmtPow10 = (e) => (e >= -2 && e <= 3 ? String(+(10 ** e).toPrecision(1)) : `1e${e}`);
+
+  function lineChart(title, unit, series, { log = false } = {}) {
     const width = 340;
     const height = 190;
     const m = { l: 46, r: 18, t: 22, b: 26 };
@@ -1069,17 +1194,32 @@
     const maxStep = Math.max(...allSteps);
     const x = xScaleLog(maxStep, m.l, width - m.r);
     const values = series.flatMap((s) => s.points.map((p) => p[1])).filter((v) => v !== null && Number.isFinite(v));
-    let lo = Math.min(0, ...values);
-    let hi = Math.max(...values, lo + 1e-9);
-    const pad = (hi - lo) * 0.05;
-    hi += pad;
-    const y = (v) => m.t + (height - m.t - m.b) * (1 - (v - lo) / (hi - lo));
+    const plotTop = m.t;
+    const plotBottom = height - m.b;
+    // On a log scale only positive values have a place; the axis spans whole decades around them.
+    const placeable = (v) => v !== null && Number.isFinite(v) && (!log || v > 0);
+    let y;
+    let ticks;
+    if (log) {
+      const positive = values.filter((v) => v > 0);
+      const loExp = positive.length ? Math.floor(Math.log10(Math.min(...positive))) : -1;
+      let hiExp = positive.length ? Math.ceil(Math.log10(Math.max(...positive))) : 0;
+      if (hiExp <= loExp) hiExp = loExp + 1;
+      y = (v) => plotTop + (plotBottom - plotTop) * (1 - (Math.log10(v) - loExp) / (hiExp - loExp));
+      ticks = decadeTicks(loExp, hiExp).map((e) => [10 ** e, fmtPow10(e)]);
+    } else {
+      const lo = Math.min(0, ...values);
+      let hi = Math.max(...values, lo + 1e-9);
+      hi += (hi - lo) * 0.05;
+      y = (v) => plotTop + (plotBottom - plotTop) * (1 - (v - lo) / (hi - lo));
+      ticks = niceTicks(lo, hi, 3).map((t) => [t, fmt(t, 2)]);
+    }
     const colors = SERIES();
     const root = svg("svg", { width, height, viewBox: `0 0 ${width} ${height}`, style: "max-width:100%;height:auto", role: "img", "aria-label": title });
-    root.append(svg("text", { x: 0, y: 12, style: "font-weight:600" }, `${title}`), svg("text", { x: width, y: 12, "text-anchor": "end" }, unit));
-    for (const t of niceTicks(lo, hi, 3)) {
+    root.append(svg("text", { x: 0, y: 12, style: "font-weight:600" }, `${title}`), svg("text", { x: width, y: 12, "text-anchor": "end" }, log ? `${unit}, log scale` : unit));
+    for (const [t, label] of ticks) {
       root.append(svg("line", { class: "gridline", x1: m.l, x2: width - m.r, y1: y(t), y2: y(t) }),
-        svg("text", { x: m.l - 4, y: y(t) + 4, "text-anchor": "end" }, fmt(t, 2)));
+        svg("text", { x: m.l - 4, y: y(t) + 4, "text-anchor": "end" }, label));
     }
     root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: height - m.b, y2: height - m.b }));
     for (const t of logTicks(maxStep, 0.16)) root.append(svg("text", { x: x(t), y: height - m.b + 13, "text-anchor": "middle" }, String(t)));
@@ -1090,22 +1230,28 @@
       let d = "";
       let pen = false;
       for (const [st, v] of s.points) {
-        if (v === null || !Number.isFinite(v)) { pen = false; continue; }
+        if (!placeable(v)) { pen = false; continue; }
         d += `${pen ? "L" : "M"}${x(st).toFixed(1)},${y(v).toFixed(1)}`;
         pen = true;
       }
       root.append(svg("path", { d, fill: "none", stroke: colour, "stroke-width": 2, "stroke-linejoin": "round", "stroke-dasharray": i >= colors.length ? "4 3" : null }));
       for (const [st, v] of s.points) {
         if (v === null || !Number.isFinite(v)) continue;
-        const dot = svg("circle", { cx: x(st), cy: y(v), r: st === step() ? 4 : 2.5, fill: colour, stroke: cssVar("--surface-1"), "stroke-width": 1 });
-        dot.append(svg("title", {}, `${s.name} · step ${st}: ${fmt(v, 4)} ${unit}`));
+        const r = st === step() ? 4 : 2.5;
+        // A value a log axis can't place: an open marker on the bottom edge.
+        const dot = placeable(v)
+          ? svg("circle", { cx: x(st), cy: y(v), r, fill: colour, stroke: cssVar("--surface-1"), "stroke-width": 1 })
+          : svg("circle", { cx: x(st), cy: plotBottom, r: r + 0.5, fill: cssVar("--surface-1"), stroke: colour, "stroke-width": 1.5 });
+        dot.append(svg("title", {}, `${s.name} · step ${st}: ${fmt(v, 4)} ${unit}${placeable(v) ? "" : " (at or below zero, so off the log axis; drawn on its bottom edge)"}`));
         root.append(dot);
       }
     });
     const legend = el("div", { class: "legend" }, series.map((s, i) => el("span", {},
       el("span", { class: "sw", style: { background: colors[i % colors.length] } }), s.name)));
     const current = series.map((s) => s.points.find((p) => p[0] === step())).map((p, i) => (p ? `${series[i].name} ${fmt(p[1], 3)}` : null)).filter(Boolean);
-    return el("div", {}, root, legend, el("div", { class: "note", text: `At step ${step()}: ${current.join(" · ")}` }));
+    const offAxis = log ? values.filter((v) => v <= 0).length : 0;
+    return el("div", {}, root, legend, el("div", { class: "note", text: `At step ${step()}: ${current.join(" · ")}` }),
+      offAxis ? el("div", { class: "note", text: `${offAxis} value${offAxis === 1 ? " is" : "s are"} at or below zero, which a log scale can't place: open markers on the bottom edge.` }) : null);
   }
 
   // ---------------------------------------------------------------- orchestration
@@ -1122,6 +1268,7 @@
     renderTimeline();
     report(renderProbe(), "loss-meter");
     report(renderLens(), "lens-meter");
+    report(renderJLens(), "jlens-meter");
     report(renderAttribution(), "attr-meter");
     report(renderAttention(), "attn-meter");
     report(renderResidual(), "resid-meter");
@@ -1152,6 +1299,7 @@
     }
     if (seqChanged || posChanged) {
       report(renderLens(), "lens-meter");
+      report(renderJLens(), "jlens-meter");
       report(renderAttribution(), "attr-meter");
     }
     if (seqChanged || posChanged || layerChanged || headChanged) report(renderAttention(), "attn-meter");
@@ -1235,6 +1383,7 @@
       return;
     }
     state.index = index;
+    $("jlens-panel").hidden = !hasJLens();
     try {
       indexEvents(eventsText);
     } catch (error) {

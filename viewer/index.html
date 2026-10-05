@@ -157,6 +157,12 @@
     .scrollx { overflow-x: auto; }
     td.cell { border-radius: 3px; }
     td.cell.target { outline: 2px solid var(--text-primary); outline-offset: -2px; font-weight: 700; }
+    .outside { color: var(--warning-text); font-weight: 700; }
+    th.vs, td.vs { border-left: 1px solid var(--border); }
+    table.lens th.group { text-align: center; font-weight: normal; font-size: 12px; color: var(--text-muted); border-bottom: none; padding-bottom: 0; }
+    table.lens th, table.lens td { padding-left: 4px; padding-right: 4px; }
+    table.lens td.cell { line-height: 1.2; padding-top: 2px; padding-bottom: 2px; }
+    table.lens td.cell .p { font-size: 11px; opacity: 0.8; }
 
     /* Charts */
     svg text { fill: var(--text-secondary); font-size: 11px; }
@@ -218,15 +224,21 @@
         <div id="lens-badge"></div>
         <div id="lens-body"></div>
       </section>
+      <section class="panel" id="jlens-panel" hidden>
+        <h2>J-lens <span class="sub" id="jlens-sub"></span></h2>
+        <div class="meter" id="jlens-meter"></div>
+        <div id="jlens-badge"></div>
+        <div id="jlens-body"></div>
+      </section>
+    </div>
+
+    <div class="grid2">
       <section class="panel" id="attr-panel">
         <h2>Direct logit attribution <span class="sub" id="attr-sub"></span></h2>
         <div class="meter" id="attr-meter"></div>
         <div id="attr-badge"></div>
         <div id="attr-body"></div>
       </section>
-    </div>
-
-    <div class="grid2">
       <section class="panel" id="attn-panel">
         <h2>Attention pattern <span class="sub" id="attn-sub"></span></h2>
         <div class="controls">
@@ -237,12 +249,13 @@
         <div class="meter" id="attn-meter"></div>
         <div id="attn-body"></div>
       </section>
-      <section class="panel" id="resid-panel">
-        <h2>Residual stream norm <span class="sub" id="resid-sub"></span></h2>
-        <div class="meter" id="resid-meter"></div>
-        <div id="resid-body"></div>
-      </section>
     </div>
+
+    <section class="panel" id="resid-panel">
+      <h2>Residual stream norm <span class="sub" id="resid-sub"></span></h2>
+      <div class="meter" id="resid-meter"></div>
+      <div id="resid-body"></div>
+    </section>
 
     <section class="panel" id="layers-panel">
       <h2>Layer structure <span class="sub">across every checkpoint</span></h2>
