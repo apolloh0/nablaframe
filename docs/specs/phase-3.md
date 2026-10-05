@@ -70,7 +70,7 @@ These test the plumbing exactly. Tests of whether an effect means what it seems 
 - the whole block
 - the embeddings
 
-It's time travel along the scrubber's timeline. Swapping block 1's attention from step 12,208 back to step 1,024, for example, asks which of the model's capabilities that component carries.
+It's time travel along the scrubber's timeline. Swapping block 1's attention from step 12,208 back to step 1,024, for example, asks which of the model's capabilities that component carries. Our weights are tied, so swapping the embeddings also swaps the unembedding: the model's output layer changes along with its input layer, and an embeddings swap must be read that way.
 
 **D27: the viewer stays read-only (D13).** Interventions run in Python, through a small API and a command line, never in the browser. Their results reach the viewer as derived payloads. The viewer gains a compare mode: the unintervened and intervened passes side by side, with the effect's meter.
 
@@ -80,9 +80,11 @@ An intervention's effect is measured against the unintervened pass on the same c
 
 - **the change in the actual next token's logit and loss, per position**
 - **the KL divergence of the intervened prediction from the unintervened one, per position**
-- **the change in any requested tap**
+- **the change in any requested tap:** per position, the L2 norm over the tap's trailing axes of the intervened value minus the unintervened one
 
 The meter beside every effect is its exactness record. The payload names the D25 identity checks that passed for that operation, so a reader knows the plumbing was verified before looking at the effect.
+
+**Every pass goes through `run_intervened`, the unintervened one included.** Edit values must enter the compiled program as inputs. Hooks that bake them in as constants let XLA fold part of the final layer norm, and a full patch then misses its source by up to 1.7e-6 at size S (found in PR #38). The command line, the effects and every gate call `run_intervened` and never build their own hooks.
 
 ## The first experiment: what the J-lens reads
 
@@ -142,6 +144,8 @@ Written with the stubs. Proposed names:
 - **3:** `test_effects_against_the_unintervened_pass`, `test_effect_meter_names_the_identities_checked`, `test_intervention_cache_key_covers_spec_inputs_and_code`
 - **4:** `test_jlens_direction_is_the_pullback_of_the_unembedding`, `test_steering_scales_follow_the_residual_norm`
 - **5:** the compare payload and the viewer's compare mode are tested in delta 2, with the command line that produces them; the J-lens layout fix is checked by hand at H3
+- **6:** `test_experiment_constants`, `test_position_helpers`, `test_phase3_status_rules`
+- **7:** `test_compare_payload_pairs_both_passes`, `test_cli_writes_payload_cache_and_index`, `test_cli_refuses_a_missing_object`
 
 ## Settled while drafting
 
