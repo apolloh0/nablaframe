@@ -20,6 +20,9 @@
 //   `target_rank` and `target_prob`, so the next token is visible even outside the top 5.
 // * The layer-structure lens-KL chart uses a log scale, so readings near zero stay
 //   distinguishable.
+// * In the J-lens table, the "vs logit lens" columns come directly after each reading's
+//   name, before the top tokens, so the comparison D21 records is visible without
+//   scrolling sideways.
 //
 // How this page meets it:
 //
@@ -42,7 +45,9 @@
 // * The J-lens panel is hidden unless the index's `views` lists "jlens". Its rows are the
 //   block outputs it reads; each one's comparison is the payload's `comparison` entry for
 //   that reading, a mean over every probe position, against the logit lens at the same
-//   block output. A payload without `comparison` says so in the panel's meter.
+//   block output. A payload without `comparison` says so in the panel's meter. Its table
+//   is the logit lens's with the "vs logit lens" group moved up front, between the reading
+//   and the top tokens; the logit lens's own table keeps its order.
 // * Ranks are shown 1-based, as #1 to #5 head the top-token columns, so the outlined next
 //   token in column #k reads rank #k. A view built without `target_rank` and
 //   `target_prob` says so beside its table rather than leaving the columns empty.
@@ -727,43 +732,46 @@
   }
 
   // The table both lenses share: top tokens per reading, the next token's rank and probability,
-  // the meter's columns, then any group of columns the caller adds. Groups head the columns, so
-  // their own headings stay short and the table fits beside its neighbour.
+  // then the meter's columns. Any group of columns the caller adds comes first, right after the
+  // reading's name, so it stays on screen when the table scrolls sideways. Groups head the
+  // columns, so their own headings stay short and the table fits beside its neighbour.
   function lensTable(data, seq, pos, { meter, extra = null }) {
     const tokens = probeRow();
     const target = pos + 1 < tokens.length ? tokens[pos + 1] : null;
     const color = rampFor("blue");
     const k = topK(data);
     const group = (text, span, title, cls = "") => el("th", { class: `group ${cls}`, colspan: String(span), title, text });
+    // With a group up front, the top tokens open with a border of their own.
+    const tokensVs = extra ? "vs" : "";
     const groups = el("tr", {}, el("th", {}),
-      group(`top ${k} tokens`, k, "each reading's most probable tokens, best first"),
+      extra ? group(extra.label, extra.heads.length, extra.title, "vs") : null,
+      group(`top ${k} tokens`, k, "each reading's most probable tokens, best first", tokensVs),
       group("next token", 2, "the actual next token under this reading", "vs"),
-      group("meter", 2, "probe means: KL from the model's own prediction (nats) and top-1 agreement with it", "vs"),
-      extra ? group(extra.label, extra.heads.length, extra.title, "vs") : null);
+      group("meter", 2, "probe means: KL from the model's own prediction (nats) and top-1 agreement with it", "vs"));
     const head = el("tr", {}, el("th", { text: "reading" }),
-      Array.from({ length: k }, (_, i) => el("th", { text: `#${i + 1}` })),
+      extra ? extra.heads : null,
+      Array.from({ length: k }, (_, i) => el("th", { class: i === 0 ? tokensVs : "", text: `#${i + 1}` })),
       el("th", { class: "num vs", title: "the actual next token's rank under this reading; #1 is the top token", text: "rank" }),
       el("th", { class: "num", title: "the actual next token's probability under this reading", text: "p" }),
       el("th", { class: "num vs", title: "KL from the model's own prediction, nats, probe mean", text: "KL" }),
-      el("th", { class: "num", title: "top-1 agreement with the model's own prediction, probe mean", text: "top-1" }),
-      extra ? extra.heads : null);
+      el("th", { class: "num", title: "top-1 agreement with the model's own prediction, probe mean", text: "top-1" }));
     const rows = data.layers.map((layerName, l) => {
       const ids = data.top_tokens[l][seq][pos];
       const probs = data.top_probs[l][seq][pos];
       return el("tr", {},
         el("td", { class: "mono", title: layerName, text: lensLabel(layerName, l) }),
+        extra ? extra.cells(l) : null,
         ids.map((id, i) => {
           const rgb = color(probs[i]);
           return el("td", {
-            class: `cell${id === target ? " target" : ""}`,
+            class: `cell${id === target ? " target" : ""}${i === 0 && extra ? " vs" : ""}`,
             style: { background: rgbCss(rgb), color: inkFor(rgb) },
             title: `token “${tokenText(id)}” (id ${id}) · p = ${probs[i]}${id === target ? " · the actual next token" : ""}`,
           }, el("div", { text: tokenText(id) }), el("div", { class: "p", text: (probs[i] * 100).toFixed(1) + "%" }));
         }),
         targetCells(data, l, seq, pos, target),
         el("td", { class: "num vs", text: meter[l] ? fmt(meter[l].kl_mean) : "?" }),
-        el("td", { class: "num", text: meter[l] ? pct(meter[l].top1_agreement) : "?" }),
-        extra ? extra.cells(l) : null);
+        el("td", { class: "num", text: meter[l] ? pct(meter[l].top1_agreement) : "?" }));
     });
     const missingRanks = !Array.isArray(data.target_rank) || !Array.isArray(data.target_prob);
     return [
