@@ -47,7 +47,7 @@ Carried over from Glasshouse.
 | 0 | Gates: backend, determinism, throughput, cross-check; trace schema; oracle harness | [specs/phase-0.md](specs/phase-0.md), done at H0 on 2026-09-29 |
 | 1 | Reference model, trainer and trace engine; oracle wired in | [specs/phase-1.md](specs/phase-1.md), done at H1 on 2026-10-02 |
 | 2 | Read-only views and the timeline scrubber | [specs/phase-2.md](specs/phase-2.md), done on 2026-10-04 (D16, D21) |
-| 3 | Manipulation: ablate, patch, steer, swap | Not yet written |
+| 3 | Manipulation: ablate, patch, steer, swap | [specs/phase-3.md](specs/phase-3.md) |
 | 4 | Ground-truth zoo and discrimination tests | Not yet written |
 | 5 | Gestures and dictionaries | Not yet written |
 | 6 | Self-learning ledger | Not yet written |
