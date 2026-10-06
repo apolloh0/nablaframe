@@ -1,0 +1,103 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G3.5",
+  "git_commit": "5ec438d3b51a5d81f8f0ee341bbd1a3979be55ee",
+  "git_dirty": false,
+  "measurements": {
+    "builds_identical": true,
+    "examples": [
+      {
+        "file": "intervention-68e4a8c56f797b305984a70b2472e1811f85386887afc76179246b7cc95c8ed5-step-12208.json",
+        "op": "zero",
+        "spec_hash": "68e4a8c56f797b305984a70b2472e1811f85386887afc76179246b7cc95c8ed5",
+        "taps": [
+          "blocks.0.hook_attn_out",
+          "blocks.3.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-c6f13f1e1c87b13dac351ba95d34a3625b3288ec0a6737243d20486fd200ea8a-step-12208.json",
+        "op": "mean",
+        "spec_hash": "c6f13f1e1c87b13dac351ba95d34a3625b3288ec0a6737243d20486fd200ea8a",
+        "taps": [
+          "blocks.1.hook_mlp_out",
+          "blocks.3.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-4bc4f8b5a35edfc2eb78628472a7d46abf09a01dff137676989605b4d9523800-step-12208.json",
+        "op": "resample",
+        "spec_hash": "4bc4f8b5a35edfc2eb78628472a7d46abf09a01dff137676989605b4d9523800",
+        "taps": [
+          "blocks.1.hook_resid_mid",
+          "blocks.3.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-e0ddd1aa40dce9420191fd21d9623032a57c9a6f8cd80dc9025fe99a17131f44-step-12208.json",
+        "op": "patch",
+        "spec_hash": "e0ddd1aa40dce9420191fd21d9623032a57c9a6f8cd80dc9025fe99a17131f44",
+        "taps": [
+          "blocks.1.hook_resid_post",
+          "blocks.3.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-524457d604b1905eb105cd77ddba2709b61e7998953972b215a0fb8236085e2e-step-12208.json",
+        "op": "add",
+        "spec_hash": "524457d604b1905eb105cd77ddba2709b61e7998953972b215a0fb8236085e2e",
+        "taps": [
+          "blocks.0.hook_resid_post",
+          "blocks.3.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-389138dbb4204680263d48a6bdc46141460220b50a437228d7378bc1dc64da66-step-12208.json",
+        "op": "swap",
+        "spec_hash": "389138dbb4204680263d48a6bdc46141460220b50a437228d7378bc1dc64da66",
+        "taps": [
+          "blocks.1.hook_attn_out",
+          "blocks.3.hook_resid_post"
+        ]
+      }
+    ],
+    "external_url_matches": [],
+    "external_urls": 0,
+    "files_compared": 13,
+    "files_differing": [],
+    "first_build_dir": "runs/phase3/g35_viewer/first-build",
+    "index_entries": 6,
+    "interventions_dir": "runs/phase3/interventions",
+    "payload_files": [
+      "intervention-389138dbb4204680263d48a6bdc46141460220b50a437228d7378bc1dc64da66-step-12208.json",
+      "intervention-4bc4f8b5a35edfc2eb78628472a7d46abf09a01dff137676989605b4d9523800-step-12208.json",
+      "intervention-524457d604b1905eb105cd77ddba2709b61e7998953972b215a0fb8236085e2e-step-12208.json",
+      "intervention-68e4a8c56f797b305984a70b2472e1811f85386887afc76179246b7cc95c8ed5-step-12208.json",
+      "intervention-c6f13f1e1c87b13dac351ba95d34a3625b3288ec0a6737243d20486fd200ea8a-step-12208.json",
+      "intervention-e0ddd1aa40dce9420191fd21d9623032a57c9a6f8cd80dc9025fe99a17131f44-step-12208.json"
+    ],
+    "payloads": 6,
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "runs_failed": [],
+    "step": 12208,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    },
+    "viewer_files": [
+      "app.js",
+      "index.html"
+    ]
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-06T00:30:35Z",
+  "xla_flags": ""
+}

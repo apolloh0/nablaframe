@@ -1,0 +1,305 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G3.2",
+  "git_commit": "5ec438d3b51a5d81f8f0ee341bbd1a3979be55ee",
+  "git_dirty": false,
+  "measurements": {
+    "cache_keys_distinct": true,
+    "cli_keys_match": true,
+    "code_identity": "3745bedffa6458cf5d460c709ecdc458bb57f0fd",
+    "key_grid": {
+      "batches": 2,
+      "checkpoints": 28,
+      "codes": 2,
+      "specs": 12
+    },
+    "keys_checked": 1344,
+    "keys_distinct": true,
+    "keys_stable": true,
+    "operations": [
+      "add",
+      "mean",
+      "patch",
+      "resample",
+      "swap",
+      "zero"
+    ],
+    "recompute_identical": 12,
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "runs": 3,
+    "runs_failed": [],
+    "sample_seed": 0,
+    "sample_size": 12,
+    "specs": [
+      {
+        "identical": true,
+        "key": "d076d1f9c0d8fc61cc3fa51158c5a4166b4fc991576479557c7c11aa37319dd5",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "source": "abd9ddabc6cbe8e2184aaad131028415affdb92302d1afe958b2d86f84ed3f0f"
+              },
+              "op": "patch",
+              "positions": {
+                "range": [
+                  171,
+                  172
+                ]
+              },
+              "tap": "blocks.0.hook_resid_post"
+            }
+          ]
+        },
+        "spec_hash": "e872b58bb40d413dc71497e71775b4c05c9dc1899c879ec0c08f257fa424e542"
+      },
+      {
+        "identical": true,
+        "key": "16c91911f4aebf31034c59ceb0c2a0fa83127141fb49c2cb776c570b737f412d",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "reference": "0608dedb84aa86b0164fc1219831197e9cd3c80b2698d69bb503e34091ca551a",
+                "seed": 50127
+              },
+              "op": "resample",
+              "positions": {
+                "range": [
+                  141,
+                  145
+                ]
+              },
+              "tap": "blocks.1.hook_resid_mid"
+            }
+          ]
+        },
+        "spec_hash": "0997e720c8715732312d5e36538abff2aa6412f44120e9ec58835f01882435a2"
+      },
+      {
+        "identical": true,
+        "key": "8ee7614c35f8d7f68ae14544b971fbc9ff7b459f5154bdefcf5d33434920c202",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "reference": "0608dedb84aa86b0164fc1219831197e9cd3c80b2698d69bb503e34091ca551a"
+              },
+              "op": "mean",
+              "positions": {
+                "range": [
+                  44,
+                  63
+                ]
+              },
+              "tap": "blocks.2.hook_resid_post"
+            }
+          ]
+        },
+        "spec_hash": "8ed675e80f07614ede1c98ed824d3481328d4003ef2a7fd61321c7ddbe3851b7"
+      },
+      {
+        "identical": true,
+        "key": "0c6a1cfcc04287fe727aae7f39e599705283f102eb569f31b2b46c10ec8b8f4c",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "alpha": 1.8959376194094206,
+                "vector": "274f61e7c7eae17e423fed04b26a73b8eb193cbb0f8230082c6ec82d71b32349"
+              },
+              "op": "add",
+              "positions": "all",
+              "tap": "blocks.3.hook_resid_mid"
+            }
+          ]
+        },
+        "spec_hash": "d524ee54888ed2b45d9c223c9779a46ef75285d78379d89092903858c0610b1e"
+      },
+      {
+        "identical": true,
+        "key": "c059175c6f88a9e874010f005301700bb02371182c7ba73a3e3d8a9680b69757",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "step": 1000
+              },
+              "op": "swap",
+              "positions": "all",
+              "tap": "blocks.1.mlp"
+            }
+          ]
+        },
+        "spec_hash": "18004e452f6b18fc8ccfc5fe746507e396000151b3ba3b149dc86593ed3d95da"
+      },
+      {
+        "identical": true,
+        "key": "fd76c2faf595f36505190407a9b2cad89641afb28590a2848feb25c846f48dfe",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "step": 2000
+              },
+              "op": "swap",
+              "positions": "all",
+              "tap": "blocks.1.mlp"
+            }
+          ]
+        },
+        "spec_hash": "8edf57f72ca2feacee2b27377fbb8439cf0278b0526f5ff11a042e255010ee00"
+      },
+      {
+        "identical": true,
+        "key": "a799b503a357583e68392190b60b26692c1e796e6d5c18f7bb17072a864e9a08",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {},
+              "op": "zero",
+              "positions": [
+                48,
+                62,
+                120,
+                221
+              ],
+              "tap": "blocks.3.hook_resid_pre"
+            }
+          ]
+        },
+        "spec_hash": "3db8f82028c305d3c7362a5a353732396067ca6e9623e79079d57fdb8307a7cc"
+      },
+      {
+        "identical": true,
+        "key": "7d9fadf45f98ac3bb2ba482a0de64981174a3ffd49daf3be71713f959d9059b8",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "source": "abd9ddabc6cbe8e2184aaad131028415affdb92302d1afe958b2d86f84ed3f0f"
+              },
+              "op": "patch",
+              "positions": "all",
+              "tap": "blocks.1.hook_resid_pre"
+            }
+          ]
+        },
+        "spec_hash": "25831f78b32ad25ef3c1efdfaf1fae173944e83f5d7238fff05a45f15d59e5c8"
+      },
+      {
+        "identical": true,
+        "key": "9114601a3c37b02754915a529ed9103651c0bc76c6f4b306fd3e1fdbc8e459ab",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {},
+              "op": "zero",
+              "positions": [
+                23,
+                69,
+                224
+              ],
+              "tap": "blocks.3.hook_resid_pre"
+            }
+          ]
+        },
+        "spec_hash": "0bf70c3a0e8b0d30d81252b23a64db3fbdd07394bfc35a0752b6c77ecf939da7"
+      },
+      {
+        "identical": true,
+        "key": "47ba7a4b6762ac7325d0f9b165f32f5c2d21c48d7795e2829b5d8b72f6d4d54f",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "alpha": 0.5138351915156334,
+                "vector": "0a0429f0b79a5976750be7d1c287bfdf6d3608d69e8f25bba4d411aa45a3e9b6"
+              },
+              "op": "add",
+              "positions": [
+                3,
+                109
+              ],
+              "tap": "blocks.0.hook_resid_pre"
+            }
+          ]
+        },
+        "spec_hash": "1e77118e3fb55fd7af4e40c2a830db305f87d5896bafb81f0477818406c6e1b7"
+      },
+      {
+        "identical": true,
+        "key": "8479bb0486b927f672aacd513491a88fa416b764d0f737d23f1edb35a42db31c",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "reference": "0608dedb84aa86b0164fc1219831197e9cd3c80b2698d69bb503e34091ca551a",
+                "seed": 5009
+              },
+              "op": "resample",
+              "positions": [
+                38,
+                43,
+                191,
+                246
+              ],
+              "tap": "blocks.1.ln2.hook_normalized"
+            }
+          ]
+        },
+        "spec_hash": "2a909bdf9824046c8480b467e714095a335852df64697ac73762d9e5fad07a67"
+      },
+      {
+        "identical": true,
+        "key": "c4f3d4687fe5d6d87c41bededc5fe497d4fb2864a9f141f003858d9dda2496f6",
+        "key_matches": true,
+        "spec": {
+          "edits": [
+            {
+              "args": {
+                "reference": "0608dedb84aa86b0164fc1219831197e9cd3c80b2698d69bb503e34091ca551a"
+              },
+              "op": "mean",
+              "positions": [
+                33,
+                42,
+                206
+              ],
+              "tap": "blocks.3.ln2.hook_normalized"
+            }
+          ]
+        },
+        "spec_hash": "8429c4eef98180cd379c921de66b1109175597fb04e88a7715be16d31f5848f1"
+      }
+    ],
+    "step": 12208,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    },
+    "work_dir": "runs/phase3/g32_determinism"
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-06T00:26:12Z",
+  "xla_flags": ""
+}

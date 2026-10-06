@@ -1,0 +1,49 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G3.1",
+  "git_commit": "5ec438d3b51a5d81f8f0ee341bbd1a3979be55ee",
+  "git_dirty": false,
+  "measurements": {
+    "failures": [],
+    "identities_by_kind": {
+      "full patch": 1,
+      "full swap": 1,
+      "null edit": 31,
+      "self-swap": 14,
+      "steering at zero": 31
+    },
+    "identities_checked": 78,
+    "identities_checked_by_kind": {
+      "full patch": 1,
+      "full swap": 1,
+      "null edit": 31,
+      "self-swap": 14,
+      "steering at zero": 31
+    },
+    "identities_exact": 78,
+    "patch_source_differs": true,
+    "patch_source_sha256": "abd9ddabc6cbe8e2184aaad131028415affdb92302d1afe958b2d86f84ed3f0f",
+    "probe_sha256": "f3774467b9c4794158230270d0a2bcbe9d90ff20c9f3e74e069b6ae1b6e19a53",
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "step": 12208,
+    "swap_step": 1024,
+    "swap_step_differs": true,
+    "taps_compared": 35,
+    "vector_seed": 0,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-06T00:25:44Z",
+  "xla_flags": ""
+}

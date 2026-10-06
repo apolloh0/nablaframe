@@ -1,0 +1,2974 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G3.4",
+  "git_commit": "5ec438d3b51a5d81f8f0ee341bbd1a3979be55ee",
+  "git_dirty": false,
+  "measurements": {
+    "fit_range": [
+      16,
+      254
+    ],
+    "meters_by_step": {
+      "0": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.04174888547684556,
+              "layer": 0,
+              "top1_agreement": 0.05596234309623431
+            },
+            {
+              "kl_mean": 0.018454023513207893,
+              "layer": 1,
+              "top1_agreement": 0.17364016736401675
+            },
+            {
+              "kl_mean": 0.007179279157921344,
+              "layer": 2,
+              "top1_agreement": 0.35721757322175735
+            },
+            {
+              "kl_mean": 1.1514944847585716e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.0412808661830235,
+              "layer": 0,
+              "top1_agreement": 0.05908203125
+            },
+            {
+              "kl_mean": 0.018244907219752363,
+              "layer": 1,
+              "top1_agreement": 0.1806640625
+            },
+            {
+              "kl_mean": 0.00708819495785127,
+              "layer": 2,
+              "top1_agreement": 0.36474609375
+            },
+            {
+              "kl_mean": 1.1578345890634534e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.11529183828702068,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 0.06426145756790681,
+              "layer": 1,
+              "top1_agreement": 0.00993723849372385
+            },
+            {
+              "kl_mean": 0.03566838625671028,
+              "layer": 2,
+              "top1_agreement": 0.08263598326359832
+            },
+            {
+              "kl_mean": 0.01502330442750969,
+              "layer": 3,
+              "top1_agreement": 0.19822175732217573
+            },
+            {
+              "kl_mean": 1.1514944847585716e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11531430884493055,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 0.06392726375809166,
+              "layer": 1,
+              "top1_agreement": 0.01220703125
+            },
+            {
+              "kl_mean": 0.03560377462107148,
+              "layer": 2,
+              "top1_agreement": 0.0830078125
+            },
+            {
+              "kl_mean": 0.01504925952205605,
+              "layer": 3,
+              "top1_agreement": 0.20263671875
+            },
+            {
+              "kl_mean": 1.1578345890634534e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "1": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.04175487074759431,
+              "layer": 0,
+              "top1_agreement": 0.05596234309623431
+            },
+            {
+              "kl_mean": 0.018464700237039926,
+              "layer": 1,
+              "top1_agreement": 0.17154811715481172
+            },
+            {
+              "kl_mean": 0.007183605846931308,
+              "layer": 2,
+              "top1_agreement": 0.3514644351464435
+            },
+            {
+              "kl_mean": 1.5856473562672937e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.04128648646113711,
+              "layer": 0,
+              "top1_agreement": 0.05859375
+            },
+            {
+              "kl_mean": 0.01825514150915047,
+              "layer": 1,
+              "top1_agreement": 0.17822265625
+            },
+            {
+              "kl_mean": 0.0070923564193396665,
+              "layer": 2,
+              "top1_agreement": 0.35888671875
+            },
+            {
+              "kl_mean": 1.5891485288824457e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.11523623274798711,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 0.06427078963294808,
+              "layer": 1,
+              "top1_agreement": 0.00993723849372385
+            },
+            {
+              "kl_mean": 0.035680978918735735,
+              "layer": 2,
+              "top1_agreement": 0.08158995815899582
+            },
+            {
+              "kl_mean": 0.015022814070371383,
+              "layer": 3,
+              "top1_agreement": 0.19769874476987448
+            },
+            {
+              "kl_mean": 1.5856473562672937e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11525977657189412,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 0.06393629365946364,
+              "layer": 1,
+              "top1_agreement": 0.01220703125
+            },
+            {
+              "kl_mean": 0.03561610962945666,
+              "layer": 2,
+              "top1_agreement": 0.08203125
+            },
+            {
+              "kl_mean": 0.015048845770308178,
+              "layer": 3,
+              "top1_agreement": 0.2021484375
+            },
+            {
+              "kl_mean": 1.5891485288824457e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "1000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 2.7048631314871012,
+              "layer": 0,
+              "top1_agreement": 0.19299163179916318
+            },
+            {
+              "kl_mean": 1.9254387869659821,
+              "layer": 1,
+              "top1_agreement": 0.3054393305439331
+            },
+            {
+              "kl_mean": 0.9088960902590139,
+              "layer": 2,
+              "top1_agreement": 0.4827405857740586
+            },
+            {
+              "kl_mean": 9.146448095968458e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 2.671451356416104,
+              "layer": 0,
+              "top1_agreement": 0.1923828125
+            },
+            {
+              "kl_mean": 1.8983974412568976,
+              "layer": 1,
+              "top1_agreement": 0.3037109375
+            },
+            {
+              "kl_mean": 0.8987562719407477,
+              "layer": 2,
+              "top1_agreement": 0.47998046875
+            },
+            {
+              "kl_mean": 9.25886207336584e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 16.110301506955764,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.4868787689442196,
+              "layer": 1,
+              "top1_agreement": 0.3310669456066946
+            },
+            {
+              "kl_mean": 1.4714023533791414,
+              "layer": 2,
+              "top1_agreement": 0.37552301255230125
+            },
+            {
+              "kl_mean": 0.5032151958385667,
+              "layer": 3,
+              "top1_agreement": 0.6134937238493724
+            },
+            {
+              "kl_mean": 9.146448095968458e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 16.03564707996724,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.4762194489586866,
+              "layer": 1,
+              "top1_agreement": 0.33056640625
+            },
+            {
+              "kl_mean": 1.4548808910168343,
+              "layer": 2,
+              "top1_agreement": 0.3759765625
+            },
+            {
+              "kl_mean": 0.5064775037826045,
+              "layer": 3,
+              "top1_agreement": 0.61279296875
+            },
+            {
+              "kl_mean": 9.25886207336584e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "10000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.683555716227121,
+              "layer": 0,
+              "top1_agreement": 0.04654811715481171
+            },
+            {
+              "kl_mean": 3.8754634413690403,
+              "layer": 1,
+              "top1_agreement": 0.12552301255230125
+            },
+            {
+              "kl_mean": 2.363596515707401,
+              "layer": 2,
+              "top1_agreement": 0.2557531380753138
+            },
+            {
+              "kl_mean": 1.548332254516651e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.633153745906318,
+              "layer": 0,
+              "top1_agreement": 0.046875
+            },
+            {
+              "kl_mean": 3.8530422853585735,
+              "layer": 1,
+              "top1_agreement": 0.12451171875
+            },
+            {
+              "kl_mean": 2.3390276528702563,
+              "layer": 2,
+              "top1_agreement": 0.2578125
+            },
+            {
+              "kl_mean": 1.555744831430633e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 28.981161408744217,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.086207187392515,
+              "layer": 1,
+              "top1_agreement": 0.22489539748953974
+            },
+            {
+              "kl_mean": 2.3977634545467374,
+              "layer": 2,
+              "top1_agreement": 0.2944560669456067
+            },
+            {
+              "kl_mean": 1.3246868640728935,
+              "layer": 3,
+              "top1_agreement": 0.4811715481171548
+            },
+            {
+              "kl_mean": 1.548332254516651e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 28.933113329715567,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.066754749024697,
+              "layer": 1,
+              "top1_agreement": 0.22412109375
+            },
+            {
+              "kl_mean": 2.3821335013309204,
+              "layer": 2,
+              "top1_agreement": 0.29541015625
+            },
+            {
+              "kl_mean": 1.3103872231634452,
+              "layer": 3,
+              "top1_agreement": 0.48193359375
+            },
+            {
+              "kl_mean": 1.555744831430633e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "1024": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 2.622430981950583,
+              "layer": 0,
+              "top1_agreement": 0.18357740585774057
+            },
+            {
+              "kl_mean": 1.9531117360645243,
+              "layer": 1,
+              "top1_agreement": 0.2803347280334728
+            },
+            {
+              "kl_mean": 0.9421430528561585,
+              "layer": 2,
+              "top1_agreement": 0.4743723849372385
+            },
+            {
+              "kl_mean": 9.692165139429174e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 2.592515590101475,
+              "layer": 0,
+              "top1_agreement": 0.18505859375
+            },
+            {
+              "kl_mean": 1.921906528533216,
+              "layer": 1,
+              "top1_agreement": 0.27783203125
+            },
+            {
+              "kl_mean": 0.9313841779126004,
+              "layer": 2,
+              "top1_agreement": 0.47119140625
+            },
+            {
+              "kl_mean": 9.716209891462215e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 16.33199859459845,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.5037064503108084,
+              "layer": 1,
+              "top1_agreement": 0.33734309623430964
+            },
+            {
+              "kl_mean": 1.5286288794167997,
+              "layer": 2,
+              "top1_agreement": 0.3561715481171548
+            },
+            {
+              "kl_mean": 0.5197043902973975,
+              "layer": 3,
+              "top1_agreement": 0.6035564853556485
+            },
+            {
+              "kl_mean": 9.692165139429174e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 16.252968338190605,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.4912453293611072,
+              "layer": 1,
+              "top1_agreement": 0.33447265625
+            },
+            {
+              "kl_mean": 1.505230926069831,
+              "layer": 2,
+              "top1_agreement": 0.35986328125
+            },
+            {
+              "kl_mean": 0.5213233423413897,
+              "layer": 3,
+              "top1_agreement": 0.60107421875
+            },
+            {
+              "kl_mean": 9.716209891462215e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "11000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.811322321040499,
+              "layer": 0,
+              "top1_agreement": 0.04288702928870293
+            },
+            {
+              "kl_mean": 3.911910553629246,
+              "layer": 1,
+              "top1_agreement": 0.1192468619246862
+            },
+            {
+              "kl_mean": 2.4239580391718327,
+              "layer": 2,
+              "top1_agreement": 0.24843096234309622
+            },
+            {
+              "kl_mean": 1.5180374977418748e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.758934528751907,
+              "layer": 0,
+              "top1_agreement": 0.0439453125
+            },
+            {
+              "kl_mean": 3.8885808182295944,
+              "layer": 1,
+              "top1_agreement": 0.11669921875
+            },
+            {
+              "kl_mean": 2.398012542144256,
+              "layer": 2,
+              "top1_agreement": 0.248046875
+            },
+            {
+              "kl_mean": 1.5249879953868446e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 29.38916033036213,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.1556293947346914,
+              "layer": 1,
+              "top1_agreement": 0.22541841004184102
+            },
+            {
+              "kl_mean": 2.449615699311809,
+              "layer": 2,
+              "top1_agreement": 0.28870292887029286
+            },
+            {
+              "kl_mean": 1.3448658115538492,
+              "layer": 3,
+              "top1_agreement": 0.49947698744769875
+            },
+            {
+              "kl_mean": 1.5180374977418748e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 29.34456950041741,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.1371711224823784,
+              "layer": 1,
+              "top1_agreement": 0.2265625
+            },
+            {
+              "kl_mean": 2.4355931275902165,
+              "layer": 2,
+              "top1_agreement": 0.2900390625
+            },
+            {
+              "kl_mean": 1.332476240487442,
+              "layer": 3,
+              "top1_agreement": 0.49853515625
+            },
+            {
+              "kl_mean": 1.5249879953868446e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "12000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.799600368608818,
+              "layer": 0,
+              "top1_agreement": 0.04602510460251046
+            },
+            {
+              "kl_mean": 3.962385250428795,
+              "layer": 1,
+              "top1_agreement": 0.11663179916317992
+            },
+            {
+              "kl_mean": 2.447796816099161,
+              "layer": 2,
+              "top1_agreement": 0.24633891213389122
+            },
+            {
+              "kl_mean": 1.5968637076291284e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.751631808629927,
+              "layer": 0,
+              "top1_agreement": 0.046875
+            },
+            {
+              "kl_mean": 3.93879692052841,
+              "layer": 1,
+              "top1_agreement": 0.11474609375
+            },
+            {
+              "kl_mean": 2.4221712906686816,
+              "layer": 2,
+              "top1_agreement": 0.24609375
+            },
+            {
+              "kl_mean": 1.604518845964705e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 29.76776818552228,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 3.1803618466580077,
+              "layer": 1,
+              "top1_agreement": 0.2149581589958159
+            },
+            {
+              "kl_mean": 2.4895812410529126,
+              "layer": 2,
+              "top1_agreement": 0.29497907949790797
+            },
+            {
+              "kl_mean": 1.4022488490553355,
+              "layer": 3,
+              "top1_agreement": 0.49006276150627615
+            },
+            {
+              "kl_mean": 1.5968637076291284e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 29.71873322401891,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 3.1651950893636327,
+              "layer": 1,
+              "top1_agreement": 0.21533203125
+            },
+            {
+              "kl_mean": 2.473679814381863,
+              "layer": 2,
+              "top1_agreement": 0.296875
+            },
+            {
+              "kl_mean": 1.387661993544266,
+              "layer": 3,
+              "top1_agreement": 0.49169921875
+            },
+            {
+              "kl_mean": 1.604518845964705e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "12208": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.836555793098031,
+              "layer": 0,
+              "top1_agreement": 0.043933054393305436
+            },
+            {
+              "kl_mean": 3.9719162300478223,
+              "layer": 1,
+              "top1_agreement": 0.12133891213389121
+            },
+            {
+              "kl_mean": 2.4363895151491914,
+              "layer": 2,
+              "top1_agreement": 0.24581589958158995
+            },
+            {
+              "kl_mean": 1.5103832100872515e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.78590649528962,
+              "layer": 0,
+              "top1_agreement": 0.04443359375
+            },
+            {
+              "kl_mean": 3.9477369158440965,
+              "layer": 1,
+              "top1_agreement": 0.11865234375
+            },
+            {
+              "kl_mean": 2.4109863696750464,
+              "layer": 2,
+              "top1_agreement": 0.2470703125
+            },
+            {
+              "kl_mean": 1.5221392024866945e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 29.813927931218057,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.1630112534078076,
+              "layer": 1,
+              "top1_agreement": 0.22489539748953974
+            },
+            {
+              "kl_mean": 2.4941639875667376,
+              "layer": 2,
+              "top1_agreement": 0.29131799163179917
+            },
+            {
+              "kl_mean": 1.3947001619462833,
+              "layer": 3,
+              "top1_agreement": 0.4932008368200837
+            },
+            {
+              "kl_mean": 1.5103832100872515e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 29.76741275674452,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.149048619431076,
+              "layer": 1,
+              "top1_agreement": 0.22412109375
+            },
+            {
+              "kl_mean": 2.4781342804658433,
+              "layer": 2,
+              "top1_agreement": 0.29150390625
+            },
+            {
+              "kl_mean": 1.3808340344205237,
+              "layer": 3,
+              "top1_agreement": 0.49169921875
+            },
+            {
+              "kl_mean": 1.5221392024866945e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "128": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.5434739666729763,
+              "layer": 0,
+              "top1_agreement": 0.62918410041841
+            },
+            {
+              "kl_mean": 0.1800928377721843,
+              "layer": 1,
+              "top1_agreement": 0.7442468619246861
+            },
+            {
+              "kl_mean": 0.037897488416213494,
+              "layer": 2,
+              "top1_agreement": 0.8765690376569037
+            },
+            {
+              "kl_mean": 2.5404286252981857e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.5405960447180874,
+              "layer": 0,
+              "top1_agreement": 0.6201171875
+            },
+            {
+              "kl_mean": 0.17730262698494903,
+              "layer": 1,
+              "top1_agreement": 0.744140625
+            },
+            {
+              "kl_mean": 0.037263565156652946,
+              "layer": 2,
+              "top1_agreement": 0.8779296875
+            },
+            {
+              "kl_mean": 2.5435934519430124e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 1.9627596161084775,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 1.1620073738853283,
+              "layer": 1,
+              "top1_agreement": 0.6511506276150628
+            },
+            {
+              "kl_mean": 0.4052869929490431,
+              "layer": 2,
+              "top1_agreement": 0.7897489539748954
+            },
+            {
+              "kl_mean": 0.07624437812595417,
+              "layer": 3,
+              "top1_agreement": 0.8373430962343096
+            },
+            {
+              "kl_mean": 2.5404286252981857e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 1.9578935969481588,
+              "layer": 0,
+              "top1_agreement": 0.0009765625
+            },
+            {
+              "kl_mean": 1.1761050752523132,
+              "layer": 1,
+              "top1_agreement": 0.64697265625
+            },
+            {
+              "kl_mean": 0.40613273650919,
+              "layer": 2,
+              "top1_agreement": 0.78955078125
+            },
+            {
+              "kl_mean": 0.07609774736978339,
+              "layer": 3,
+              "top1_agreement": 0.83447265625
+            },
+            {
+              "kl_mean": 2.5435934519430124e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "16": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.04364124486798242,
+              "layer": 0,
+              "top1_agreement": 0.018305439330543932
+            },
+            {
+              "kl_mean": 0.019697882553433164,
+              "layer": 1,
+              "top1_agreement": 0.17311715481171547
+            },
+            {
+              "kl_mean": 0.008144823665851219,
+              "layer": 2,
+              "top1_agreement": 0.34414225941422594
+            },
+            {
+              "kl_mean": 1.4168073468063123e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.04304630411108805,
+              "layer": 0,
+              "top1_agreement": 0.02490234375
+            },
+            {
+              "kl_mean": 0.019437218235234574,
+              "layer": 1,
+              "top1_agreement": 0.1796875
+            },
+            {
+              "kl_mean": 0.008026952586733482,
+              "layer": 2,
+              "top1_agreement": 0.35546875
+            },
+            {
+              "kl_mean": 1.4191549249586717e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.10999742326275021,
+              "layer": 0,
+              "top1_agreement": 0.06694560669456066
+            },
+            {
+              "kl_mean": 0.06572881629374933,
+              "layer": 1,
+              "top1_agreement": 0.005753138075313808
+            },
+            {
+              "kl_mean": 0.034445358610452816,
+              "layer": 2,
+              "top1_agreement": 0.09100418410041841
+            },
+            {
+              "kl_mean": 0.014279387033614964,
+              "layer": 3,
+              "top1_agreement": 0.24267782426778242
+            },
+            {
+              "kl_mean": 1.4168073468063123e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11008361318900693,
+              "layer": 0,
+              "top1_agreement": 0.0634765625
+            },
+            {
+              "kl_mean": 0.06539882286424964,
+              "layer": 1,
+              "top1_agreement": 0.00732421875
+            },
+            {
+              "kl_mean": 0.034465473142690266,
+              "layer": 2,
+              "top1_agreement": 0.09375
+            },
+            {
+              "kl_mean": 0.01433037279904003,
+              "layer": 3,
+              "top1_agreement": 0.2509765625
+            },
+            {
+              "kl_mean": 1.4191549249586717e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "2": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.04176326231154076,
+              "layer": 0,
+              "top1_agreement": 0.053347280334728034
+            },
+            {
+              "kl_mean": 0.01848429450807504,
+              "layer": 1,
+              "top1_agreement": 0.16579497907949792
+            },
+            {
+              "kl_mean": 0.007191481148872078,
+              "layer": 2,
+              "top1_agreement": 0.34989539748953974
+            },
+            {
+              "kl_mean": 1.4822265786355679e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.0412941971668946,
+              "layer": 0,
+              "top1_agreement": 0.05615234375
+            },
+            {
+              "kl_mean": 0.018273865030480733,
+              "layer": 1,
+              "top1_agreement": 0.173828125
+            },
+            {
+              "kl_mean": 0.007099911063985775,
+              "layer": 2,
+              "top1_agreement": 0.3583984375
+            },
+            {
+              "kl_mean": 1.4815663506614196e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.11512601548019938,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 0.06428998248555731,
+              "layer": 1,
+              "top1_agreement": 0.00993723849372385
+            },
+            {
+              "kl_mean": 0.03570541952776485,
+              "layer": 2,
+              "top1_agreement": 0.08054393305439331
+            },
+            {
+              "kl_mean": 0.01502351835106964,
+              "layer": 3,
+              "top1_agreement": 0.19926778242677826
+            },
+            {
+              "kl_mean": 1.4822265786355679e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11515158919884302,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 0.06395481755133006,
+              "layer": 1,
+              "top1_agreement": 0.01220703125
+            },
+            {
+              "kl_mean": 0.035640001405224817,
+              "layer": 2,
+              "top1_agreement": 0.0810546875
+            },
+            {
+              "kl_mean": 0.015049614631480256,
+              "layer": 3,
+              "top1_agreement": 0.20458984375
+            },
+            {
+              "kl_mean": 1.4815663506614196e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "2000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 3.691147980302511,
+              "layer": 0,
+              "top1_agreement": 0.10460251046025104
+            },
+            {
+              "kl_mean": 2.623788418573023,
+              "layer": 1,
+              "top1_agreement": 0.1846234309623431
+            },
+            {
+              "kl_mean": 1.4107784086018569,
+              "layer": 2,
+              "top1_agreement": 0.38964435146443516
+            },
+            {
+              "kl_mean": 1.1922838570502205e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 3.6504010731520267,
+              "layer": 0,
+              "top1_agreement": 0.10498046875
+            },
+            {
+              "kl_mean": 2.5910089218692867,
+              "layer": 1,
+              "top1_agreement": 0.185546875
+            },
+            {
+              "kl_mean": 1.3901911911563796,
+              "layer": 2,
+              "top1_agreement": 0.392578125
+            },
+            {
+              "kl_mean": 1.1911738938722202e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 21.46438734041711,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.935916206275765,
+              "layer": 1,
+              "top1_agreement": 0.2881799163179916
+            },
+            {
+              "kl_mean": 1.886638532644998,
+              "layer": 2,
+              "top1_agreement": 0.3075313807531381
+            },
+            {
+              "kl_mean": 0.7412650223570405,
+              "layer": 3,
+              "top1_agreement": 0.5601464435146444
+            },
+            {
+              "kl_mean": 1.1922838570502205e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 21.35494924287093,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.9104121234951221,
+              "layer": 1,
+              "top1_agreement": 0.2880859375
+            },
+            {
+              "kl_mean": 1.8557999906375031,
+              "layer": 2,
+              "top1_agreement": 0.310546875
+            },
+            {
+              "kl_mean": 0.7360954505562005,
+              "layer": 3,
+              "top1_agreement": 0.556640625
+            },
+            {
+              "kl_mean": 1.1911738938722202e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "2048": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 3.6562223657159008,
+              "layer": 0,
+              "top1_agreement": 0.10669456066945607
+            },
+            {
+              "kl_mean": 2.616610706296387,
+              "layer": 1,
+              "top1_agreement": 0.18357740585774057
+            },
+            {
+              "kl_mean": 1.4283854409202699,
+              "layer": 2,
+              "top1_agreement": 0.37918410041841005
+            },
+            {
+              "kl_mean": 1.2062699623649976e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 3.6210458002409567,
+              "layer": 0,
+              "top1_agreement": 0.107421875
+            },
+            {
+              "kl_mean": 2.585689698423548,
+              "layer": 1,
+              "top1_agreement": 0.18505859375
+            },
+            {
+              "kl_mean": 1.4104816071115034,
+              "layer": 2,
+              "top1_agreement": 0.38427734375
+            },
+            {
+              "kl_mean": 1.224500075675116e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 21.592005954812883,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.9656174749858735,
+              "layer": 1,
+              "top1_agreement": 0.2897489539748954
+            },
+            {
+              "kl_mean": 1.892649921765732,
+              "layer": 2,
+              "top1_agreement": 0.3043933054393305
+            },
+            {
+              "kl_mean": 0.7741580901073405,
+              "layer": 3,
+              "top1_agreement": 0.5617154811715481
+            },
+            {
+              "kl_mean": 1.2062699623649976e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 21.485315705876197,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 1.9370406666340512,
+              "layer": 1,
+              "top1_agreement": 0.29052734375
+            },
+            {
+              "kl_mean": 1.8606610074385619,
+              "layer": 2,
+              "top1_agreement": 0.310546875
+            },
+            {
+              "kl_mean": 0.7649425499651226,
+              "layer": 3,
+              "top1_agreement": 0.5625
+            },
+            {
+              "kl_mean": 1.224500075675116e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "256": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 1.031819808003881,
+              "layer": 0,
+              "top1_agreement": 0.5010460251046025
+            },
+            {
+              "kl_mean": 0.4947262688948338,
+              "layer": 1,
+              "top1_agreement": 0.6835774058577406
+            },
+            {
+              "kl_mean": 0.1058310501744115,
+              "layer": 2,
+              "top1_agreement": 0.8326359832635983
+            },
+            {
+              "kl_mean": 4.296397996416869e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 1.0271178764040059,
+              "layer": 0,
+              "top1_agreement": 0.5029296875
+            },
+            {
+              "kl_mean": 0.49414507919859496,
+              "layer": 1,
+              "top1_agreement": 0.6826171875
+            },
+            {
+              "kl_mean": 0.10614576442787133,
+              "layer": 2,
+              "top1_agreement": 0.83251953125
+            },
+            {
+              "kl_mean": 4.235108891784862e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.055919259547061,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 1.3221941404851005,
+              "layer": 1,
+              "top1_agreement": 0.627092050209205
+            },
+            {
+              "kl_mean": 0.5243460485953555,
+              "layer": 2,
+              "top1_agreement": 0.766213389121339
+            },
+            {
+              "kl_mean": 0.1262059890124338,
+              "layer": 3,
+              "top1_agreement": 0.8535564853556485
+            },
+            {
+              "kl_mean": 4.296397996416869e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.0316901364572715,
+              "layer": 0,
+              "top1_agreement": 0.0009765625
+            },
+            {
+              "kl_mean": 1.3165648558213046,
+              "layer": 1,
+              "top1_agreement": 0.62109375
+            },
+            {
+              "kl_mean": 0.521762200048066,
+              "layer": 2,
+              "top1_agreement": 0.763671875
+            },
+            {
+              "kl_mean": 0.12656760167313807,
+              "layer": 3,
+              "top1_agreement": 0.85205078125
+            },
+            {
+              "kl_mean": 4.235108891784862e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "3000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 4.502664097246264,
+              "layer": 0,
+              "top1_agreement": 0.07165271966527197
+            },
+            {
+              "kl_mean": 3.178851240136562,
+              "layer": 1,
+              "top1_agreement": 0.14748953974895398
+            },
+            {
+              "kl_mean": 1.79523658655921,
+              "layer": 2,
+              "top1_agreement": 0.3284518828451883
+            },
+            {
+              "kl_mean": 1.2538848972289173e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 4.444670601702809,
+              "layer": 0,
+              "top1_agreement": 0.07275390625
+            },
+            {
+              "kl_mean": 3.136910109360043,
+              "layer": 1,
+              "top1_agreement": 0.1474609375
+            },
+            {
+              "kl_mean": 1.7659233031060977,
+              "layer": 2,
+              "top1_agreement": 0.33544921875
+            },
+            {
+              "kl_mean": 1.2468381500576924e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 23.647525913591217,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.255109892026587,
+              "layer": 1,
+              "top1_agreement": 0.27144351464435146
+            },
+            {
+              "kl_mean": 2.006418632170066,
+              "layer": 2,
+              "top1_agreement": 0.30857740585774057
+            },
+            {
+              "kl_mean": 0.9366622578607591,
+              "layer": 3,
+              "top1_agreement": 0.5271966527196653
+            },
+            {
+              "kl_mean": 1.2538848972289173e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 23.546919337346132,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.222983102875858,
+              "layer": 1,
+              "top1_agreement": 0.27490234375
+            },
+            {
+              "kl_mean": 1.9753572624524325,
+              "layer": 2,
+              "top1_agreement": 0.31298828125
+            },
+            {
+              "kl_mean": 0.9266586039657283,
+              "layer": 3,
+              "top1_agreement": 0.52783203125
+            },
+            {
+              "kl_mean": 1.2468381500576924e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "32": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.055805431543487674,
+              "layer": 0,
+              "top1_agreement": 0.08472803347280335
+            },
+            {
+              "kl_mean": 0.025539810655977196,
+              "layer": 1,
+              "top1_agreement": 0.9874476987447699
+            },
+            {
+              "kl_mean": 0.010065482375705667,
+              "layer": 2,
+              "top1_agreement": 1.0
+            },
+            {
+              "kl_mean": 1.6714735127608338e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.05504842788472239,
+              "layer": 0,
+              "top1_agreement": 0.0830078125
+            },
+            {
+              "kl_mean": 0.02534188974779081,
+              "layer": 1,
+              "top1_agreement": 0.9697265625
+            },
+            {
+              "kl_mean": 0.010010040554928148,
+              "layer": 2,
+              "top1_agreement": 0.9990234375
+            },
+            {
+              "kl_mean": 1.6651284518414055e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.11401664508583939,
+              "layer": 0,
+              "top1_agreement": 0.08786610878661087
+            },
+            {
+              "kl_mean": 0.06700049199078385,
+              "layer": 1,
+              "top1_agreement": 0.011506276150627616
+            },
+            {
+              "kl_mean": 0.0309652487319934,
+              "layer": 2,
+              "top1_agreement": 0.944560669456067
+            },
+            {
+              "kl_mean": 0.011810829177849572,
+              "layer": 3,
+              "top1_agreement": 1.0
+            },
+            {
+              "kl_mean": 1.6714735127608338e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11375067042513962,
+              "layer": 0,
+              "top1_agreement": 0.08837890625
+            },
+            {
+              "kl_mean": 0.06699526621894736,
+              "layer": 1,
+              "top1_agreement": 0.01123046875
+            },
+            {
+              "kl_mean": 0.031241837006628585,
+              "layer": 2,
+              "top1_agreement": 0.9169921875
+            },
+            {
+              "kl_mean": 0.01193340039501685,
+              "layer": 3,
+              "top1_agreement": 0.9990234375
+            },
+            {
+              "kl_mean": 1.6651284518414055e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "4": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.04180235568039947,
+              "layer": 0,
+              "top1_agreement": 0.051255230125523014
+            },
+            {
+              "kl_mean": 0.01856204876318506,
+              "layer": 1,
+              "top1_agreement": 0.16213389121338911
+            },
+            {
+              "kl_mean": 0.007218782090774224,
+              "layer": 2,
+              "top1_agreement": 0.3446652719665272
+            },
+            {
+              "kl_mean": 1.5283253790228928e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.04132976035956337,
+              "layer": 0,
+              "top1_agreement": 0.05419921875
+            },
+            {
+              "kl_mean": 0.018347795412275884,
+              "layer": 1,
+              "top1_agreement": 0.1708984375
+            },
+            {
+              "kl_mean": 0.007125896611720863,
+              "layer": 2,
+              "top1_agreement": 0.3525390625
+            },
+            {
+              "kl_mean": 1.5270165955599326e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.11474377779833561,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 0.06435525255667437,
+              "layer": 1,
+              "top1_agreement": 0.00993723849372385
+            },
+            {
+              "kl_mean": 0.035794338221417046,
+              "layer": 2,
+              "top1_agreement": 0.07897489539748954
+            },
+            {
+              "kl_mean": 0.015023136224756536,
+              "layer": 3,
+              "top1_agreement": 0.200836820083682
+            },
+            {
+              "kl_mean": 1.5283253790228928e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11477659059253371,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 0.0640185571936257,
+              "layer": 1,
+              "top1_agreement": 0.01171875
+            },
+            {
+              "kl_mean": 0.03572671193548188,
+              "layer": 2,
+              "top1_agreement": 0.080078125
+            },
+            {
+              "kl_mean": 0.01504930252736576,
+              "layer": 3,
+              "top1_agreement": 0.20654296875
+            },
+            {
+              "kl_mean": 1.5270165955599326e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "4000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 4.758720838398377,
+              "layer": 0,
+              "top1_agreement": 0.07322175732217573
+            },
+            {
+              "kl_mean": 3.3464941179833625,
+              "layer": 1,
+              "top1_agreement": 0.14173640167364016
+            },
+            {
+              "kl_mean": 1.8800913735955829,
+              "layer": 2,
+              "top1_agreement": 0.29602510460251047
+            },
+            {
+              "kl_mean": 1.2748841738675906e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 4.706677573803784,
+              "layer": 0,
+              "top1_agreement": 0.0751953125
+            },
+            {
+              "kl_mean": 3.3086806159759163,
+              "layer": 1,
+              "top1_agreement": 0.14208984375
+            },
+            {
+              "kl_mean": 1.8565693433962112,
+              "layer": 2,
+              "top1_agreement": 0.2958984375
+            },
+            {
+              "kl_mean": 1.2871479954831625e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 24.607306500984084,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 2.404076003142481,
+              "layer": 1,
+              "top1_agreement": 0.2719665271966527
+            },
+            {
+              "kl_mean": 2.096030144812319,
+              "layer": 2,
+              "top1_agreement": 0.3106694560669456
+            },
+            {
+              "kl_mean": 1.017765963769142,
+              "layer": 3,
+              "top1_agreement": 0.5188284518828452
+            },
+            {
+              "kl_mean": 1.2748841738675906e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 24.530954719557773,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 2.3720791222780395,
+              "layer": 1,
+              "top1_agreement": 0.275390625
+            },
+            {
+              "kl_mean": 2.0604126321207894,
+              "layer": 2,
+              "top1_agreement": 0.31640625
+            },
+            {
+              "kl_mean": 1.0041419499754491,
+              "layer": 3,
+              "top1_agreement": 0.52001953125
+            },
+            {
+              "kl_mean": 1.2871479954831625e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "4096": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 4.779116878743859,
+              "layer": 0,
+              "top1_agreement": 0.06694560669456066
+            },
+            {
+              "kl_mean": 3.2769844427700785,
+              "layer": 1,
+              "top1_agreement": 0.14173640167364016
+            },
+            {
+              "kl_mean": 1.8327092787081751,
+              "layer": 2,
+              "top1_agreement": 0.3263598326359833
+            },
+            {
+              "kl_mean": 1.3198190957752283e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 4.728567046543242,
+              "layer": 0,
+              "top1_agreement": 0.06591796875
+            },
+            {
+              "kl_mean": 3.244059014822354,
+              "layer": 1,
+              "top1_agreement": 0.14013671875
+            },
+            {
+              "kl_mean": 1.8086647937812628,
+              "layer": 2,
+              "top1_agreement": 0.326171875
+            },
+            {
+              "kl_mean": 1.33122974871359e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 24.736141792243163,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.4233917551097597,
+              "layer": 1,
+              "top1_agreement": 0.2662133891213389
+            },
+            {
+              "kl_mean": 2.0972171610820616,
+              "layer": 2,
+              "top1_agreement": 0.3132845188284519
+            },
+            {
+              "kl_mean": 1.0061585610793602,
+              "layer": 3,
+              "top1_agreement": 0.5261506276150628
+            },
+            {
+              "kl_mean": 1.3198190957752283e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 24.652620425769378,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.38887048543641,
+              "layer": 1,
+              "top1_agreement": 0.2705078125
+            },
+            {
+              "kl_mean": 2.061715374098263,
+              "layer": 2,
+              "top1_agreement": 0.31884765625
+            },
+            {
+              "kl_mean": 0.9922136276152909,
+              "layer": 3,
+              "top1_agreement": 0.5244140625
+            },
+            {
+              "kl_mean": 1.33122974871359e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "5000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.067599137295134,
+              "layer": 0,
+              "top1_agreement": 0.06589958158995816
+            },
+            {
+              "kl_mean": 3.5084892003272805,
+              "layer": 1,
+              "top1_agreement": 0.1297071129707113
+            },
+            {
+              "kl_mean": 2.0227933170954615,
+              "layer": 2,
+              "top1_agreement": 0.29236401673640167
+            },
+            {
+              "kl_mean": 1.4184545501796188e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.007157559946141,
+              "layer": 0,
+              "top1_agreement": 0.06982421875
+            },
+            {
+              "kl_mean": 3.4685787043400627,
+              "layer": 1,
+              "top1_agreement": 0.13134765625
+            },
+            {
+              "kl_mean": 1.9921670464640244,
+              "layer": 2,
+              "top1_agreement": 0.29443359375
+            },
+            {
+              "kl_mean": 1.434676133933366e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 25.548870993095562,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.5799362635526157,
+              "layer": 1,
+              "top1_agreement": 0.25
+            },
+            {
+              "kl_mean": 2.1572621157090697,
+              "layer": 2,
+              "top1_agreement": 0.3002092050209205
+            },
+            {
+              "kl_mean": 1.0739990301290772,
+              "layer": 3,
+              "top1_agreement": 0.5172594142259415
+            },
+            {
+              "kl_mean": 1.4184545501796188e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 25.483391635739544,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.5448838670057112,
+              "layer": 1,
+              "top1_agreement": 0.25390625
+            },
+            {
+              "kl_mean": 2.1235116497303577,
+              "layer": 2,
+              "top1_agreement": 0.3076171875
+            },
+            {
+              "kl_mean": 1.061078092895277,
+              "layer": 3,
+              "top1_agreement": 0.5185546875
+            },
+            {
+              "kl_mean": 1.434676133933366e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "512": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 1.9071024050871825,
+              "layer": 0,
+              "top1_agreement": 0.30962343096234307
+            },
+            {
+              "kl_mean": 1.3496233571473237,
+              "layer": 1,
+              "top1_agreement": 0.4408995815899582
+            },
+            {
+              "kl_mean": 0.5122194458860727,
+              "layer": 2,
+              "top1_agreement": 0.6375523012552301
+            },
+            {
+              "kl_mean": 6.506177936924131e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 1.9005001526120067,
+              "layer": 0,
+              "top1_agreement": 0.3076171875
+            },
+            {
+              "kl_mean": 1.3441228913982113,
+              "layer": 1,
+              "top1_agreement": 0.44580078125
+            },
+            {
+              "kl_mean": 0.510604847487624,
+              "layer": 2,
+              "top1_agreement": 0.64111328125
+            },
+            {
+              "kl_mean": 6.494795171069129e-14,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 9.824461193428638,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 1.2249717680359606,
+              "layer": 1,
+              "top1_agreement": 0.4189330543933054
+            },
+            {
+              "kl_mean": 0.8186964051284528,
+              "layer": 2,
+              "top1_agreement": 0.5099372384937239
+            },
+            {
+              "kl_mean": 0.28781379085764053,
+              "layer": 3,
+              "top1_agreement": 0.7050209205020921
+            },
+            {
+              "kl_mean": 6.506177936924131e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 9.785874446657083,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 1.2201912148626521,
+              "layer": 1,
+              "top1_agreement": 0.41845703125
+            },
+            {
+              "kl_mean": 0.8224771222176641,
+              "layer": 2,
+              "top1_agreement": 0.5068359375
+            },
+            {
+              "kl_mean": 0.2938049715945389,
+              "layer": 3,
+              "top1_agreement": 0.69970703125
+            },
+            {
+              "kl_mean": 6.494795171069129e-14,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "6000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.194277605582904,
+              "layer": 0,
+              "top1_agreement": 0.05700836820083682
+            },
+            {
+              "kl_mean": 3.651255937981159,
+              "layer": 1,
+              "top1_agreement": 0.125
+            },
+            {
+              "kl_mean": 2.1829389747235024,
+              "layer": 2,
+              "top1_agreement": 0.2777196652719665
+            },
+            {
+              "kl_mean": 1.444471429480894e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.132316232071334,
+              "layer": 0,
+              "top1_agreement": 0.056640625
+            },
+            {
+              "kl_mean": 3.607908023852391,
+              "layer": 1,
+              "top1_agreement": 0.1259765625
+            },
+            {
+              "kl_mean": 2.1433662894980294,
+              "layer": 2,
+              "top1_agreement": 0.27978515625
+            },
+            {
+              "kl_mean": 1.4453188279790435e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 26.306691445107784,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 2.7038326626212075,
+              "layer": 1,
+              "top1_agreement": 0.24163179916317992
+            },
+            {
+              "kl_mean": 2.1670172278553874,
+              "layer": 2,
+              "top1_agreement": 0.3070083682008368
+            },
+            {
+              "kl_mean": 1.1448872566845647,
+              "layer": 3,
+              "top1_agreement": 0.5057531380753139
+            },
+            {
+              "kl_mean": 1.444471429480894e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 26.250081583226613,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 2.6696809525765803,
+              "layer": 1,
+              "top1_agreement": 0.24609375
+            },
+            {
+              "kl_mean": 2.136492877493358,
+              "layer": 2,
+              "top1_agreement": 0.31005859375
+            },
+            {
+              "kl_mean": 1.1273008907516586,
+              "layer": 3,
+              "top1_agreement": 0.505859375
+            },
+            {
+              "kl_mean": 1.4453188279790435e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "64": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.13658457482012357,
+              "layer": 0,
+              "top1_agreement": 0.24790794979079497
+            },
+            {
+              "kl_mean": 0.03894279150270222,
+              "layer": 1,
+              "top1_agreement": 0.8373430962343096
+            },
+            {
+              "kl_mean": 0.009334878682987375,
+              "layer": 2,
+              "top1_agreement": 0.9680962343096234
+            },
+            {
+              "kl_mean": 4.564803341445471e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.1365283914772126,
+              "layer": 0,
+              "top1_agreement": 0.25634765625
+            },
+            {
+              "kl_mean": 0.03922340156275758,
+              "layer": 1,
+              "top1_agreement": 0.83837890625
+            },
+            {
+              "kl_mean": 0.009407074700353037,
+              "layer": 2,
+              "top1_agreement": 0.966796875
+            },
+            {
+              "kl_mean": 4.565794528377226e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.2513598861891195,
+              "layer": 0,
+              "top1_agreement": 0.08786610878661087
+            },
+            {
+              "kl_mean": 0.1426755140960708,
+              "layer": 1,
+              "top1_agreement": 0.10826359832635983
+            },
+            {
+              "kl_mean": 0.04238170561930688,
+              "layer": 2,
+              "top1_agreement": 0.8676778242677824
+            },
+            {
+              "kl_mean": 0.009456758168110431,
+              "layer": 3,
+              "top1_agreement": 0.9942468619246861
+            },
+            {
+              "kl_mean": 4.564803341445471e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.25015127607111615,
+              "layer": 0,
+              "top1_agreement": 0.08837890625
+            },
+            {
+              "kl_mean": 0.14417923213991468,
+              "layer": 1,
+              "top1_agreement": 0.119140625
+            },
+            {
+              "kl_mean": 0.04309967684354205,
+              "layer": 2,
+              "top1_agreement": 0.869140625
+            },
+            {
+              "kl_mean": 0.009588002257207472,
+              "layer": 3,
+              "top1_agreement": 0.99365234375
+            },
+            {
+              "kl_mean": 4.565794528377226e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "7000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.442342869490218,
+              "layer": 0,
+              "top1_agreement": 0.05700836820083682
+            },
+            {
+              "kl_mean": 3.706004551988279,
+              "layer": 1,
+              "top1_agreement": 0.11820083682008369
+            },
+            {
+              "kl_mean": 2.2601674543812145,
+              "layer": 2,
+              "top1_agreement": 0.26098326359832635
+            },
+            {
+              "kl_mean": 1.492926334762662e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.38812443591351,
+              "layer": 0,
+              "top1_agreement": 0.05712890625
+            },
+            {
+              "kl_mean": 3.676229050979082,
+              "layer": 1,
+              "top1_agreement": 0.11572265625
+            },
+            {
+              "kl_mean": 2.228387672316372,
+              "layer": 2,
+              "top1_agreement": 0.26318359375
+            },
+            {
+              "kl_mean": 1.4880613971680276e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 27.075074667496022,
+              "layer": 0,
+              "top1_agreement": 0.0005230125523012552
+            },
+            {
+              "kl_mean": 2.8363834307923197,
+              "layer": 1,
+              "top1_agreement": 0.23744769874476987
+            },
+            {
+              "kl_mean": 2.307229473281882,
+              "layer": 2,
+              "top1_agreement": 0.2955020920502092
+            },
+            {
+              "kl_mean": 1.230587644284468,
+              "layer": 3,
+              "top1_agreement": 0.5109832635983264
+            },
+            {
+              "kl_mean": 1.492926334762662e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 27.028968501565412,
+              "layer": 0,
+              "top1_agreement": 0.00048828125
+            },
+            {
+              "kl_mean": 2.8071659460724403,
+              "layer": 1,
+              "top1_agreement": 0.23779296875
+            },
+            {
+              "kl_mean": 2.2791438919692464,
+              "layer": 2,
+              "top1_agreement": 0.29833984375
+            },
+            {
+              "kl_mean": 1.2129633529456383,
+              "layer": 3,
+              "top1_agreement": 0.51171875
+            },
+            {
+              "kl_mean": 1.4880613971680276e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "8": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.04202895721466001,
+              "layer": 0,
+              "top1_agreement": 0.05387029288702929
+            },
+            {
+              "kl_mean": 0.018861331104426095,
+              "layer": 1,
+              "top1_agreement": 0.16213389121338911
+            },
+            {
+              "kl_mean": 0.007350820412614504,
+              "layer": 2,
+              "top1_agreement": 0.34518828451882844
+            },
+            {
+              "kl_mean": 1.4576646796975386e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.04153649475123032,
+              "layer": 0,
+              "top1_agreement": 0.05859375
+            },
+            {
+              "kl_mean": 0.01863092733004445,
+              "layer": 1,
+              "top1_agreement": 0.16943359375
+            },
+            {
+              "kl_mean": 0.007251669195333893,
+              "layer": 2,
+              "top1_agreement": 0.35302734375
+            },
+            {
+              "kl_mean": 1.4484568673498609e-15,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 0.11340319257290744,
+              "layer": 0,
+              "top1_agreement": 0.0020920502092050207
+            },
+            {
+              "kl_mean": 0.06460350547752246,
+              "layer": 1,
+              "top1_agreement": 0.011506276150627616
+            },
+            {
+              "kl_mean": 0.035995747695882825,
+              "layer": 2,
+              "top1_agreement": 0.08368200836820083
+            },
+            {
+              "kl_mean": 0.01499201921450357,
+              "layer": 3,
+              "top1_agreement": 0.1893305439330544
+            },
+            {
+              "kl_mean": 1.4576646796975386e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 0.11346065165700804,
+              "layer": 0,
+              "top1_agreement": 0.001953125
+            },
+            {
+              "kl_mean": 0.06426344618066741,
+              "layer": 1,
+              "top1_agreement": 0.01318359375
+            },
+            {
+              "kl_mean": 0.03592582826536782,
+              "layer": 2,
+              "top1_agreement": 0.08447265625
+            },
+            {
+              "kl_mean": 0.015019311860045069,
+              "layer": 3,
+              "top1_agreement": 0.19775390625
+            },
+            {
+              "kl_mean": 1.4484568673498609e-15,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "8000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.447994421586256,
+              "layer": 0,
+              "top1_agreement": 0.051255230125523014
+            },
+            {
+              "kl_mean": 3.7925431680276205,
+              "layer": 1,
+              "top1_agreement": 0.12866108786610878
+            },
+            {
+              "kl_mean": 2.2954964850406863,
+              "layer": 2,
+              "top1_agreement": 0.2557531380753138
+            },
+            {
+              "kl_mean": 1.5121904369839104e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.396428550517372,
+              "layer": 0,
+              "top1_agreement": 0.0517578125
+            },
+            {
+              "kl_mean": 3.7629345387342763,
+              "layer": 1,
+              "top1_agreement": 0.12548828125
+            },
+            {
+              "kl_mean": 2.26530228464071,
+              "layer": 2,
+              "top1_agreement": 0.25537109375
+            },
+            {
+              "kl_mean": 1.5142964270064807e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 27.79479834703375,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.9275179392658672,
+              "layer": 1,
+              "top1_agreement": 0.23430962343096234
+            },
+            {
+              "kl_mean": 2.290574338359942,
+              "layer": 2,
+              "top1_agreement": 0.3023012552301255
+            },
+            {
+              "kl_mean": 1.2219445083096747,
+              "layer": 3,
+              "top1_agreement": 0.5052301255230126
+            },
+            {
+              "kl_mean": 1.5121904369839104e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 27.749015810983074,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.8975095230112746,
+              "layer": 1,
+              "top1_agreement": 0.2373046875
+            },
+            {
+              "kl_mean": 2.2671981252504834,
+              "layer": 2,
+              "top1_agreement": 0.30810546875
+            },
+            {
+              "kl_mean": 1.206402806765189,
+              "layer": 3,
+              "top1_agreement": 0.505859375
+            },
+            {
+              "kl_mean": 1.5142964270064807e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "8192": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.492072827705254,
+              "layer": 0,
+              "top1_agreement": 0.051255230125523014
+            },
+            {
+              "kl_mean": 3.79068109912524,
+              "layer": 1,
+              "top1_agreement": 0.1192468619246862
+            },
+            {
+              "kl_mean": 2.252372031490429,
+              "layer": 2,
+              "top1_agreement": 0.27144351464435146
+            },
+            {
+              "kl_mean": 1.4007129792502743e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.442141425980518,
+              "layer": 0,
+              "top1_agreement": 0.05126953125
+            },
+            {
+              "kl_mean": 3.759523589739997,
+              "layer": 1,
+              "top1_agreement": 0.11767578125
+            },
+            {
+              "kl_mean": 2.223465293160112,
+              "layer": 2,
+              "top1_agreement": 0.27099609375
+            },
+            {
+              "kl_mean": 1.404328866436237e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 27.914434318769956,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.9804952376710925,
+              "layer": 1,
+              "top1_agreement": 0.23169456066945607
+            },
+            {
+              "kl_mean": 2.3033563525864253,
+              "layer": 2,
+              "top1_agreement": 0.29236401673640167
+            },
+            {
+              "kl_mean": 1.2467796099261839,
+              "layer": 3,
+              "top1_agreement": 0.50418410041841
+            },
+            {
+              "kl_mean": 1.4007129792502743e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 27.865779703754015,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.953078598577112,
+              "layer": 1,
+              "top1_agreement": 0.23291015625
+            },
+            {
+              "kl_mean": 2.282356886108275,
+              "layer": 2,
+              "top1_agreement": 0.2958984375
+            },
+            {
+              "kl_mean": 1.2342139095226958,
+              "layer": 3,
+              "top1_agreement": 0.50537109375
+            },
+            {
+              "kl_mean": 1.404328866436237e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      },
+      "9000": {
+        "jlens": {
+          "fit_range": [
+            {
+              "kl_mean": 5.558334790879987,
+              "layer": 0,
+              "top1_agreement": 0.05543933054393305
+            },
+            {
+              "kl_mean": 3.8156284366336886,
+              "layer": 1,
+              "top1_agreement": 0.1202928870292887
+            },
+            {
+              "kl_mean": 2.2747582286684516,
+              "layer": 2,
+              "top1_agreement": 0.2662133891213389
+            },
+            {
+              "kl_mean": 1.4084612235676198e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 5.505752777273242,
+              "layer": 0,
+              "top1_agreement": 0.05517578125
+            },
+            {
+              "kl_mean": 3.78710351238185,
+              "layer": 1,
+              "top1_agreement": 0.11962890625
+            },
+            {
+              "kl_mean": 2.247625927905874,
+              "layer": 2,
+              "top1_agreement": 0.26416015625
+            },
+            {
+              "kl_mean": 1.411300200487819e-13,
+              "layer": 3,
+              "top1_agreement": 1.0
+            }
+          ]
+        },
+        "logit_lens": {
+          "fit_range": [
+            {
+              "kl_mean": 28.40702702479666,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 3.0155655822657614,
+              "layer": 1,
+              "top1_agreement": 0.2160041841004184
+            },
+            {
+              "kl_mean": 2.3579580659684067,
+              "layer": 2,
+              "top1_agreement": 0.2939330543933054
+            },
+            {
+              "kl_mean": 1.2925463285291856,
+              "layer": 3,
+              "top1_agreement": 0.4874476987447699
+            },
+            {
+              "kl_mean": 1.4084612235676198e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ],
+          "full": [
+            {
+              "kl_mean": 28.362130837261795,
+              "layer": 0,
+              "top1_agreement": 0.0
+            },
+            {
+              "kl_mean": 2.9946782894686947,
+              "layer": 1,
+              "top1_agreement": 0.21826171875
+            },
+            {
+              "kl_mean": 2.3406663562831405,
+              "layer": 2,
+              "top1_agreement": 0.294921875
+            },
+            {
+              "kl_mean": 1.2798177015958034,
+              "layer": 3,
+              "top1_agreement": 0.4873046875
+            },
+            {
+              "kl_mean": 1.411300200487819e-13,
+              "layer": 4,
+              "top1_agreement": 1.0
+            }
+          ]
+        }
+      }
+    },
+    "positions_fit_range": 1912,
+    "positions_full": 2048,
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "steps": [
+      0,
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1000,
+      1024,
+      2000,
+      2048,
+      3000,
+      4000,
+      4096,
+      5000,
+      6000,
+      7000,
+      8000,
+      8192,
+      9000,
+      10000,
+      11000,
+      12000,
+      12208
+    ],
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-06T00:30:24Z",
+  "xla_flags": ""
+}
