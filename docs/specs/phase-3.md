@@ -1,6 +1,6 @@
 # Phase 3 spec: manipulation
 
-Status: ready for stubs and tests once D22 to D27 are committed. Charter: [../charter.md](../charter.md). Decisions: [../decisions.md](../decisions.md).
+Status: complete. Ruled at human gate H3 on 2026-10-05: see D28 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
