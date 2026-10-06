@@ -23,6 +23,16 @@
 // * In the J-lens table, the "vs logit lens" columns come directly after each reading's
 //   name, before the top tokens, so the comparison D21 records is visible without
 //   scrolling sideways.
+// * When `../runs/phase3/interventions/index.json` exists, or the folder `?interventions=`
+//   names, a compare panel lists its interventions by spec hash and step. Choosing one shows:
+//   - the spec as readable lines, one per edit
+//   - the probe text colored by per-token KL and by the next token's logit change, with a
+//     switch between them
+//   - each requested tap's change per position
+//   - the effect's exactness meter, naming its identities and citing G3.1
+//   A payload whose step differs from the timeline's current step says so, rather than
+//   mixing two steps' numbers. The panel computes nothing: every number comes from the
+//   payload.
 //
 // How this page meets it:
 //
@@ -53,8 +63,27 @@
 //   `target_prob` says so beside its table rather than leaving the columns empty.
 // * On the log-scale chart, a reading at or below zero can't be placed; it is drawn as an
 //   open marker on the bottom edge, and the chart's note says how many there are.
-// * State lives in the address's #fragment (step, sequence, position, layer, head), so a
-//   view can be reopened as it was.
+// * State lives in the address's #fragment (step, sequence, position, layer, head, and the
+//   chosen intervention as compare=<spec hash>-<step>), so a view can be reopened as it was.
+// * Compare mode reads the index src/nablaframe/interventions/cli.py writes last, then the
+//   payload file each entry names, relative to the same folder. Without `?interventions=`,
+//   a folder with no index.json (a 404) hides the panel; a named folder without one shows
+//   the panel with the error. A payload without a "meter", or whose step, spec hash or array
+//   shapes don't match its index entry and its own tokens, isn't drawn: the panel says why.
+// * The spec's lines are its JSON's edits, in order, in words; hashes are shortened, with
+//   the full hash on hover; alpha, seeds, steps and ranges are printed as the JSON holds them
+//   (a range stays half-open, [a, b)).
+// * The colored text is the payload's own `tokens`, decoded with the index's vocab, for the
+//   page's chosen sequence and position; when they aren't the index's probe, it says so. KL
+//   uses a sequential scale and the logit change a diverging one, centred on zero; each
+//   scale's end is the largest magnitude in the payload, all sequences, and the legend
+//   prints that value. The last position's logit change is null and drawn blank. The tap
+//   changes are drawn like the residual norms, one row per requested tap, on one scale.
+// * The exactness meter prints the payload's `identities` and `checked_by`; whether the
+//   identities held is in that gate's report, so the panel never says they passed. With
+//   the steps matched it also prints `kl_mean`.
+// * On a step mismatch, the spec and the meter stay, the effect's numbers are hidden, and a
+//   button moves the timeline to the payload's step when the index has it.
 "use strict";
 
 (() => {
@@ -129,6 +158,8 @@
 
   const VIEWS_DIR = dirParam("views", "../runs/phase2/views/");
   const TRACE_DIR = dirParam("trace", "../runs/phase1/g16_trace/store/");
+  const INTERVENTIONS_DIR = dirParam("interventions", "../runs/phase3/interventions/");
+  const INTERVENTIONS_NAMED = new URLSearchParams(location.search).has("interventions");
 
   // Resolves a relative path against the page; refuses anything that leaves its origin.
   function localUrl(path) {
@@ -411,6 +442,10 @@
             dark: ramp(["#1d2230", "#104281", "#256abf", "#3987e5", "#86b6ef", "#cde2fb"]) },
     orange: { light: ramp(["#fdf3ee", "#f9cdb7", "#f39a70", "#eb6834", "#b8481e", "#7a2a0c"]),
               dark: ramp(["#2a201c", "#6b2d14", "#a8461f", "#d95926", "#f0946b", "#fbd0bd"]) },
+    violet: { light: ramp(["#f5f4fb", "#dcd8f3", "#b0a8e4", "#7d70cf", "#4a3aa7", "#2a1f6b"]),
+              dark: ramp(["#1f1d2a", "#352d6b", "#5247a8", "#7d70cf", "#b0a8e4", "#dcd8f3"]) },
+    red: { light: ramp(["#fdf3f3", "#f8cfcf", "#f09a9a", "#e34948", "#b02a2a", "#6e1414"]),
+           dark: ramp(["#2a1c1c", "#6b1f1f", "#a82e2e", "#e34948", "#f09a9a", "#fbd0d0"]) },
   };
   const rampFor = (name) => RAMPS[name][isDark() ? "dark" : "light"];
   const rgbCss = ([r, g, b]) => `rgb(${r},${g},${b})`;
@@ -421,6 +456,17 @@
   function rampLegend(name, lo, hi, unit) {
     const f = rampFor(name);
     const stops = [0, 0.25, 0.5, 0.75, 1].map((t) => `${rgbCss(f(t))} ${t * 100}%`).join(",");
+    return el("span", {}, `${lo}`, el("span", { class: "ramp", style: { background: `linear-gradient(90deg,${stops})` } }), `${hi} ${unit}`);
+  }
+
+  // Signed values: red below zero, blue above, both receding to the surface at zero.
+  function diverging(t) {
+    if (!Number.isFinite(t)) t = 0;
+    return t < 0 ? rampFor("red")(-t) : rampFor("blue")(t);
+  }
+
+  function divergingLegend(lo, hi, unit) {
+    const stops = [-1, -0.5, 0, 0.5, 1].map((t, i) => `${rgbCss(diverging(t))} ${i * 25}%`).join(",");
     return el("span", {}, `${lo}`, el("span", { class: "ramp", style: { background: `linear-gradient(90deg,${stops})` } }), `${hi} ${unit}`);
   }
 
@@ -453,6 +499,9 @@
     layerStructure: new Map(), // step -> payload
     layerStructureErrors: [],
     layerStructureDone: false,
+    // Compare mode: the intervention index's entries, the chosen one as `${spec_hash}-${step}`,
+    // the probe's coloring ("kl" or "logit"), and loaded payloads by file name.
+    compare: { entries: null, chosen: null, color: "kl", payloads: new Map() },
   };
 
   const step = () => state.index.steps[state.stepIndex];
@@ -466,11 +515,16 @@
   function readHash() {
     const values = new URLSearchParams(location.hash.slice(1));
     const int = (name) => (values.has(name) && /^-?\d+$/.test(values.get(name)) ? Number(values.get(name)) : null);
-    return { step: int("step"), seq: int("seq"), pos: int("pos"), layer: int("layer"), head: int("head") };
+    const compare = values.get("compare");
+    return {
+      step: int("step"), seq: int("seq"), pos: int("pos"), layer: int("layer"), head: int("head"),
+      compare: compare && /^[0-9a-f]{64}-(0|[1-9]\d*)$/.test(compare) ? compare : null,
+    };
   }
 
   function writeHash() {
     const values = new URLSearchParams({ step: step(), seq: state.seq, pos: state.pos, layer: state.layer, head: state.head });
+    if (state.compare.chosen) values.set("compare", state.compare.chosen);
     history.replaceState(null, "", `${location.pathname}${location.search}#${values}`);
   }
 
@@ -1262,6 +1316,344 @@
       offAxis ? el("div", { class: "note", text: `${offAxis} value${offAxis === 1 ? " is" : "s are"} at or below zero, which a log scale can't place: open markers on the bottom edge.` }) : null);
   }
 
+  // ---------------------------------------------------------------- compare mode (Phase 3, D27)
+
+  const compareKey = (entry) => `${entry.spec_hash}-${entry.step}`;
+  const isInt = (v) => Number.isInteger(v) && v >= 0;
+
+  // Reads the intervention index, if there is one. Without ?interventions=, a 404 hides the panel.
+  async function loadInterventions() {
+    const indexPath = `${INTERVENTIONS_DIR}index.json`;
+    if (!INTERVENTIONS_NAMED) {
+      let head;
+      try {
+        head = await fetch(localUrl(indexPath), { method: "HEAD", cache: "no-cache" });
+      } catch (error) {
+        return;
+      }
+      if (head.status === 404) return;
+    }
+    $("compare-panel").hidden = false;
+    $("compare-sub").textContent = `from ${INTERVENTIONS_DIR}`;
+    clear($("compare-meter"), meterRow("info", "loading the intervention index…", ""));
+    let index;
+    try {
+      index = await fetchJSON(indexPath, "intervention index");
+    } catch (error) {
+      clear($("compare-meter"), meterRow("bad", "intervention index unavailable", error.message));
+      setPanelBad("compare-panel", true);
+      return;
+    }
+    const entries = index && Array.isArray(index.interventions) ? index.interventions : null;
+    const bad = entries === null ? -1 : entries.findIndex((e) => !e || typeof e !== "object" || !/^[0-9a-f]{64}$/.test(e.spec_hash)
+      || !isInt(e.step) || typeof e.file !== "string" || !e.file);
+    if (bad !== -1) {
+      const why = entries === null ? 'it has no "interventions" list' : `entry ${bad} isn't {"spec_hash", "step", "file"}`;
+      clear($("compare-meter"), meterRow("bad", "intervention index unreadable", `${indexPath}: ${why}, so it doesn't follow cli.py's contract`));
+      setPanelBad("compare-panel", true);
+      return;
+    }
+    const c = state.compare;
+    c.entries = entries;
+    if (c.chosen === null) {
+      const here = entries.find((e) => e.step === step());
+      if (here) c.chosen = compareKey(here);
+      writeHash();
+    }
+    await renderCompare();
+  }
+
+  function comparePayload(entry) {
+    const c = state.compare;
+    if (!c.payloads.has(entry.file)) {
+      const promise = fetchJSON(INTERVENTIONS_DIR + entry.file, `intervention ${short(entry.spec_hash)} · step ${entry.step}`)
+        .then((data) => checkComparePayload(entry, data));
+      promise.catch(() => c.payloads.delete(entry.file));
+      c.payloads.set(entry.file, promise);
+      if (c.payloads.size > 24) c.payloads.delete(c.payloads.keys().next().value);
+    }
+    return c.payloads.get(entry.file);
+  }
+
+  // A payload is drawn only when it has its meter and its arrays agree with its own tokens.
+  function checkComparePayload(entry, data) {
+    const name = entry.file;
+    if (!data || typeof data !== "object" || !("meter" in data)) throw new Error(`${name} has no meter, so it isn't shown`);
+    if (data.step !== entry.step) throw new Error(`the index lists ${name} at step ${entry.step}, but it holds step ${data.step}`);
+    if (data.spec_hash !== entry.spec_hash) throw new Error(`the index lists ${name} under spec ${short(entry.spec_hash)}, but it holds spec ${short(data.spec_hash)}`);
+    if (!data.spec || !Array.isArray(data.spec.edits)) throw new Error(`${name} has no spec with a list of edits`);
+    const tokens = data.tokens;
+    if (!Array.isArray(tokens) || !tokens.length || !tokens.every((row) => Array.isArray(row) && row.length === tokens[0].length)) {
+      throw new Error(`${name}'s tokens aren't a (Batch, Pos) list`);
+    }
+    const sameShape = (array) => Array.isArray(array) && array.length === tokens.length
+      && array.every((row, b) => Array.isArray(row) && row.length === tokens[b].length);
+    for (const field of ["kl", "delta_logit", "delta_loss"]) {
+      if (!sameShape(data[field])) throw new Error(`${name}'s ${field} isn't shaped like its tokens, (${tokens.length}, ${tokens[0].length})`);
+    }
+    if (!Array.isArray(data.taps) || !data.tap_changes || typeof data.tap_changes !== "object") {
+      throw new Error(`${name} has no taps list and tap_changes`);
+    }
+    for (const tap of data.taps) {
+      if (!sameShape(data.tap_changes[tap])) throw new Error(`${name}'s change for ${tap} is missing or isn't shaped like its tokens`);
+    }
+    return data;
+  }
+
+  function renderCompareList() {
+    const c = state.compare;
+    const here = step();
+    clear($("compare-list"),
+      el("span", { text: "Interventions" }),
+      c.entries.length ? c.entries.map((e) => el("button", {
+        type: "button",
+        class: e.step === here ? "here" : null,
+        "aria-pressed": String(compareKey(e) === c.chosen),
+        title: `spec ${e.spec_hash}\nstep ${e.step}${e.step === here ? " (the timeline's current step)" : ""}\n${e.file}`,
+        text: `${short(e.spec_hash)} · step ${e.step}`,
+        onclick: () => {
+          c.chosen = compareKey(e);
+          writeHash();
+          report(renderCompare(), "compare-meter");
+        },
+      })) : el("span", { class: "muted", text: "none listed" }),
+      c.entries.some((e) => e.step === here) && c.entries.some((e) => e.step !== here)
+        ? el("span", { class: "muted", text: `bold: at step ${here}, the timeline's` }) : null);
+  }
+
+  const hashCode = (hash) => el("code", { title: hash, text: typeof hash === "string" ? short(hash) : JSON.stringify(hash) });
+  const tapCode = (tap) => el("code", { text: tap });
+
+  function positionsText(positions) {
+    if (positions === "all") return "every position";
+    if (Array.isArray(positions)) {
+      if (!positions.length) return "no position (a null edit)";
+      return `${positions.length === 1 ? "position" : "positions"} ${positions.join(", ")}`;
+    }
+    if (positions && Array.isArray(positions.range) && positions.range.length === 2) {
+      const [a, b] = positions.range;
+      return a === b ? `no position (the empty range [${a}, ${b}))` : `positions [${a}, ${b}) (half-open)`;
+    }
+    return `positions ${JSON.stringify(positions)}`;
+  }
+
+  function componentText(component) {
+    if (component === "embeddings") return "the embeddings and the tied output layer, D26";
+    if (component === "ln_final") return "the final layer norm";
+    const match = /^blocks\.(\d+)(\.attn|\.mlp)?$/.exec(component);
+    if (!match) return null;
+    return match[2] === ".attn" ? `block ${match[1]}'s attention` : match[2] === ".mlp" ? `block ${match[1]}'s MLP` : `block ${match[1]}, whole`;
+  }
+
+  // One edit as a readable line: its operation, where it applies, and its arguments as the JSON holds them.
+  function editLine(e) {
+    const at = positionsText(e.positions);
+    const args = e.args && typeof e.args === "object" ? e.args : {};
+    switch (e.op) {
+      case "zero":
+        return ["zero ", tapCode(e.tap), ` at ${at}`];
+      case "mean":
+        return ["replace ", tapCode(e.tap), ` at ${at} with its per-position mean over reference batch `, hashCode(args.reference)];
+      case "resample":
+        return ["resample ", tapCode(e.tap), ` at ${at} from reference batch `, hashCode(args.reference), `, seed ${JSON.stringify(args.seed)}`];
+      case "patch":
+        return ["patch ", tapCode(e.tap), ` at ${at} from source batch `, hashCode(args.source)];
+      case "add":
+        return [`add ${JSON.stringify(args.alpha)} × vector `, hashCode(args.vector), " to ", tapCode(e.tap), ` at ${at}`];
+      case "swap": {
+        const what = componentText(e.tap);
+        return ["swap ", tapCode(e.tap), what ? ` (${what})` : "", ` with its weights from step ${JSON.stringify(args.step)}`,
+          e.positions === "all" ? "" : `, at ${at}`];
+      }
+      default:
+        return [el("span", { class: "error", text: `unknown operation ${JSON.stringify(e.op)}: ` }), tapCode(String(e.tap)), ` at ${at}, arguments ${JSON.stringify(args)}`];
+    }
+  }
+
+  function specBlock(data) {
+    const edits = data.spec.edits;
+    return el("div", { class: "spec" },
+      el("div", { class: "note" }, `Spec `, hashCode(data.spec_hash), edits.length
+        ? `, ${edits.length} ${edits.length === 1 ? "edit" : "edits"}. Swaps apply first, then the other edits, each in this order.`
+        : ": no edits, so this is the unintervened pass."),
+      edits.length ? el("ol", {}, edits.map((e) => el("li", {}, editLine(e)))) : null);
+  }
+
+  function exactnessRows(data, matched) {
+    const m = data.meter || {};
+    const rows = [];
+    if (m.kind !== "exactness") {
+      rows.push(meterRow("bad", "unexpected meter", `kind ${JSON.stringify(m.kind)}, expected exactness`));
+    } else {
+      const identities = Array.isArray(m.identities) ? m.identities : [];
+      rows.push(identities.length && m.checked_by
+        ? meterRow("info", "exactness", `the D25 identities ${identities.join(", ")}, each checked bit for bit by ${m.checked_by}; whether they held is in ${m.checked_by}'s report`)
+        : meterRow("bad", "exactness meter incomplete", `identities ${JSON.stringify(m.identities)}, checked by ${JSON.stringify(m.checked_by)}`));
+    }
+    if (matched) rows.push(meterRow("info", "mean KL", `${fmt(data.kl_mean)} nats, the unintervened prediction against the intervened one, over every sequence and position`));
+    return rows;
+  }
+
+  // The largest magnitude among a (Batch, Pos) list's numbers, skipping nulls: a color scale's end.
+  function largest(rows) {
+    let top = 0;
+    for (const row of rows) for (const v of row) if (v !== null && Number.isFinite(v) && Math.abs(v) > top) top = Math.abs(v);
+    return top;
+  }
+
+  const sameTokens = (a, b) => a.length === b.length && a.every((row, i) => row.length === b[i].length && row.every((v, j) => v === b[i][j]));
+
+  async function renderCompare() {
+    const c = state.compare;
+    if (!c.entries) return;
+    renderCompareList();
+    const meter = $("compare-meter");
+    const body = $("compare-body");
+    const entry = c.entries.find((e) => compareKey(e) === c.chosen);
+    if (!entry) {
+      $("compare-sub").textContent = `from ${INTERVENTIONS_DIR}`;
+      clear(meter, c.chosen ? meterRow("warn", "not in the index", `the address names intervention ${short(c.chosen.split("-")[0])} at step ${c.chosen.split("-")[1]}, which the index doesn't list`) : null);
+      clear(body, el("div", { class: "note", text: c.entries.length ? "Choose an intervention to see its spec and its effect." : "The intervention index lists no interventions." }));
+      setPanelBad("compare-panel", false);
+      return;
+    }
+    const { chosen } = c;
+    const atStep = step();
+    const { seq, pos } = state;
+    $("compare-sub").textContent = `spec ${short(entry.spec_hash)} at step ${entry.step}`;
+    let data;
+    try {
+      data = await comparePayload(entry);
+    } catch (error) {
+      if (chosen !== c.chosen) return;
+      clear(meter, meterRow("bad", "intervention unavailable", error.message));
+      clear(body);
+      setPanelBad("compare-panel", true);
+      return;
+    }
+    if (chosen !== c.chosen || atStep !== step() || seq !== state.seq || pos !== state.pos) return;
+    setPanelBad("compare-panel", false);
+    const matched = data.step === atStep;
+    clear(meter, exactnessRows(data, matched));
+    if (!matched) {
+      const onTimeline = state.index.steps.includes(data.step);
+      clear(body, specBlock(data), el("div", { class: "mismatch" },
+        el("b", { text: `This intervention ran at step ${data.step}; the timeline is at step ${atStep}. ` }),
+        "Its effect isn't shown beside another step's views. ",
+        onTimeline
+          ? el("button", { type: "button", text: `Move the timeline to step ${data.step}`, onclick: () => selectStep(state.index.steps.indexOf(data.step)) })
+          : el("span", { text: `Step ${data.step} isn't one of the view index's checkpoints, so the timeline can't reach it.` })));
+      return;
+    }
+    if (seq >= data.tokens.length) {
+      clear(body, specBlock(data), errorBox(`The payload holds ${data.tokens.length} sequence(s); sequence ${seq} isn't one of them.`));
+      return;
+    }
+    clear(body,
+      specBlock(data),
+      sameTokens(data.tokens, state.index.probe) ? null
+        : el("div", { class: "mismatch", text: "This intervention ran on a batch other than the view index's probe: the text below is its own tokens, and the other panels' positions don't line up with it." }),
+      el("h3", { text: `Effect on sequence ${seq}` }),
+      el("div", { class: "controls" }, el("span", { text: "Color by" }),
+        [["kl", "per-token KL"], ["logit", "next token's logit change"]].map(([mode, label]) => el("button", {
+          type: "button", "aria-pressed": String(c.color === mode), text: label,
+          onclick: () => { c.color = mode; report(renderCompare(), "compare-meter"); },
+        }))),
+      compareProbe(data, seq),
+      el("h3", { text: "Requested taps' change" }),
+      tapChanges(data, seq));
+  }
+
+  function compareProbe(data, seq) {
+    const mode = state.compare.color;
+    const field = mode === "kl" ? data.kl : data.delta_logit;
+    const top = largest(field);
+    const tokens = data.tokens[seq];
+    const color = rampFor("violet");
+    const spans = tokens.map((id, t) => {
+      const value = field[seq][t];
+      const word = tokenText(id);
+      const span = el("span", { class: "tok", "data-pos": t, text: word });
+      if (word.startsWith("<") && word.endsWith(">")) span.classList.add("special");
+      if (value === null) span.classList.add("blank");
+      else {
+        const scaled = top > 0 ? value / top : 0;
+        const rgb = mode === "kl" ? color(scaled) : diverging(scaled);
+        span.style.background = rgbCss(rgb);
+        span.style.color = inkFor(rgb);
+      }
+      if (t === state.pos) span.classList.add("sel");
+      span.addEventListener("click", () => { state.pos = t; changed({ posChanged: true }); });
+      span.addEventListener("mousemove", (event) => {
+        const kl = data.kl[seq][t];
+        const dl = data.delta_logit[seq][t];
+        const dloss = data.delta_loss[seq][t];
+        showTip(event, [
+          `position ${t} · “${word}” (id ${id})`,
+          `KL, unintervened ‖ intervened: ${kl === null ? "blank" : `${fmt(kl)} nats`}`,
+          dl === null ? "next token's logit change: blank, no next token in the window" : `next token's logit change: ${fmt(dl)}`,
+          dloss === null ? "" : `next token's loss change: ${fmt(dloss)} nats`,
+          t + 1 < tokens.length ? `next token: “${tokenText(tokens[t + 1])}”` : "",
+        ].filter(Boolean));
+      });
+      span.addEventListener("mouseleave", hideTip);
+      return span;
+    });
+    const legend = mode === "kl"
+      ? el("span", {}, "KL of the intervened prediction from the unintervened one: ", rampLegend("violet", 0, fmt(top), "nats"))
+      : el("span", {}, "change in the actual next token's logit: ", divergingLegend(fmt(-top), fmt(top), ""), " blue raises it, red lowers it");
+    return [
+      el("div", { class: "probe", id: "compare-text" }, spans),
+      el("div", { class: "legend" }, legend,
+        top === 0 ? el("span", { text: "every value in this payload is 0" }) : el("span", { text: "scale: the payload's largest magnitude" }),
+        mode === "logit" ? el("span", {}, el("span", { class: "sw", style: { backgroundImage: "repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px)" } }), "blank: no next token in the window") : null),
+    ];
+  }
+
+  function tapChanges(data, seq) {
+    const taps = data.taps;
+    if (!taps.length) return el("div", { class: "note", text: "No taps were requested when this payload was written (the command line's --taps), so there are no tap changes to show." });
+    const rows = taps.map((tap) => data.tap_changes[tap][seq]);
+    const top = largest(taps.map((tap) => data.tap_changes[tap]).flat());
+    const T = rows[0].length;
+    const tokens = data.tokens[seq];
+    const color = rampFor("orange");
+    const box = $("compare-body");
+    const cellW = Math.max(1, Math.floor(((box.clientWidth || 600) - 230) / T));
+    const cellH = 20;
+    const canvas = el("canvas", { width: T * cellW, height: rows.length * cellH, "aria-label": "each requested tap's change per position" });
+    const ctx = canvas.getContext("2d");
+    rows.forEach((row, r) => row.forEach((v, p) => {
+      ctx.fillStyle = rgbCss(color(top > 0 && v !== null ? v / top : 0));
+      ctx.fillRect(p * cellW, r * cellH, cellW, cellH - 1);
+    }));
+    if (state.pos < T) {
+      ctx.strokeStyle = cssVar("--text-primary");
+      ctx.lineWidth = 1;
+      ctx.strokeRect(state.pos * cellW + 0.5, 0.5, Math.max(1, cellW - 1), rows.length * cellH - 1);
+    }
+    const cell = (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const p = Math.floor(((event.clientX - rect.left) / rect.width) * T);
+      const r = Math.floor(((event.clientY - rect.top) / rect.height) * rows.length);
+      return [Math.min(rows.length - 1, Math.max(0, r)), Math.min(T - 1, Math.max(0, p))];
+    };
+    canvas.addEventListener("mousemove", (event) => {
+      const [r, p] = cell(event);
+      showTip(event, [`${taps[r]} · position ${p} “${tokenText(tokens[p])}”`, `L2 norm of the change: ${fmt(rows[r][p])}`]);
+    });
+    canvas.addEventListener("mouseleave", hideTip);
+    canvas.addEventListener("click", (event) => { state.pos = cell(event)[1]; changed({ posChanged: true }); });
+    const labelCol = el("div", { class: "tap-labels" },
+      taps.map((tap) => el("div", { class: "mono secondary", title: tap, style: { height: `${cellH}px`, lineHeight: `${cellH}px` }, text: tap })));
+    return [
+      el("div", { style: { display: "flex", gap: "8px", alignItems: "flex-start" } }, labelCol, el("div", { class: "scrollx" }, canvas)),
+      el("div", { class: "legend" }, el("span", {}, "L2 norm over the tap's trailing axes of intervened minus unintervened ", rampLegend("orange", "0", fmt(top), "")),
+        el("span", { text: `one scale for every tap; columns: positions 0 to ${T - 1}` })),
+      state.pos < T ? el("div", { class: "note", text: `At position ${state.pos} “${tokenText(tokens[state.pos])}”: ${taps.map((tap, r) => `${tap} ${fmt(rows[r][state.pos])}`).join(" · ")}` }) : null,
+    ];
+  }
+
   // ---------------------------------------------------------------- orchestration
 
   // A panel that throws says so in its meter rather than sitting on "loading".
@@ -1280,6 +1672,7 @@
     report(renderAttribution(), "attr-meter");
     report(renderAttention(), "attn-meter");
     report(renderResidual(), "resid-meter");
+    report(renderCompare(), "compare-meter");
     if (state.layerStructure.size) renderLayerStructure();
   }
 
@@ -1309,6 +1702,7 @@
       report(renderLens(), "lens-meter");
       report(renderJLens(), "jlens-meter");
       report(renderAttribution(), "attr-meter");
+      report(renderCompare(), "compare-meter");
     }
     if (seqChanged || posChanged || layerChanged || headChanged) report(renderAttention(), "attn-meter");
   }
@@ -1358,6 +1752,7 @@
     state.pos = saved.pos !== null && saved.pos >= 0 && saved.pos < index.probe[0].length ? saved.pos : 0;
     state.layer = saved.layer !== null && saved.layer >= 0 && saved.layer < index.n_layers ? saved.layer : 0;
     state.head = saved.head !== null && saved.head >= 0 ? saved.head : 0;
+    state.compare.chosen = saved.compare;
     return saved.step === null ? -1 : index.steps.indexOf(saved.step);
   }
 
@@ -1422,6 +1817,7 @@
       selectStep(at >= 0 ? at : state.stepIndex);
     });
     report(loadLayerStructure(), "layers-meter");
+    report(loadInterventions(), "compare-meter");
   }
 
   main();
