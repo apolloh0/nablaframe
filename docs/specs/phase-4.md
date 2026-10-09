@@ -63,7 +63,7 @@ On the two-hop model it asks the decisive question. If swapping the intermediate
 
 ### Induction
 
-- **Task:** random tokens from a vocabulary of 64, in windows of 64, each window's second half repeating its first.
+- **Task:** random tokens from a vocabulary of 64, in windows of 64, each window's second half repeating its first. A window of 64 tokens trains a model of sequence length 63, since each window holds one more token than the model reads, as the reference run's windows do. Two-hop's 27 tokens train a sequence length of 26 the same way.
 - **Mechanism positions:** 32 to 62, each predicting a token copied from the first half. **Control positions:** 0 to 30, unpredictable, with chance 1/64.
 - **Model:** 2 blocks, d_model 64, 4 heads, d_mlp 256: two blocks, so a previous-token head and an induction head can compose.
 - **Training:** 4,000 steps at batch 32, seed 0, with checkpoints every 50 steps through step 1,500 and every 250 after. Every checkpoint is traced, so the loss bump is resolved on the scrubber.
@@ -98,7 +98,7 @@ The bars are set here, before any run, and are never moved after.
 - Some head in block 1 puts a mean of at least 0.5 of its attention on induction targets, at mechanism positions. A target is the token after the current token's previous occurrence.
 - The random-weights twin's best head puts at most twice what uniform attention would.
 
-**Ablation, on the induction model (judged).** Zeroing that head's output through `attn.hook_z`:
+**Ablation, on the induction model (judged).** Zeroing that head's output through `attn.hook_z`: Zeroing one head uses `zero` with an optional `head` argument, valid only at `attn.hook_z`. At no positions it's a null edit, held to D25 like every operation.
 
 - removes at least half of the mechanism positions' accuracy above chance
 - removes more than zeroing any other single head does
@@ -148,6 +148,16 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | 5 | The two-hop patch profiles and lens ranks | `zoo/two_hop.py` | 2, 3 |
 | 6 | Phase 4 gates and their report rules | `gates/phase4/`, `reports.py` | All |
 | 7 | Model-level badges: each view's model-level result on its badge, after H4's runs (D34) | `views/build.py`, `viewer/` | 6 |
+
+## Tests
+
+Written with the stubs:
+
+- **1:** `test_induction_windows`, `test_two_hop_windows`, `test_trainer_batch_source_leaves_the_default_unchanged`
+- **2:** `test_next_token_accuracy`, `test_twin_params`
+- **3:** `test_jswap_and_head_arguments`, `test_jswap_of_a_token_with_itself_is_exact`, `test_jswap_exchanges_the_coordinates`, `test_jswap_and_head_zero_where_they_apply`
+- **4:** `test_induction_targets`, `test_induction_scores`, `test_formation_steps_and_head_ablation`
+- **5:** `test_sources_carry_the_counterpart`, `test_patch_outcomes`, `test_token_ranks`
 
 ## Out of scope
 
