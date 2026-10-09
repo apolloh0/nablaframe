@@ -76,6 +76,7 @@ On the two-hop model it asks the decisive question. If swapping the intermediate
   - four distractors
   - every subject distinct, so each lookup is unique
   - one distractor, `b′ → d`, plants a **counterpart** subject for the patch test
+  - the answer `c` is never `a` or `b`, and no distractor has `c` as its object, so `c` appears as an object only in `b`'s fact (ruled on PR #44)
 - **Mechanism position:** 25, the `⇒`, predicting the answer `c`.
 - **Controls:**
   - the random-weights twin
@@ -105,7 +106,7 @@ The bars are set here, before any run, and are never moved after.
 
 **Component swap, on the induction model (judged).** Swapping block 1's attention from the last checkpoint before the loss bump removes at least half of the accuracy above chance.
 
-**Patch, on the two-hop model (judged): the signature demo.** At every block output, patch the query's two positions, 24 and 25, from a source window whose intermediate is the target's counterpart subject `b′`. Recorded per layer:
+**Patch, on the two-hop model (judged): the signature demo.** At every block output, patch the query's two positions, 24 and 25, from a source window whose intermediate is the target's counterpart subject `b′`, and whose answer is neither the target's answer `c` nor `d`. So an unchanged, a swapped and a transplanted answer are always three different tokens. Recorded per layer:
 
 - **the swap rate:** how often the answer becomes `d`, the counterpart's successor in the target's own facts, meaning the intermediate moved
 - **the transplant rate:** how often it becomes the source's own answer, meaning the answer moved
@@ -158,6 +159,7 @@ Written with the stubs:
 - **3:** `test_jswap_and_head_arguments`, `test_jswap_of_a_token_with_itself_is_exact`, `test_jswap_exchanges_the_coordinates`, `test_jswap_and_head_zero_where_they_apply`
 - **4:** `test_induction_targets`, `test_induction_scores`, `test_formation_steps_and_head_ablation`
 - **5:** `test_sources_carry_the_counterpart`, `test_patch_outcomes`, `test_token_ranks`
+- **Delta 2:** `test_two_hop_answers_never_collide`, `test_patch_sources_keep_the_outcomes_distinct`
 
 ## Out of scope
 
