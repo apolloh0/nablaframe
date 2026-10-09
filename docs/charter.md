@@ -48,7 +48,7 @@ Carried over from Glasshouse.
 | 1 | Reference model, trainer and trace engine; oracle wired in | [specs/phase-1.md](specs/phase-1.md), done at H1 on 2026-10-02 |
 | 2 | Read-only views and the timeline scrubber | [specs/phase-2.md](specs/phase-2.md), done on 2026-10-04 (D16, D21) |
 | 3 | Manipulation: ablate, patch, steer, swap | [specs/phase-3.md](specs/phase-3.md), done at H3 on 2026-10-05 (D28) |
-| 4 | Ground-truth zoo and discrimination tests | Not yet written |
+| 4 | Ground-truth zoo and discrimination tests | [specs/phase-4.md](specs/phase-4.md) |
 | 5 | Gestures and dictionaries | Not yet written |
 | 6 | Self-learning ledger | Not yet written |
 
