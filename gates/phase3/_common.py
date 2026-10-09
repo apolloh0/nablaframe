@@ -12,6 +12,7 @@ schema-2 report, and runs every pass through ``run_intervened``.
 * ``later_positions(p, seq_len)``: positions ``p + 1`` up to ``p + LATER_WINDOW``, cut at the
   window's end.
 * ``fit_range(seq_len)``: positions ``FIT_FIRST`` to ``seq_len - 2``, D17's fit range.
+* ``PHASE3_OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap")``, in ``_common.py``: D22's six operations, as H3 ruled on them (D28). G3.2's ``sample_specs`` and G3.5's ``examples`` iterate it, never ``spec.OPERATIONS``, so their committed reports stay reproducible however many operations later phases add. Later operations are tested by their own phase's gates.
 """
 
 # Beyond the contract above, this module holds what several Phase 3 gates share:
@@ -58,6 +59,7 @@ REFERENCE_WINDOWS = 64
 EXPERIMENT_POSITIONS = 64
 LATER_WINDOW = 16
 FIT_FIRST = 16
+PHASE3_OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap")
 
 
 def later_positions(p: int, seq_len: int) -> np.ndarray:

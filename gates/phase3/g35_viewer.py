@@ -104,7 +104,7 @@ def examples(model: Any, params: Any, config: Any, probe: np.ndarray, source: np
              excluded: list[int], objects: Any) -> list[tuple[Any, list[str]]]:
     """The six example specs, one per operation, each with the taps its run asks for."""
     from nablaframe.interventions.jlens_experiment import logit_lens_direction, steering_scales
-    from nablaframe.interventions.spec import OPERATIONS, InterventionSpec, edit
+    from nablaframe.interventions.spec import InterventionSpec, edit
 
     n, seq = config.n_layers, config.seq
     m = min(1, n - 1)
@@ -128,7 +128,7 @@ def examples(model: Any, params: Any, config: Any, probe: np.ndarray, source: np
         "swap": (edit(f"blocks.{m}.attn", "all", "swap", step=g31.SWAP_STEP), f"blocks.{m}.hook_attn_out"),
     }
     out = []
-    for op in OPERATIONS:
+    for op in _common.PHASE3_OPERATIONS:
         e, tap = edits[op]
         out.append((InterventionSpec((e,)), list(dict.fromkeys([tap, last]))))
     return out

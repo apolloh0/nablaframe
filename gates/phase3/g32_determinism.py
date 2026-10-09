@@ -94,13 +94,13 @@ def sample_specs(config: Any, steps: tuple[int, ...], objects: Any, reference: n
                  size: int = SAMPLE_SIZE, seed: int = SAMPLE_SEED) -> list[Any]:
     """``size`` distinct seeded specs of one edit each, every operation twice over (see the notes above)."""
     from nablaframe.interventions.apply import editable_taps
-    from nablaframe.interventions.spec import OPERATIONS, InterventionSpec, edit, spec_hash
+    from nablaframe.interventions.spec import InterventionSpec, edit, spec_hash
 
     rng = np.random.default_rng(seed)
     taps = list(editable_taps(config.n_layers))
     components = ["embeddings", "ln_final", *(f"blocks.{layer}{part}" for layer in range(config.n_layers)
                                               for part in ("", ".attn", ".mlp"))]
-    ops = [OPERATIONS[i] for i in rng.permutation(np.arange(size) % len(OPERATIONS))]
+    ops = [_common.PHASE3_OPERATIONS[i] for i in rng.permutation(np.arange(size) % len(_common.PHASE3_OPERATIONS))]
     reference_hash, source_hash = objects.batch(reference), objects.batch(source)
     specs, hashes = [], set()
     for op in ops:
