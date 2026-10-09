@@ -17,6 +17,9 @@ Spec: docs/specs/phase-3.md, D22.
   ``spec_from_json`` inverts it. ``spec_hash(spec)``: SHA-256 of ``canonical_json(spec_json(spec))``.
 * ``position_index(positions, seq_len)``: the int array of positions selected; ValueError for
   any position outside ``[0, seq_len)`` or any other form.
+* ``OPERATIONS`` gains ``jswap``, taking ``J`` (a content hash) and the token ids ``a`` and ``b``
+  (non-negative ints) (D33). ``zero`` takes either no arguments or exactly ``head``, a
+  non-negative int: zeroing one attention head's output.
 """
 
 from __future__ import annotations
@@ -31,7 +34,7 @@ import numpy as np
 
 from ..trace.schema import canonical_json, sha256_hex
 
-OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap")
+OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap")
 
 # Each operation's arguments: name -> kind. Exactly these keys, no others.
 _ARGS: dict[str, dict[str, str]] = {
@@ -41,7 +44,10 @@ _ARGS: dict[str, dict[str, str]] = {
     "patch": {"source": "hash"},
     "add": {"vector": "hash", "alpha": "float"},
     "swap": {"step": "int"},
+    "jswap": {"J": "hash", "a": "int", "b": "int"},
 }
+# The other form an operation's arguments may take: ``zero`` of one head.
+_ALTERNATIVE: dict[str, dict[str, str]] = {"zero": {"head": "int"}}
 _HASH = re.compile(r"[0-9a-f]{64}")
 _COMPONENT = re.compile(r"embeddings|ln_final|blocks\.(0|[1-9][0-9]*)(\.attn|\.mlp)?")
 
@@ -115,8 +121,11 @@ def _edit(tap: Any, positions: Any, op: Any, args: Mapping[str, Any]) -> Edit:
     if not isinstance(args, Mapping):
         raise ValueError(f"{op}: args must be a mapping")
     expected = _ARGS[op]
+    if op in _ALTERNATIVE and set(args) == set(_ALTERNATIVE[op]):
+        expected = _ALTERNATIVE[op]
     if set(args) != set(expected):
-        raise ValueError(f"{op} takes exactly {sorted(expected)}, got {sorted(map(str, args))}")
+        forms = " or ".join(str(sorted(form)) for form in (_ARGS[op], _ALTERNATIVE.get(op)) if form is not None)
+        raise ValueError(f"{op} takes exactly {forms}, got {sorted(map(str, args))}")
     positions = _positions(positions)
     if op == "swap":
         if not _COMPONENT.fullmatch(tap):

@@ -26,6 +26,16 @@ module imports without it.
     (``batch_hash`` for token batches, ``tensor_sha256`` for vectors) and raises ValueError
     if it differs.
   - ``recorded`` holds the requested taps' values after the edits.
+  - ``jswap`` applies at residual-stream taps only, ``hook_resid_pre``, ``hook_resid_mid`` or
+    ``hook_resid_post``. J must be shaped (d_model, d_model), and both tokens must be below the
+    vocabulary size. Anything else raises ValueError before anything runs. With u = Jᵀw for each
+    token's unembedding row w, it adds (β − α)(u_a − u_b) at the selected positions, where
+    α u_a + β u_b is the residual's least-squares component in their span. Its operand enters
+    the compiled program as an argument, as every operand does. With a == b it adds no operation
+    at all, so it reproduces the unintervened pass bit for bit (D25).
+  - A ``zero`` with ``head`` applies only at ``attn.hook_z``. It zeroes that head's slice at the
+    selected positions and leaves every other head untouched. A head at or beyond the tap's head
+    count raises ValueError.
 * ``code_identity()``: this module's git blob hash (D18, D24).
 """
 
@@ -47,6 +57,7 @@ from .spec import InterventionSpec, position_index, spec_from_json, spec_json
 
 _COMPONENT = re.compile(r"embeddings|ln_final|blocks\.(0|[1-9][0-9]*)(\.attn|\.mlp)?")
 _TOKEN_ARGS = {"patch": "source", "mean": "reference", "resample": "reference"}
+_RESIDUAL = ("hook_resid_pre", "hook_resid_mid", "hook_resid_post")
 
 
 def editable_taps(n_layers: int) -> tuple[str, ...]:
@@ -110,6 +121,10 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             selected.append(None)
         elif e.tap not in editable:
             raise ValueError(f"{e.tap!r} is not an editable tap for a {n_layers}-layer model (D23)")
+        elif e.op == "jswap" and e.tap.rsplit(".", 1)[-1] not in _RESIDUAL:
+            raise ValueError(f"jswap applies at residual-stream taps ({', '.join(_RESIDUAL)}), not {e.tap!r}")
+        elif "head" in e.args and not e.tap.endswith(".attn.hook_z"):
+            raise ValueError(f"zeroing one head applies only at attn.hook_z, not {e.tap!r}")
         else:
             selected.append(position_index(e.positions, seq))
     resolved: dict[str, np.ndarray] = {}
@@ -122,18 +137,35 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
                                  f" which doesn't line up with tokens shaped {np.shape(tokens)}")
         elif e.op == "add":
             resolved.setdefault(e.args["vector"], _resolved(resolve, e.args["vector"], tensor_sha256))
+        elif e.op == "jswap":
+            vocab, d_model = np.shape(params.wte)
+            J = resolved.setdefault(e.args["J"], _resolved(resolve, e.args["J"], tensor_sha256))
+            if np.shape(J) != (d_model, d_model):
+                raise ValueError(f"jswap at {e.tap}: J is shaped {np.shape(J)}, not (d_model, d_model) = "
+                                 f"{(d_model, d_model)}")
+            if max(e.args["a"], e.args["b"]) >= vocab:
+                raise ValueError(f"jswap at {e.tap}: tokens {e.args['a']} and {e.args['b']} must be below the"
+                                 f" vocabulary size {vocab}")
+    heads = sorted({e.tap for e in edits if "head" in e.args})
+    if heads:
+        import jax
+
+        shapes = jax.eval_shape(lambda p, t: model.instrumented(p, t, heads)[1], params, tokens)
+        for e in (e for e in edits if "head" in e.args):
+            count = getattr(shapes[e.tap], "array", shapes[e.tap]).shape[2]  # (Batch, Pos, Head, HeadDim)
+            if e.args["head"] >= count:
+                raise ValueError(f"zero at {e.tap}: head {e.args['head']} is at or beyond the tap's {count} heads")
 
     for e in edits:
         if e.op == "swap":
             params = swap_component(params, params_at(e.args["step"]), e.tap)
-    if all(e.op == "swap" for e in edits):
-        return model.instrumented(params, tokens, taps)
 
-    # Each edit's operand: zeros, the scaled vector, or the source or reference values at its tap, per sequence.
-    operations: list[tuple[str, str, np.ndarray, Any]] = []
+    # Each edit's operand: zeros, the scaled vector, the source or reference values at its tap, per
+    # sequence, or jswap's coefficient and direction differences.
+    operations: list[tuple[str, str, np.ndarray, int | None, Any]] = []
     for e, index in zip(edits, selected):
-        if e.op == "swap":
-            continue
+        if e.op == "swap" or (e.op == "jswap" and e.args["a"] == e.args["b"]):
+            continue  # a self-swap adds no operation at all (D25)
         mask = np.zeros(seq, dtype=bool)
         mask[index] = True
         if e.op == "zero":
@@ -141,6 +173,8 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
         elif e.op == "add":
             vector = resolved[e.args["vector"]]
             operand = (np.float64(e.args["alpha"]) * vector.astype(np.float64)).astype(np.float32)
+        elif e.op == "jswap":
+            operand = _jswap_operand(resolved[e.args["J"]], params.wte, e.args["a"], e.args["b"])
         elif e.op == "patch":
             operand = _tap_value(model, params, resolved[e.args["source"]], e.tap)
         else:
@@ -150,7 +184,9 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             else:
                 rows = np.random.default_rng(e.args["seed"]).integers(0, len(reference), size=batch)
                 operand = reference[rows]
-        operations.append((e.tap, e.op, mask, operand))
+        operations.append((e.tap, e.op, mask, e.args.get("head"), operand))
+    if not operations:
+        return model.instrumented(params, tokens, taps)
 
     import jax
     import jax.numpy as jnp
@@ -159,8 +195,8 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
         # Operands are arguments, not constants closed over: baked in as constants, XLA folds
         # the layer norm after a full patch and the patched logits stop matching the source's bit for bit.
         hooks: dict[str, list[Callable[[Any], Any]]] = {}
-        for (tap, op, mask, _), operand in zip(operations, operands):
-            hooks.setdefault(tap, []).append(_hook(jnp, op, mask, operand))
+        for (tap, op, mask, head, _), operand in zip(operations, operands):
+            hooks.setdefault(tap, []).append(_hook(jnp, op, mask, head, operand))
 
         def chain(fns: list[Callable[[Any], Any]]) -> Callable[[Any], Any]:
             def apply(value: Any) -> Any:
@@ -174,19 +210,33 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
     return jax.jit(forward)(params, tokens, [operand for *_, operand in operations])
 
 
-def _hook(jnp: Any, op: str, mask: np.ndarray, operand: Any) -> Callable[[Any], Any]:
+def _jswap_operand(J: np.ndarray, wte: Any, a: int, b: int) -> np.ndarray:
+    """``[q, d]``, float32: ``r · q`` is β − α, the difference of r's least-squares coefficients
+    on ``u_a`` and ``u_b``, and ``d = u_a − u_b``, with ``u = Jᵀw``. Computed in float64."""
+    U = np.asarray(J, np.float64).T @ np.asarray(wte, np.float64)[[a, b]].T  # columns u_a, u_b
+    P = np.linalg.pinv(U)  # rows map r to α and β
+    return np.stack([P[1] - P[0], U[:, 0] - U[:, 1]]).astype(np.float32)
+
+
+def _hook(jnp: Any, op: str, mask: np.ndarray, head: int | None, operand: Any) -> Callable[[Any], Any]:
     """The edit as a pure function of the tap's value, whose axes are (Batch, Pos, ...)."""
 
     def apply(value: Any) -> Any:
         where = mask.reshape((1, -1) + (1,) * (value.ndim - 2))
         if op == "zero":
+            if head is not None:  # attn.hook_z: (Batch, Pos, Head, HeadDim)
+                where = where & (np.arange(value.shape[2]) == head).reshape(1, 1, -1, 1)
             return jnp.where(where, jnp.zeros((), value.dtype), value)
-        expected = value.shape[2:] if op == "add" else ((1,) if op == "mean" else value.shape[:1]) + value.shape[1:]
+        expected = {"add": value.shape[2:], "jswap": (2,) + value.shape[2:], "mean": (1,) + value.shape[1:]}.get(
+            op, value.shape)
         if tuple(operand.shape) != tuple(expected) or operand.dtype != value.dtype:
             raise ValueError(f"{op}: operand is {operand.dtype}{list(operand.shape)}, the tap needs"
                              f" {value.dtype}{list(expected)}")
         if op == "add":
             return jnp.where(where, value + operand, value)
+        if op == "jswap":
+            q, d = operand[0], operand[1]
+            return jnp.where(where, value + jnp.sum(value * q, axis=-1, keepdims=True) * d, value)
         return jnp.where(where, operand, value)
 
     return apply
