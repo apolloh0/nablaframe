@@ -23,26 +23,72 @@ from typing import Any
 
 import numpy as np
 
+from ..interventions.spec import InterventionSpec, edit
+
+
+def _positions(positions: Any) -> np.ndarray:
+    pos = np.asarray(positions, dtype=np.int64).reshape(-1)
+    if pos.size == 0:
+        raise ValueError("no positions")
+    if pos.min() < 0:
+        raise ValueError("positions must be non-negative")
+    return pos
+
 
 def induction_targets(windows: np.ndarray, positions: Any) -> np.ndarray:
-    raise NotImplementedError
+    windows = np.asarray(windows)
+    if windows.ndim != 2:
+        raise ValueError("windows must be (Batch, Pos)")
+    pos = _positions(positions)
+    if pos.max() >= windows.shape[1]:
+        raise ValueError(f"positions must lie in [0, {windows.shape[1]})")
+    targets = np.full((windows.shape[0], pos.size), -1, dtype=np.int64)
+    for b in range(windows.shape[0]):
+        for i, p in enumerate(pos):
+            earlier = np.flatnonzero(windows[b, :p] == windows[b, p])
+            if earlier.size:
+                targets[b, i] = earlier[-1] + 1
+    return targets
 
 
 def induction_scores(pattern: np.ndarray, windows: np.ndarray, positions: Any) -> np.ndarray:
-    raise NotImplementedError
+    pattern = np.asarray(pattern)
+    if pattern.ndim != 4:
+        raise ValueError("pattern must be (Batch, Head, QPos, KPos)")
+    windows = np.asarray(windows)
+    if windows.ndim != 2 or windows.shape[0] != pattern.shape[0]:
+        raise ValueError("windows must be (Batch, Pos) with the pattern's batch")
+    pos = _positions(positions)
+    if pos.max() >= pattern.shape[2]:
+        raise ValueError(f"positions must lie in [0, {pattern.shape[2]})")
+    targets = induction_targets(windows, pos)
+    b, i = np.nonzero(targets >= 0)
+    if b.size == 0:
+        raise ValueError("no (sequence, position) pair has an induction target")
+    attention = pattern[b, :, pos[i], targets[b, i]].astype(np.float64)  # (pairs, Head)
+    return attention.mean(axis=0)
 
 
 def uniform_baseline(positions: Any) -> float:
-    raise NotImplementedError
+    pos = _positions(positions)
+    return float(np.mean(1.0 / (pos.astype(np.float64) + 1.0)))
+
+
+def _steepest(steps: Sequence[int], values: Sequence[float], sign: float) -> int:
+    steps, values = list(steps), np.asarray(values, dtype=np.float64)
+    if values.ndim != 1 or len(steps) != values.size or values.size < 2:
+        raise ValueError("steps and values must be equal-length sequences of at least two checkpoints")
+    change = sign * np.diff(values)
+    return int(steps[int(np.argmax(change)) + 1])  # argmax returns the first maximum: ties to the earlier step
 
 
 def steepest_drop(steps: Sequence[int], values: Sequence[float]) -> int:
-    raise NotImplementedError
+    return _steepest(steps, values, -1.0)
 
 
 def steepest_rise(steps: Sequence[int], values: Sequence[float]) -> int:
-    raise NotImplementedError
+    return _steepest(steps, values, 1.0)
 
 
 def head_zero(layer: int, head: int) -> Any:
-    raise NotImplementedError
+    return InterventionSpec((edit(f"blocks.{layer}.attn.hook_z", "all", "zero", head=head),))
