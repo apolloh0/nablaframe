@@ -133,10 +133,14 @@ def _compiled_update(model_config: GPT2Config, train_config: TrainConfig) -> Cal
     return jax.jit(update)
 
 
-def run_until(state: TrainState, stream: np.ndarray, model_config: GPT2Config, train_config: TrainConfig, *,
+def run_until(state: TrainState, stream: np.ndarray | None, model_config: GPT2Config, train_config: TrainConfig, *,
               until_step: int, checkpoint_dir: str | Path | None = None, save_every: int | None = None,
-              heartbeat: Heartbeat | None = None, run_id: str | None = None) -> TrainState:
-    """``run_id`` goes into each resume checkpoint's sidecar, and is null there when omitted."""
+              heartbeat: Heartbeat | None = None, run_id: str | None = None,
+              batch_source: Callable[[int], np.ndarray] | None = None) -> TrainState:
+    """``run_id`` goes into each resume checkpoint's sidecar, and is null there when omitted.
+
+    ``run_until`` gains a keyword ``batch_source=None``. When given, step k's batch is ``batch_source(k)``, which must be an int32 array shaped (batch, seq + 1), or ValueError before that step trains, and ``stream`` may then be None. When omitted, the loop is unchanged, and the reference run trains bit for bit as before (D29).
+    """
     from .checkpoint import save_checkpoint  # checkpoint.py imports TrainState from here
 
     if until_step < state.step:
@@ -146,8 +150,15 @@ def run_until(state: TrainState, stream: np.ndarray, model_config: GPT2Config, t
     saving = checkpoint_dir is not None and save_every is not None
     train_step = make_train_step(model_config, train_config)
     tokens = train_config.batch * train_config.seq
+    expected = (train_config.batch, train_config.seq + 1)
     while state.step < until_step:
-        batch = batch_for_step(stream, train_config.data_seed, state.step, train_config.batch, train_config.seq)
+        if batch_source is None:
+            batch = batch_for_step(stream, train_config.data_seed, state.step, train_config.batch, train_config.seq)
+        else:
+            batch = batch_source(state.step)
+            if getattr(batch, "dtype", None) != np.int32 or np.shape(batch) != expected:
+                raise ValueError(f"batch_source({state.step}) must be an int32 array shaped {expected}, got "
+                                 f"{getattr(batch, 'dtype', type(batch).__name__)} {np.shape(batch)}")
         state, loss = train_step(state, batch)
         if saving and state.step % save_every == 0:
             save_checkpoint(state, checkpoint_dir, run_id=run_id)
