@@ -17,11 +17,189 @@ Measurements: REQUIRED_MEASUREMENTS["G4.5"]. Pass needs ``builds_identical`` tru
 ``external_urls == 0``; the formation steps are recorded.
 """
 
+# How it measures:
+#
+# * Run in nf-jax: ``UV_PROJECT_ENVIRONMENT=.venv-jax uv run --extra jax python
+#   gates/phase4/g45_formation_viewer.py``. Takes --overwrite and --allow-dirty. It reads G4.1's
+#   runs and their traces, after ``require_g41`` and ``zoo_run``'s checks; --overwrite also lets
+#   it replace the build folders.
+# * Each store must hold, at every checkpoint in G4.1's schedule, the logits and events recorded
+#   on the probe's first ``seq`` tokens (``batch_hash``), or the gate exits 1 with no report.
+# * Formation: at each checkpoint, the mean over the probe's windows and the mechanism positions
+#   of ``-log softmax(logits[b, p])[probe[b, p + 1]]``, in float64, from the traced logits; and
+#   the largest of block 1's heads' ``induction_scores`` at that checkpoint. Each head's own
+#   curve is recorded beside it, as ``attention_by_head_by_step``.
+# * Views: ``build_views`` of every traced step, with ``params_for`` loading G4.1's checkpoints,
+#   the probe's first ``seq`` tokens (what the trace recorded), the run's ``n_layers`` and
+#   ``run_id``, and ``task.vocab``. No validation-loss curve and no J-lens: a zoo run has
+#   neither at every step. The first build goes to ``runs/phase4/<name>/views/``, the second to
+#   ``runs/phase4/scratch/views/<name>/``; both start empty. ``builds_identical`` holds when
+#   both models' two builds hold the same files, by relative path, with the same bytes.
+# * ``external_urls`` counts every match of ``EXTERNAL_URL``, copied from tests/test_viewer.py
+#   as G2.6 copies it, in every file directly in viewer/; ``external_url_matches`` lists them.
+
 from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import numpy as np  # noqa: E402
+
+import _common  # noqa: E402
+
+p1 = _common.p1
+
+GATE_ID = "G4.5"
+REPORT_NAME = "g45_formation_viewer.json"
+PATTERN_TAP = "blocks.1.attn.hook_pattern"
+# The offline rule's pattern, as tests/test_viewer.py states it.
+EXTERNAL_URL = re.compile(r"https?://|src=[\"']//|import\s*\(\s*[\"']//")
+VERSIONS = ("jax", "jaxlib", "equinox", "marin-haliax", "safetensors", "numpy")
 
 
 def main(argv: list[str] | None = None) -> int:
-    raise NotImplementedError
+    args = p1.arg_parser(__doc__).parse_args(argv)
+    report = p1.start(args, _common.report_relative(REPORT_NAME))
+    g41 = _common.require_g41()
+    runs = {name: _common.zoo_run(name, g41) for name in _common.NAMES}
+    readers = {name: open_reader(run) for name, run in runs.items()}
+    folders = {name: (run.folder / "views", _common.scratch_dir() / "views" / name) for name, run in runs.items()}
+    for first, second in folders.values():
+        for folder in (first, second):
+            if folder.exists() and not args.overwrite:
+                raise SystemExit(f"{p1.rel(folder)} exists. Pass --overwrite to start it over.")
+    measurements = formation(runs["induction"], readers["induction"])
+    measurements |= views(runs, folders, overwrite=args.overwrite)
+    measurements |= offline(Path(p1.REPO_ROOT) / "viewer")
+    measurements["run_ids"] = {name: run.run_id for name, run in runs.items()}
+    measurements["versions"] = p1.phase0.package_versions(VERSIONS)
+    return p1.write(GATE_ID, status(measurements), measurements, report, overwrite=args.overwrite)
+
+
+def status(m: dict[str, Any]) -> str:
+    """pass exactly when reports.py's G4.5 rule holds."""
+    return "pass" if m["builds_identical"] is True and m["external_urls"] == 0 else "fail"
+
+
+def probe(run: Any) -> np.ndarray:
+    """The probe as the trace recorded it: the probe windows' first ``seq`` tokens."""
+    return _common.tokens(run.task, _common.probe(run.task))
+
+
+def open_reader(run: Any) -> Any:
+    """A ``TraceReader`` on the run's store, once it holds every checkpoint's events and logits, on the probe."""
+    from nablaframe.data.corpus import batch_hash
+    from nablaframe.trace.registry import LOGITS
+    from nablaframe.views.readouts import TraceReader
+
+    root = run.store
+    if not (root / "events.jsonl").exists():
+        raise SystemExit(f"{p1.rel(root)} holds no trace store. Run G4.1 first. No report written.")
+    reader = TraceReader(root)
+    missing = [step for step in run.steps if step not in reader.steps()]
+    if missing or tuple(reader.steps()) != run.steps:
+        raise SystemExit(f"{p1.rel(root)} doesn't hold exactly G4.1's checkpoints (missing {missing}). Run G4.1"
+                         " again. No report written.")
+    expected = batch_hash(probe(run))
+    for step in run.steps:
+        try:
+            reader.event(step, LOGITS)
+        except KeyError:
+            raise SystemExit(f"{p1.rel(root)} has no logits at step {step}. Run G4.1 again. No report written.")
+        if reader.batch_hash(step) != expected:
+            raise SystemExit(f"step {step} in {p1.rel(root)} was traced on a different batch than the probe."
+                             " No report written.")
+    return reader
+
+
+def formation(run: Any, reader: Any) -> dict[str, Any]:
+    """The scrubber's two curves: the mechanism positions' loss and the best block-1 head's attention."""
+    from nablaframe.zoo.induction import induction_scores, steepest_drop, steepest_rise
+
+    task = run.task
+    windows = _common.probe(task)
+    positions = task.mechanism_positions
+    losses, best, by_head = [], [], []
+    progress = p1.Progress("formation, checkpoints", len(run.steps))
+    for step in run.steps:
+        logits = reader.tensor(step, "logits").astype(np.float64)[:, positions]
+        shifted = logits - logits.max(axis=-1, keepdims=True)
+        log_probs = shifted - np.log(np.exp(shifted).sum(axis=-1, keepdims=True))
+        targets = windows[:, positions + 1]
+        losses.append(float(-np.take_along_axis(log_probs, targets[..., None].astype(np.intp), axis=-1).mean()))
+        scores = induction_scores(reader.tensor(step, PATTERN_TAP), windows, positions)
+        by_head.append([float(s) for s in scores])
+        best.append(float(scores.max()))
+        progress.advance()
+    loss_step, attention_step = steepest_drop(run.steps, losses), steepest_rise(run.steps, best)
+    print(f"{GATE_ID}: the mechanism positions' loss drops most steeply at step {loss_step:,}; the best block-1 head's"
+          f" attention to its targets rises most steeply at step {attention_step:,}", flush=True)
+    return {
+        "formation_loss_step": loss_step,
+        "formation_attention_step": attention_step,
+        "steps": list(run.steps),
+        "mechanism_loss_by_step": losses,
+        "best_attention_by_step": best,
+        "attention_by_head_by_step": by_head,
+        "probe_windows": int(len(windows)),
+        "probe_sha256": _batch_hash(windows),
+    }
+
+
+def views(runs: dict[str, Any], folders: dict[str, tuple[Path, Path]], *, overwrite: bool) -> dict[str, Any]:
+    """Each zoo model's views built twice, compared file by file."""
+    by_model = {}
+    for name, run in runs.items():
+        first, second = folders[name]
+        written = []
+        for label, out in (("first build", first), ("second build", second)):
+            _common.fresh_dir(out, overwrite=overwrite)
+            written.append(build(run, out, label))
+        comparison = _common.p3.compare_trees(first, second)
+        print(f"{GATE_ID}: {name}: the two builds are {'byte-identical' if comparison['identical'] else 'different'}"
+              f" over {comparison['files_compared']:,} files", flush=True)
+        by_model[name] = {**comparison, "files_written": len(written[0]), "export_bytes": _bytes(written[0]),
+                          "views_dir": p1.rel(first), "second_build_dir": p1.rel(second)}
+    return {"builds_identical": all(m["identical"] for m in by_model.values()), "views": by_model}
+
+
+def build(run: Any, out: Path, label: str) -> list[Path]:
+    """One ``build_views`` of a zoo run into ``out``, with a fresh reader and a progress line."""
+    from nablaframe.views.build import build_views
+    from nablaframe.views.readouts import TraceReader
+
+    reader = TraceReader(run.store)
+    progress = p1.Progress(f"views, {run.name}, {label}, steps", len(reader.steps()))
+    paths = build_views(reader, out, params_for=run.params_for, probe=probe(run), n_layers=run.config.n_layers,
+                        run_id=run.run_id, vocab=run.task.vocab, progress=lambda done, total: progress.advance())
+    print(f"{GATE_ID}: {run.name}, {label}: {len(paths):,} files written to {p1.rel(out)}", flush=True)
+    return paths
+
+
+def offline(viewer: Path) -> dict[str, Any]:
+    """Matches of the offline rule's pattern in the viewer's files, as G2.6 counts them."""
+    matches = []
+    for path in sorted(Path(viewer).glob("*")):
+        if path.is_file():
+            text = path.read_text(encoding="utf-8")
+            matches += [{"file": path.name, "match": match.group(0)} for match in EXTERNAL_URL.finditer(text)]
+    files = sorted(path.name for path in Path(viewer).glob("*") if path.is_file())
+    print(f"{GATE_ID}: {len(matches)} external references in {', '.join(files) or 'no files'}", flush=True)
+    return {"external_urls": len(matches), "external_url_matches": matches, "viewer_files": files}
+
+
+def _bytes(paths: list[Path]) -> int:
+    return sum(Path(path).stat().st_size for path in paths)
+
+
+def _batch_hash(windows: np.ndarray) -> str:
+    from nablaframe.data.corpus import batch_hash
+
+    return batch_hash(windows)
 
 
 if __name__ == "__main__":
