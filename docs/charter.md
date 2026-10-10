@@ -49,7 +49,7 @@ Carried over from Glasshouse.
 | 2 | Read-only views and the timeline scrubber | [specs/phase-2.md](specs/phase-2.md), done on 2026-10-04 (D16, D21) |
 | 3 | Manipulation: ablate, patch, steer, swap | [specs/phase-3.md](specs/phase-3.md), done at H3 on 2026-10-05 (D28) |
 | 4 | Ground-truth zoo and discrimination tests | [specs/phase-4.md](specs/phase-4.md), done at H4 on 2026-10-10 (D39) |
-| 5 | Dictionaries and their edge-sparsity meter | Not yet written |
+| 5 | Dictionaries and their edge-sparsity meter | [specs/phase-5.md](specs/phase-5.md) |
 | 6 | Gestures | Not yet written |
 | 7 | Self-learning ledger | Not yet written |
 
