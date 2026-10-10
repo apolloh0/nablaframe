@@ -1,0 +1,195 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G4.3",
+  "git_commit": "ecd7c965994d8b0b7895554fd6462de066a5a742",
+  "git_dirty": false,
+  "measurements": {
+    "answer_kept_by_site": {
+      "every position": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fact positions": [
+        0.10546875,
+        0.9921875,
+        0.99609375,
+        0.99609375
+      ],
+      "query": [
+        0.8984375,
+        0.00390625,
+        0.00390625,
+        0.0
+      ]
+    },
+    "answer_position": 25,
+    "bars": {
+      "ablation_fraction": 0.5,
+      "behaviour": 0.9,
+      "control_ratio": 2.0,
+      "control_unchanged": 0.95,
+      "induction_attention": 0.5,
+      "patch_after_read": 0.1,
+      "patch_followed": 0.9,
+      "swap_fraction": 0.5,
+      "twin_attention_ratio": 2.0
+    },
+    "best_swap": {
+      "block": 2,
+      "rate": 0.8515625,
+      "site": "query"
+    },
+    "blocks": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "control_unchanged_by_site": {
+      "every position": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fact positions": [
+        1.0,
+        0.99609375,
+        1.0,
+        1.0
+      ],
+      "query": [
+        1.0,
+        1.0,
+        0.99609375,
+        1.0
+      ]
+    },
+    "control_unchanged_min": 0.99609375,
+    "controls_sha256": "a6ea9cdc1a5cda12e3709e584114dbbb07f4c63b38ff0b647c41544669e127f6",
+    "eval_windows": 256,
+    "eval_windows_sha256": "49daccf629480c943caf79e25321ff7ced0b37e39f14fc8a93a03232c9195425",
+    "run_id": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97",
+    "sites": {
+      "every position": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "fact positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "query": [
+        24,
+        25
+      ]
+    },
+    "source_seed": 5,
+    "sources_sha256": "885353a1a53767c14a76cbdd1d74fe798541cf871a40ef4d99ca78c6e90d40e9",
+    "step": 20000,
+    "swap_by_site": {
+      "every position": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fact positions": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "query": [
+        0.08984375,
+        0.8359375,
+        0.8515625,
+        0.0
+      ]
+    },
+    "transplant_by_site": {
+      "every position": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fact positions": [
+        0.890625,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "query": [
+        0.0,
+        0.1484375,
+        0.140625,
+        1.0
+      ]
+    },
+    "unpatched_accuracy": 0.99609375,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-10T02:09:06Z",
+  "xla_flags": ""
+}
