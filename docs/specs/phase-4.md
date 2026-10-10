@@ -132,7 +132,8 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | G4.2 Induction | The attention view's, the ablation's, the component swap's and the patch's tests | All four bars met | Diagnose the view or tool that failed |
 | G4.3 Two-hop | The aligned patch's swap and transplant profiles, and its distractor control | The control's bar met; the profiles recorded | Diagnose the patch |
 | G4.4 Lenses at model level | Both lenses' ranks, the J-lens coordinate swap, direct logit attribution, and the zoo J's | Recorded, not judged | Not applicable |
-| G4.5 Formation and viewer | The formation demo's two steps; both zoo models' views built twice | Builds byte-identical, no external URL | Diagnose the build |
+| G4.5 Formation and viewer | The formation demo's two steps; both zoo models' views built twice, with their timeline curves and last-position targets (D38) | Builds byte-identical, no external URL | Diagnose the build |
+| G4.6 Badges and demos | Each view's and each operation's model-level badge, from the reports; the zoo demos' compare payloads (D38) | Both built twice, byte-identical; every view and operation has a badge | Diagnose the build |
 
 ## Work packages
 
@@ -144,7 +145,7 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | 4 | Induction scores, head ablation and the formation steps | `zoo/induction.py` | 2 |
 | 5 | The two-hop patch profiles and lens ranks | `zoo/two_hop.py` | 2, 3 |
 | 6 | Phase 4 gates and their report rules | `gates/phase4/`, `reports.py` | All |
-| 7 | Model-level badges: each view's model-level result on its badge, after H4's runs (D34) | `views/build.py`, `viewer/` | 6 |
+| 7 | Model-level badges, generated from the reports; the zoo's timeline curves, last-position targets and compare top tokens, so both demos show in the viewer (D34, D38) | `views/`, `interventions/cli.py`, `viewer/`, `gates/phase4/` | 6 |
 
 ## Tests
 
@@ -158,6 +159,7 @@ Written with the stubs:
 - **Delta 2:** `test_two_hop_answers_never_collide`, `test_patch_sources_keep_the_outcomes_distinct`
 - **Delta 3 (D36):** `test_periodic_windows_draw_in_a_fixed_order`, `test_a_fixed_period_draws_no_period`, `test_the_task_requires_its_mechanism`, `test_periods_are_checked`, `test_every_position_after_an_earlier_occurrence_is_a_target`, `test_scores_sum_the_attention_on_every_target`, `test_new_token_sources`, `test_aligned_sources_differ_only_where_the_chain_moves`, `test_outcomes_on_aligned_sources_are_three_different_tokens`, `test_aligned_sources_check_their_windows`
 - **Delta 3 (gates):** `test_settings_and_bars_are_fixed`, `test_schedules`, `test_fraction_removed_and_the_last_checkpoint_at_chance`, `test_the_gates_windows`, `test_configs_build_the_settings`, `test_phase4_gate_ids`, `test_phase4_status_rules`
+- **Delta 4 (D38):** `test_every_view_and_operation_has_a_badge`, `test_the_lens_badges_read_where_the_patch_finds_the_intermediate`, `test_attribution_and_the_operations_cite_their_gates`, `test_status_follows_the_reports_and_bad_reports_are_refused`, `test_the_last_position_is_scored_against_the_next_token`, `test_build_views_with_next_tokens_and_curves`, `test_both_passes_top_tokens`, `test_ties_go_to_the_lower_id`, `test_g46_status_rules`
 
 ## Out of scope
 

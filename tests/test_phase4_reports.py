@@ -34,7 +34,7 @@ def _g(gate_id: str, status: str = "pass", **measurements) -> dict:
 
 
 def test_phase4_gate_ids():
-    assert reports.PHASE4_GATE_IDS == ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")
+    assert reports.PHASE4_GATE_IDS == ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5", "G4.6")  # G4.6 from delta 4
     old = _g("G4.1")
     old["schema_version"] = 1
     del old["git_commit"], old["git_dirty"]
