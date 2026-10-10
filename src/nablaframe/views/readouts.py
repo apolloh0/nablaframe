@@ -21,11 +21,13 @@ tensor comes from ``TraceStore.load_tensor``, which verifies its SHA-256.
   ``-log softmax(logits[b, t])[probe[b, t + 1]]``, computed in float64 from the
   traced ``logits``. The last position has no next token and holds NaN. Raises
   ValueError unless ``batch_hash(probe)`` equals the events' batch hash.
+  ``per_token_loss`` takes a keyword ``next_token=None``: one int per probe sequence, the token that follows its last position in the window. When given, the last position is scored against it like any other; without it, the last position stays NaN. Anything but a 1-D integer array of non-negative ids with one entry per sequence raises ValueError. A helper here, ``checked_next_token(next_token, probe)``, returns it as an int64 array, or None, or raises that ValueError, and the other views use it.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -79,13 +81,32 @@ def residual_norms(reader: TraceReader, step: int, n_layers: int) -> np.ndarray:
     return np.stack(rows).astype(np.float32)
 
 
-def per_token_loss(reader: TraceReader, step: int, probe: np.ndarray) -> np.ndarray:
+def checked_next_token(next_token: Any, probe: np.ndarray) -> np.ndarray | None:
+    """``next_token`` as an int64 array of one entry per probe sequence, or None if it is None."""
+    if next_token is None:
+        return None
+    array = np.asarray(next_token)
+    if array.ndim != 1 or not np.issubdtype(array.dtype, np.integer):
+        raise ValueError(f"next_token must be a 1-D integer array, got dtype {array.dtype} and shape {array.shape}")
+    if array.shape[0] != np.shape(probe)[0]:
+        raise ValueError(f"next_token has {array.shape[0]} entries for {np.shape(probe)[0]} probe sequences")
+    if (array < 0).any():
+        raise ValueError("next_token ids must be non-negative")
+    return array.astype(np.int64)
+
+
+def per_token_loss(reader: TraceReader, step: int, probe: np.ndarray, *, next_token: Any = None) -> np.ndarray:
     probe = np.asarray(probe)
+    next_token = checked_next_token(next_token, probe)
     if probe_batch_hash(probe) != reader.batch_hash(step):
         raise ValueError(f"probe does not match the batch step {step} was recorded on")
     logits = reader.tensor(step, "logits").astype(np.float64)
     shifted = logits - logits.max(axis=-1, keepdims=True)
     log_probs = shifted - np.log(np.exp(shifted).sum(axis=-1, keepdims=True))
+    if next_token is not None:
+        targets = np.concatenate([probe[:, 1:], next_token[:, None]], axis=1)
+        nll = -np.take_along_axis(log_probs, targets[..., None].astype(np.intp), axis=-1)[..., 0]
+        return nll.astype(np.float32)
     loss = np.full(probe.shape, np.nan, dtype=np.float32)
     nll = -np.take_along_axis(log_probs[:, :-1], probe[:, 1:, None].astype(np.intp), axis=-1)[..., 0]
     loss[:, :-1] = nll

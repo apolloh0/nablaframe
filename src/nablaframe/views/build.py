@@ -45,6 +45,7 @@ the viewer reads. All floats are plain Python floats; NaN is written as null.
   `jlens_payload(reader, step, params_for(step), jacobians_for(step), probe, n_layers)` as
   `jlens-step-<step>`, and the index's `views` is `VIEWS` followed by `"jlens"`. Without
   it, nothing changes.
+  ``view_payloads`` takes ``next_token=None`` and passes it to ``per_token_loss``, ``target_ranks`` and ``attribution_from_trace``. ``build_views`` takes ``next_token=None`` and ``curves=None``. It passes ``next_token`` to every payload, the J-lens's included. When it's given, the index gains ``"next_token"``, a list of ints. When ``curves`` is given, the index gains ``"curves"``: a list of ``{"name", "unit", "points"}``, ``name`` and ``unit`` non-empty strings, each point ``{"step", "value"}`` with an int step and a finite value or null. Anything else raises ValueError before a file is written. Without either keyword, the index has exactly its earlier keys and every file is byte-identical to before, so earlier runs' builds don't change.
 """
 
 from __future__ import annotations
@@ -61,7 +62,7 @@ from .cache import _write_atomic
 from .export import export_view
 from .jlens_view import jlens_payload, target_ranks
 from .lens import lens_meter, lens_readings
-from .readouts import per_token_loss, residual_norms
+from .readouts import checked_next_token, per_token_loss, residual_norms
 
 VIEWS = ("per_token_loss", "logit_lens", "attribution", "layer_structure")
 TOP_K = 5
@@ -108,18 +109,53 @@ def _attention_entropy(reader: Any, step: int, n_layers: int) -> list[list[float
     return rows
 
 
-def view_payloads(reader: Any, step: int, params: Any, probe: np.ndarray, n_layers: int) -> dict[str, dict[str, Any]]:
+def _checked_curves(curves: Any) -> list[dict[str, Any]] | None:
+    """``curves`` as plain Python values in the index's form, or None; ValueError if it isn't well formed."""
+    if curves is None:
+        return None
+    if isinstance(curves, str | bytes | Mapping) or not isinstance(curves, Sequence):
+        raise ValueError(f"curves must be a list of curves, got {type(curves).__name__}")
+    checked = []
+    for i, curve in enumerate(curves):
+        if not isinstance(curve, Mapping) or set(curve) != {"name", "unit", "points"}:
+            raise ValueError(f"curve {i} must be a dict with exactly the keys 'name', 'unit' and 'points'")
+        for key in ("name", "unit"):
+            if not isinstance(curve[key], str) or not curve[key]:
+                raise ValueError(f"curve {i}: {key!r} must be a non-empty string")
+        points = curve["points"]
+        if isinstance(points, str | bytes | Mapping) or not isinstance(points, Sequence):
+            raise ValueError(f"curve {i}: 'points' must be a list")
+        clean = []
+        for j, point in enumerate(points):
+            if not isinstance(point, Mapping) or set(point) != {"step", "value"}:
+                raise ValueError(f"curve {i}, point {j} must be a dict with exactly the keys 'step' and 'value'")
+            step, value = point["step"], point["value"]
+            if isinstance(step, bool) or not isinstance(step, int | np.integer):
+                raise ValueError(f"curve {i}, point {j}: 'step' must be an int, got {step!r}")
+            if value is not None:
+                if isinstance(value, bool) or not isinstance(value, int | float | np.integer | np.floating):
+                    raise ValueError(f"curve {i}, point {j}: 'value' must be a finite number or null, got {value!r}")
+                value = float(value)
+                if not np.isfinite(value):
+                    raise ValueError(f"curve {i}, point {j}: 'value' must be finite or null, got {value!r}")
+            clean.append({"step": int(step), "value": value})
+        checked.append({"name": curve["name"], "unit": curve["unit"], "points": clean})
+    return checked
+
+
+def view_payloads(reader: Any, step: int, params: Any, probe: np.ndarray, n_layers: int, *,
+                  next_token: Any = None) -> dict[str, dict[str, Any]]:
     probe = np.asarray(probe)
     loss = {
         "step": step,
-        "loss": _nulled(per_token_loss(reader, step, probe)),
+        "loss": _nulled(per_token_loss(reader, step, probe, next_token=next_token)),
         "meter": {"kind": "hash_check", "tensor_sha256": reader.event(step, "logits").sha256},
     }
 
     readings = lens_readings(reader, step, params, n_layers)
     meter = lens_meter(readings, reader.tensor(step, "logits"))
     top_tokens, top_probs = _top_tokens(readings)
-    target_rank, target_prob = target_ranks(readings, probe)
+    target_rank, target_prob = target_ranks(readings, probe, next_token=next_token)
     lens = {
         "step": step,
         "layers": _lens_layers(n_layers),
@@ -131,7 +167,8 @@ def view_payloads(reader: Any, step: int, params: Any, probe: np.ndarray, n_laye
         "badge": BADGES["logit_lens"],
     }
 
-    contributions, error = attribution_from_trace(reader, step, params, probe, n_layers)
+    contributions, error = attribution_from_trace(reader, step, params, probe, n_layers,
+                                                    next_token=next_token)
     parts = list(contributions)
     attr = {
         "step": step,
@@ -157,18 +194,22 @@ def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int],
                 n_layers: int, run_id: str, vocab: Sequence[str] | None = None,
                 val_loss_curve: Sequence[dict[str, Any]] | None = None,
                 progress: Callable[[int, int], None] | None = None,
-                jacobians_for: Callable[[int], Mapping[int, np.ndarray]] | None = None) -> list[Path]:
+                jacobians_for: Callable[[int], Mapping[int, np.ndarray]] | None = None,
+                next_token: Any = None, curves: Sequence[dict[str, Any]] | None = None) -> list[Path]:
     out = Path(out_dir)
     probe = np.asarray(probe)
+    next_token = checked_next_token(next_token, probe)
+    curves = _checked_curves(curves)
     steps = reader.steps()
     views = VIEWS if jacobians_for is None else VIEWS + ("jlens",)
     files: dict[str, dict[str, str]] = {view: {} for view in views}
     paths: list[Path] = []
     for done, step in enumerate(steps, start=1):
         params = params_for(step)
-        payloads = view_payloads(reader, step, params, probe, n_layers)
+        payloads = view_payloads(reader, step, params, probe, n_layers, next_token=next_token)
         if jacobians_for is not None:
-            payloads["jlens"] = jlens_payload(reader, step, params, jacobians_for(step), probe, n_layers)
+            payloads["jlens"] = jlens_payload(reader, step, params, jacobians_for(step), probe, n_layers,
+                                            next_token=next_token)
         for view in views:
             path = export_view(out, f"{view}-step-{step}", payloads[view])
             files[view][str(step)] = path.name
@@ -185,6 +226,10 @@ def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int],
         "vocab": None if vocab is None else list(vocab),
         "val_loss_curve": None if val_loss_curve is None else [dict(point) for point in val_loss_curve],
     }
+    if next_token is not None:
+        index["next_token"] = next_token.tolist()
+    if curves is not None:
+        index["curves"] = curves
     out.mkdir(parents=True, exist_ok=True)
     index_path = out / "index.json"
     _write_atomic(index_path, canonical_json(index).encode("ascii"))

@@ -19,6 +19,7 @@ Spec: docs/specs/phase-2.md, "Views", and D14.
   absolute gap, over the other positions, between the summed contributions and the
   traced logit of the target: the decomposition error, a plain Python float.
   Raises ValueError unless ``batch_hash(probe)`` equals the events' batch hash.
+  ``attribution_from_trace`` takes the same keyword ``next_token=None``. When given, the last position's target is ``next_token[b]``, its contributions are computed like any other's, and ``error`` covers it too.
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ import numpy as np
 
 from ..data.corpus import batch_hash as probe_batch_hash
 from .lens import LN_EPS, lens_params
+from .readouts import checked_next_token
 
 
 def _f64(array: Any) -> np.ndarray:
@@ -62,13 +64,20 @@ def parts_from_trace(reader: Any, step: int, n_layers: int) -> tuple[dict[str, n
     return parts, reader.tensor(step, f"blocks.{n_layers - 1}.hook_resid_post")
 
 
-def attribution_from_trace(reader: Any, step: int, params: Any, probe: np.ndarray,
-                           n_layers: int) -> tuple[dict[str, np.ndarray], float]:
+def attribution_from_trace(reader: Any, step: int, params: Any, probe: np.ndarray, n_layers: int, *,
+                           next_token: Any = None) -> tuple[dict[str, np.ndarray], float]:
     probe = np.asarray(probe)
+    next_token = checked_next_token(next_token, probe)
     if probe_batch_hash(probe) != reader.batch_hash(step):
         raise ValueError(f"probe does not match the batch step {step} was recorded on")
     ln_w, ln_b, wte = lens_params(params)
     parts, final = parts_from_trace(reader, step, n_layers)
+    logits = reader.tensor(step, "logits")
+    if next_token is not None:
+        targets = np.concatenate([probe[:, 1:], next_token[:, None]], axis=1)
+        contributions = attribution(parts, final, ln_w, ln_b, wte, targets)
+        target_logits = np.take_along_axis(_f64(logits), targets[..., None].astype(np.intp), axis=-1)[..., 0]
+        return contributions, float(np.abs(sum(contributions.values()) - target_logits).max())
     targets = probe[:, 1:]
     inner = attribution({name: part[:, :-1] for name, part in parts.items()}, final[:, :-1],
                         ln_w, ln_b, wte, targets)
@@ -77,7 +86,6 @@ def attribution_from_trace(reader: Any, step: int, params: Any, probe: np.ndarra
         padded = np.full(probe.shape, np.nan, dtype=np.float64)
         padded[:, :-1] = values
         contributions[name] = padded
-    logits = reader.tensor(step, "logits")
     target_logits = np.take_along_axis(_f64(logits[:, :-1]), targets[..., None].astype(np.intp), axis=-1)[..., 0]
     error = float(np.abs(sum(inner.values()) - target_logits).max())
     return contributions, error

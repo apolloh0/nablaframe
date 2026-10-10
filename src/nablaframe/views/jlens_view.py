@@ -20,6 +20,7 @@ Spec: docs/specs/phase-2.md, "The J-lens"; rulings D17 and D20. The J's come fro
   descending softmax probability, ties going to the lower token id (as the payloads' top
   tokens are ordered), and its probability is computed in float64. The last position has
   no target: both are null there.
+  ``target_ranks`` and ``jlens_payload`` take the same keyword ``next_token=None``. When given, the last position has a rank and a probability like any other, under the same tie rule; without it, both stay null there.
 * ``jlens_payload(reader, step, params, jacobians, probe, n_layers)``: raises ValueError
   unless ``batch_hash(probe)`` equals the step's events' batch hash. Otherwise
   ``{"step", "layers", "top_tokens", "top_probs", "target_rank", "target_prob", "meter",
@@ -39,6 +40,7 @@ import numpy as np
 
 from ..data.corpus import batch_hash as probe_batch_hash
 from .lens import lens_meter, lens_params, logit_lens
+from .readouts import checked_next_token
 
 JLENS_BADGE = ("Discrimination tests: recovers planted structure at decoder level (a J that carries planted "
                "directions to tokens), and is empty on random weights, checked by G2.10. Its definition matches "
@@ -103,27 +105,34 @@ def lens_divergence(a: np.ndarray, b: np.ndarray) -> list[dict[str, float]]:
     return rows
 
 
-def target_ranks(readings: np.ndarray, probe: np.ndarray) -> tuple[list, list]:
+def target_ranks(readings: np.ndarray, probe: np.ndarray, *, next_token: Any = None) -> tuple[list, list]:
     readings = np.asarray(readings)
     probe = np.asarray(probe)
     if probe.shape != readings.shape[1:3]:
         raise ValueError(f"probe shape {probe.shape} does not match the readings' (Batch, Pos) {readings.shape[1:3]}")
-    targets = probe[:, 1:, None].astype(np.intp)  # (Batch, Pos - 1, 1): positions with a next token
+    next_token = checked_next_token(next_token, probe)
+    if next_token is None:
+        targets = probe[:, 1:, None].astype(np.intp)  # (Batch, Pos - 1, 1): positions with a next token
+        tail: list = [None]
+    else:
+        targets = np.concatenate([probe[:, 1:], next_token[:, None]], axis=1)[..., None].astype(np.intp)
+        tail = []
+    n_targets = targets.shape[1]
     ids = np.arange(readings.shape[-1])
     ranks_out, probs_out = [], []
     for reading in readings:  # one reading at a time keeps the float64 copy small
-        p = _softmax(reading)[:, :-1]
+        p = _softmax(reading)[:, :n_targets]
         target_p = np.take_along_axis(p, targets, axis=-1)
         # 0-based rank by descending probability; an equally probable token ranks above the target only if its
         # id is lower, as the payloads' top tokens are ordered.
         ranks = (p > target_p).sum(axis=-1) + ((p == target_p) & (ids < targets)).sum(axis=-1)
-        ranks_out.append([row + [None] for row in ranks.tolist()])
-        probs_out.append([row + [None] for row in target_p[..., 0].tolist()])
+        ranks_out.append([row + tail for row in ranks.tolist()])
+        probs_out.append([row + tail for row in target_p[..., 0].tolist()])
     return ranks_out, probs_out
 
 
 def jlens_payload(reader: Any, step: int, params: Any, jacobians: Mapping[int, np.ndarray], probe: np.ndarray,
-                  n_layers: int) -> dict[str, Any]:
+                  n_layers: int, *, next_token: Any = None) -> dict[str, Any]:
     from .build import _top_tokens  # imported here: build imports this module
 
     probe = np.asarray(probe)
@@ -134,7 +143,7 @@ def jlens_payload(reader: Any, step: int, params: Any, jacobians: Mapping[int, n
     logit = np.stack([logit_lens(reader.tensor(step, f"blocks.{layer}.hook_resid_post"), ln_w, ln_b, wte)
                       for layer in range(n_layers)])
     top_tokens, top_probs = _top_tokens(readings)
-    target_rank, target_prob = target_ranks(readings, probe)
+    target_rank, target_prob = target_ranks(readings, probe, next_token=next_token)
     return _json_ready({
         "step": step,
         "layers": [f"blocks.{layer}.hook_resid_post" for layer in range(n_layers)],
