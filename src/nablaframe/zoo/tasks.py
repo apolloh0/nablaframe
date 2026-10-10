@@ -9,10 +9,7 @@ Every task has ``vocab`` (a tuple of strings), ``window`` (tokens per window), `
 ``numpy.random.default_rng([seed, step])``, so a step's batch never depends on another's),
 and ``tokenizer_json()`` (``Tokenizer(vocab).to_json()``).
 
-* ``InductionTask(vocab_size=64, window=64)``: vocab ``t0`` to ``t63``. Each window's first
-  half is ``window // 2`` distinct tokens drawn without replacement, and its second half
-  repeats the first. Mechanism positions ``window // 2`` to ``window - 2``; control positions
-  ``0`` to ``window // 2 - 2``; chance ``1 / vocab_size``.
+* ``InductionTask(vocab_size=64, window=64, min_period=8, max_period=32)``: vocab ``t0`` to ``t63``. Each window repeats a block of ``P`` distinct tokens to fill ``window`` tokens, token ``i`` being ``block[i % P]`` (D36). ``draw_window(rng, *, period=None)`` draws one, in this order: ``P = rng.integers(min_period, max_period + 1)``, skipped when ``period`` is given, then ``block = rng.choice(vocab_size, size=P, replace=False)``. A ``period`` outside ``min_period`` to ``max_period`` raises ValueError. ``batch_for_step`` draws its windows in sequence from one generator. Mechanism positions ``max_period`` to ``window - 2``; control positions ``0`` to ``min_period - 2``; chance ``1 / vocab_size``. ValueError unless ``2 <= min_period <= max_period <= vocab_size`` and ``max_period <= window - 2``.
 * ``TwoHopTask(entities=48, facts=6)``: vocab ``e0`` to ``e47``, then ``→``, ``;``, ``⇒``.
   A window is ``facts`` facts ``s → o ;`` in shuffled order, then ``a ⇒ c``: 27 tokens. Every
   fact's subject is distinct. The facts hold the chain ``a → b`` and ``b → c`` and distractors
@@ -48,13 +45,15 @@ class TwoHop:
 class InductionTask:
     vocab_size: int = 64
     window: int = 64
+    min_period: int = 8
+    max_period: int = 32
 
     def __post_init__(self) -> None:
-        if self.window < 2 or self.window % 2:
-            raise ValueError(f"window must be even and at least 2, got {self.window}")
-        if self.window // 2 > self.vocab_size:
-            raise ValueError(f"a first half of {self.window // 2} distinct tokens needs at least that many "
-                             f"tokens in the vocabulary, got {self.vocab_size}")
+        if not 2 <= self.min_period <= self.max_period <= self.vocab_size:
+            raise ValueError(f"periods must satisfy 2 <= min_period <= max_period <= vocab_size, got "
+                             f"{self.min_period}, {self.max_period}, {self.vocab_size}")
+        if self.max_period > self.window - 2:
+            raise ValueError(f"max_period must be at most window - 2 = {self.window - 2}, got {self.max_period}")
 
     @property
     def vocab(self) -> tuple[str, ...]:
@@ -70,18 +69,24 @@ class InductionTask:
 
     @property
     def mechanism_positions(self) -> np.ndarray:
-        return np.arange(self.window // 2, self.window - 1)
+        return np.arange(self.max_period, self.window - 1)
 
     @property
     def control_positions(self) -> np.ndarray:
-        return np.arange(0, self.window // 2 - 1)
+        return np.arange(0, self.min_period - 1)
+
+    def draw_window(self, rng: np.random.Generator, *, period: int | None = None) -> np.ndarray:
+        # The draw order is pinned (period, then block) so G4.1 retraces the feasibility run's batches.
+        if period is None:
+            period = int(rng.integers(self.min_period, self.max_period + 1))
+        elif not self.min_period <= period <= self.max_period:
+            raise ValueError(f"period must be from {self.min_period} to {self.max_period}, got {period}")
+        block = rng.choice(self.vocab_size, size=period, replace=False)
+        return block[np.arange(self.window) % period].astype(np.int32)
 
     def batch_for_step(self, seed: int, step: int, batch: int) -> np.ndarray:
         rng = np.random.default_rng([seed, step])
-        half = self.window // 2
-        first = np.array([rng.choice(self.vocab_size, size=half, replace=False) for _ in range(batch)],
-                         dtype=np.int32).reshape(batch, half)
-        return np.concatenate([first, first], axis=1)
+        return np.array([self.draw_window(rng) for _ in range(batch)], dtype=np.int32).reshape(batch, self.window)
 
     def tokenizer_json(self) -> str:
         return Tokenizer(self.vocab).to_json()
