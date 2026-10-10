@@ -48,11 +48,12 @@ Carried over from Glasshouse.
 | 1 | Reference model, trainer and trace engine; oracle wired in | [specs/phase-1.md](specs/phase-1.md), done at H1 on 2026-10-02 |
 | 2 | Read-only views and the timeline scrubber | [specs/phase-2.md](specs/phase-2.md), done on 2026-10-04 (D16, D21) |
 | 3 | Manipulation: ablate, patch, steer, swap | [specs/phase-3.md](specs/phase-3.md), done at H3 on 2026-10-05 (D28) |
-| 4 | Ground-truth zoo and discrimination tests | [specs/phase-4.md](specs/phase-4.md) |
-| 5 | Gestures and dictionaries | Not yet written |
-| 6 | Self-learning ledger | Not yet written |
+| 4 | Ground-truth zoo and discrimination tests | [specs/phase-4.md](specs/phase-4.md), done at H4 on 2026-10-10 (D39) |
+| 5 | Dictionaries and their edge-sparsity meter | Not yet written |
+| 6 | Gestures | Not yet written |
+| 7 | Self-learning ledger | Not yet written |
 
-Phase 4 precedes Phase 5 so nothing explanatory ships untested. Each phase ends at a human gate, and nothing in the next phase starts before that gate is ruled.
+Phase 4 precedes Phase 5 so nothing explanatory ships untested, and Phase 5's dictionaries precede Phase 6's gestures for the same reason: a gesture that names or connects features needs dictionaries already held to planted structure. Each phase ends at a human gate, and nothing in the next phase starts before that gate is ruled.
 
 ## Done for v1
 
