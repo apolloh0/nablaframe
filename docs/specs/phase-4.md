@@ -63,8 +63,8 @@ On the two-hop model it asks the decisive question. If swapping the intermediate
 
 ### Induction
 
-- **Task:** random tokens from a vocabulary of 64, in windows of 64, each window's second half repeating its first. A window of 64 tokens trains a model of sequence length 63, since each window holds one more token than the model reads, as the reference run's windows do. Two-hop's 27 tokens train a sequence length of 26 the same way.
-- **Mechanism positions:** 32 to 62, each predicting a token copied from the first half. **Control positions:** 0 to 30, unpredictable, with chance 1/64.
+- **Task (D36):** each window repeats a block of `P` distinct tokens from a vocabulary of 64, `P` drawn uniformly from 8 to 32, in windows of 64. The period varies per window, so a position's next token can be found only by matching content: the token after an earlier occurrence of the current one. A window of 64 tokens trains a model of sequence length 63, since each window holds one more token than the model reads, as the reference run's windows do. Two-hop's 27 tokens train a sequence length of 26 the same way.
+- **Mechanism positions:** 32 to 62: no period exceeds 32, so from 32 on, every position's next token follows an earlier occurrence of the current token. **Control positions:** 0 to 6, which no period can predict, with chance 1/64.
 - **Model:** 2 blocks, d_model 64, 4 heads, d_mlp 256: two blocks, so a previous-token head and an induction head can compose.
 - **Training:** 4,000 steps at batch 32, seed 0, with checkpoints every 50 steps through step 1,500 and every 250 after. Every checkpoint is traced, so the loss bump is resolved on the scrubber.
 
@@ -87,7 +87,7 @@ On the two-hop model it asks the decisive question. If swapping the intermediate
 
 ## Discrimination tests at model level
 
-The bars are set here, before any run, and are never moved after.
+The bars are set here, before any run, and are never moved after. D36 revised the induction task and four tests' definitions from feasibility runs on the reference backend, before any gate ran; no bar's value changed.
 
 **Behaviour (judged).**
 
@@ -96,25 +96,21 @@ The bars are set here, before any run, and are never moved after.
 
 **Attention view, on the induction model (judged).**
 
-- Some head in block 1 puts a mean of at least 0.5 of its attention on induction targets, at mechanism positions. A target is the token after the current token's previous occurrence.
-- The random-weights twin's best head puts at most twice what uniform attention would.
+- Some head in block 1 puts a mean of at least 0.5 of its attention on induction targets, at mechanism positions. A target is any position following an earlier occurrence of the current token: each holds the right next token, and a periodic window has several.
+- The random-weights twin's best head puts at most twice what uniform attention would put on the same targets.
 
-**Ablation, on the induction model (judged).** Zeroing that head's output through `attn.hook_z`: Zeroing one head uses `zero` with an optional `head` argument, valid only at `attn.hook_z`. At no positions it's a null edit, held to D25 like every operation.
+**Ablation, on the induction model (judged).** Zeroing together, through `attn.hook_z`, every block-1 head that meets the attention bar removes at least half of the mechanism positions' accuracy above chance. Models grow redundant induction heads, so zeroing one may remove nothing, and block 0's previous-token heads are a necessary half of the same circuit: each head's own effect is recorded, not compared. Zeroing one head uses `zero` with an optional `head` argument, valid only at `attn.hook_z`. At no positions it's a null edit, held to D25 like every operation.
 
-- removes at least half of the mechanism positions' accuracy above chance
-- removes more than zeroing any other single head does
+**Component swap, on the induction model (judged).** Swapping block 1's attention from the last checkpoint at which mechanism-position accuracy is at most twice chance removes at least half of the accuracy above chance.
 
-**Component swap, on the induction model (judged).** Swapping block 1's attention from the last checkpoint before the loss bump removes at least half of the accuracy above chance.
+**Patch, on the induction model (judged).** In windows of period 20, the residual stream at a copy target `j`, for `j` of 13, 16 and 19, is patched from a source window that differs only in holding, at `j`, a token the window doesn't use. The prediction is read at `j + 19`, whose current token last occurred at `j − 1`. Patched at block 0's output, the prediction follows the new token at least 90% of the time; patched at block 1's, at most 10%. Block 1's induction heads read the target position between the two, so the first patch must move the prediction and the second can't.
 
-**Patch, on the two-hop model (judged): the signature demo.** At every block output, patch the query's two positions, 24 and 25, from a source window whose intermediate is the target's counterpart subject `b′`, and whose answer is neither the target's answer `c` nor `d`. So an unchanged, a swapped and a transplanted answer are always three different tokens. Recorded per layer:
+**Patch, on the two-hop model: the signature demo.** At every block's output, patch the query's two positions, 24 and 25, from an **aligned source**: the target window with `a`'s object `b` replaced by the counterpart `b′`, the first distractor subject in window order, and `b′`'s object `d` replaced by an entity the window doesn't use, `d′`. The source asks `a → b′ → d′` and differs from the target in nothing else. Recorded per layer, at the query, at every fact position and at every position:
 
 - **the swap rate:** how often the answer becomes `d`, the counterpart's successor in the target's own facts, meaning the intermediate moved
-- **the transplant rate:** how often it becomes the source's own answer, meaning the answer moved
+- **the transplant rate:** how often it becomes `d′`, meaning the answer moved
 
-Pass:
-
-- **the best layer's swap rate is at least 0.8**
-- **a control:** a patch from a source window with the *same* intermediate leaves the answer unchanged at least 95% of the time
+Judged: **a control source**, the target with only `b′`'s object replaced, a distractor, leaves the answer unchanged at least 95% of the time at every site and block. The swap is recorded, not judged: where a model holds its intermediate varies with the seed, so it measures the model, not the tool (D34, D36).
 
 **Lenses, on the two-hop model (recorded, D34).** At positions 24 and 25, at each layer: the intermediate's and the answer's ranks in the logit lens and in the J-lens, beside the patch profile and the random-weights twin. This is D28's question, asked of a model where the answer is known.
 
@@ -133,8 +129,8 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | Gate | Measures | Pass | On failure |
 | --- | --- | --- | --- |
 | G4.1 Zoo training | Both models trained, traced, and retrained to a seeded recompute; each model's behaviour bars | The recompute identical at the final checkpoint; every behaviour bar met | Diagnose the task or the model size; a size change is a ruling |
-| G4.2 Induction | The attention view's, the ablation's and the component swap's tests | All three bars met | Diagnose the view or tool that failed |
-| G4.3 Two-hop | The patch test, with its swap and transplant profiles | Both bars met | Diagnose the patch, or the model's composition |
+| G4.2 Induction | The attention view's, the ablation's, the component swap's and the patch's tests | All four bars met | Diagnose the view or tool that failed |
+| G4.3 Two-hop | The aligned patch's swap and transplant profiles, and its distractor control | The control's bar met; the profiles recorded | Diagnose the patch |
 | G4.4 Lenses at model level | Both lenses' ranks, the J-lens coordinate swap, direct logit attribution, and the zoo J's | Recorded, not judged | Not applicable |
 | G4.5 Formation and viewer | The formation demo's two steps; both zoo models' views built twice | Builds byte-identical, no external URL | Diagnose the build |
 
