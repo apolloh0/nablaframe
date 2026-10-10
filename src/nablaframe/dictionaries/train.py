@@ -17,10 +17,12 @@ need them, so this module imports without them.
   ``idx_in[b, i]``, at ``jac[b, i, j]``, and zero for an output latent whose pre-activation is not
   positive. ValueError for any other kind.
 * ``train(settings, sites, data, *, mlp_weights=None, key=None, progress=None)``: a trained
-  ``Dictionary``. ``data`` holds, per site in order, ``(inputs, outputs)``: float32 arrays shaped
-  (N, d_in) and (N, d_out), with one N for every site; for a ``topk``, ``staircase`` or ``jsae``
-  site they must be equal. A ``jsae`` needs ``mlp_weights`` of its block, and nothing else takes
-  them. Anything else raises ValueError before anything trains.
+  ``Dictionary``. ``data`` holds, per site in order, ``(inputs, outputs)``: finite float32 arrays
+  shaped (N, d), with one N and one d for every site and both sides, since each encoder starts as
+  its decoder transposed; for a ``topk``, ``staircase`` or ``jsae`` site they must be equal, and no
+  site's inputs or outputs may be all zero. A ``jsae`` needs ``mlp_weights`` of its block, and
+  nothing else takes them. Anything else, a malformed ``key`` or a ``progress`` that isn't
+  callable among it, raises ValueError before anything trains.
 
   - **Scales:** each site's ``scale_in`` and ``scale_out`` are the root mean square norm of its
     inputs and outputs over ``√d``, computed in float64.
@@ -32,19 +34,23 @@ need them, so this module imports without them.
     ``numpy.random.default_rng(settings.seed).integers(0, N, batch)``, one draw per step from
     one generator, the same rows for every site.
   - **Loss:** per site, the squared error of the scaled output summed over features and averaged
-    over rows, divided by ``d_out``; plus ``aux_weight`` times AuxK's: among latents that haven't
-    fired for ``dead_after`` steps on that site, the ``min(4k, m // 2)`` largest pre-activations,
-    clipped at zero, reconstruct the site's error, held constant. For a ``jsae`` with ``lam > 0``,
-    plus ``lam`` times the mean absolute entry of ``pair_jacobian`` on the batch's first
-    ``jac_batch`` rows.
-  - **Optimiser:** Adam (optax defaults) at a learning rate rising linearly from 0 over
-    ``min(warmup, steps // 10)`` steps, held, then falling linearly to 0 over the last
-    ``int(steps * decay_fraction)`` steps. After each step every ``W_dec`` row is renormalised to
-    unit length.
+    over rows, divided by ``d_out``; plus ``aux_weight`` times AuxK's: among the site's
+    ``active_width`` latents that haven't fired on that site for ``dead_after`` steps, the
+    ``min(4k, m // 2)`` largest pre-activations, clipped at zero and decoded without the decoder
+    bias, reconstruct the site's error, held constant, their squared error normalised as the main
+    term's. For a ``jsae`` with ``lam > 0``, plus ``lam`` times the mean absolute entry of
+    ``pair_jacobian`` on the batch's first ``jac_batch`` rows, differentiated through the codes as
+    well as the weights.
+  - **Optimiser:** Adam (optax defaults). With ``W = min(warmup, steps // 10)`` and
+    ``D = int(steps * decay_fraction)``, the learning rate at step ``s``, counted from 0, is
+    ``lr · min(s / W, (steps − s) / D, 1)``, a term left out when its ``W`` or ``D`` is 0: it rises
+    from 0, holds, and falls to ``lr / D`` at the last step. After each step every ``W_dec`` row is
+    renormalised to unit length.
   - **Determinism:** the same settings, sites, data, ``mlp_weights`` and ``key`` give a dictionary
     with the same content hash on the same backend.
-  - ``progress(step, steps, losses)``, when given, is called at each tenth of the steps and at the
-    last, ``losses`` holding each site's reconstruction term.
+  - ``progress(step, steps, losses)``, when given, is called once after each step ``⌈i · steps /
+    10⌉`` for ``i`` from 1 to 10, steps counted from 1, ``losses`` holding each site's
+    reconstruction term.
   - The result carries ``key``.
 * ``code_identity()``: this module's git blob hash, the code in a dictionary's cache key (D18).
 """
