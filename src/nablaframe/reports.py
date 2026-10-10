@@ -30,7 +30,7 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE3_GATE_IDS = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")`. The validator accepts them, and a Phase 3 report must use schema version 2.
 
-`PHASE4_GATE_IDS = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")`. The validator accepts them, and a Phase 4 report must use schema version 2.
+`PHASE4_GATE_IDS = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")`. The validator accepts them, and a Phase 4 report must use schema version 2. `PHASE4_GATE_IDS` gains G4.6.
 
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
@@ -93,6 +93,7 @@ Status rules for Phase 4:
 * G4.3 pass requires `control_unchanged_min >= 0.95`. Its swap and transplant profiles are recorded, not judged (D36).
 * G4.4's status is always `pass`: it records, not judges (D34).
 * G4.5 pass requires `builds_identical` true and `external_urls == 0`.
+* G4.6 pass requires `builds_identical` true and `subjects_missing == 0`.
 
 Measurements:
 
@@ -135,6 +136,7 @@ Required measurements for Phase 4:
 * G4.3: `unpatched_accuracy`, `swap_by_site`, `transplant_by_site`, `control_unchanged_by_site`, `control_unchanged_min`, `best_swap`
 * G4.4: `lens_ranks`, `jswap_by_layer`, `attribution`
 * G4.5: `formation_loss_step`, `formation_attention_step`, `builds_identical`, `external_urls`
+* G4.6: `badges`, `subjects_missing`, `builds_identical`, `payloads`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
@@ -156,7 +158,7 @@ GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
 PHASE1_GATE_IDS: tuple[str, ...] = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")
 PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6", "G2.7", "G2.8", "G2.9", "G2.10")
 PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
-PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")
+PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5", "G4.6")
 _ALL_GATE_IDS: tuple[str, ...] = (
     GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS
 )
@@ -243,6 +245,7 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
     ),
     "G4.4": ("lens_ranks", "jswap_by_layer", "attribution"),
     "G4.5": ("formation_loss_step", "formation_attention_step", "builds_identical", "external_urls"),
+    "G4.6": ("badges", "subjects_missing", "builds_identical", "payloads"),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
 _ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4")
@@ -510,6 +513,7 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         ],
         ("G4.3", "pass"): [at_least("control_unchanged_min", 0.95)],
         ("G4.5", "pass"): [is_("builds_identical", True), equals("external_urls", 0)],
+        ("G4.6", "pass"): [is_("builds_identical", True), equals("subjects_missing", 0)],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
 
