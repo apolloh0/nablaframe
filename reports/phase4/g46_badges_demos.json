@@ -1,0 +1,675 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G4.6",
+  "git_commit": "71379b195c563f935f9dab4ea242185e9620b52e",
+  "git_dirty": false,
+  "measurements": {
+    "badges": {
+      "add": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "attention_pattern": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "best head's attention to induction targets",
+            "path": [
+              "best_head_attention"
+            ],
+            "unit": "fraction",
+            "value": 0.985577030948416
+          },
+          {
+            "gate": "G4.2",
+            "label": "the random-weights twin's best head",
+            "path": [
+              "twin_best_attention"
+            ],
+            "unit": "fraction",
+            "value": 0.04757002226069708
+          },
+          {
+            "gate": "G4.2",
+            "label": "uniform baseline",
+            "path": [
+              "uniform_baseline"
+            ],
+            "unit": "fraction",
+            "value": 0.04583965457967783
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      },
+      "attribution": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "induction: mean contribution of blocks.1.hook_mlp_out, trained",
+            "path": [
+              "attribution",
+              "induction",
+              "trained",
+              "blocks.1.hook_mlp_out"
+            ],
+            "unit": "logit",
+            "value": 9.953374187374656
+          },
+          {
+            "gate": "G4.4",
+            "label": "induction: mean contribution of blocks.1.hook_attn_out, trained",
+            "path": [
+              "attribution",
+              "induction",
+              "trained",
+              "blocks.1.hook_attn_out"
+            ],
+            "unit": "logit",
+            "value": 3.3522505860769654
+          },
+          {
+            "gate": "G4.4",
+            "label": "two_hop: mean contribution of blocks.3.hook_attn_out, trained",
+            "path": [
+              "attribution",
+              "two_hop",
+              "trained",
+              "blocks.3.hook_attn_out"
+            ],
+            "unit": "logit",
+            "value": 11.131236079312075
+          },
+          {
+            "gate": "G4.4",
+            "label": "two_hop: mean contribution of blocks.3.hook_mlp_out, trained",
+            "path": [
+              "attribution",
+              "two_hop",
+              "trained",
+              "blocks.3.hook_mlp_out"
+            ],
+            "unit": "logit",
+            "value": 2.61186261564989
+          },
+          {
+            "gate": "G4.2",
+            "label": "induction: accuracy above chance removed by zeroing the induction heads together",
+            "path": [
+              "ablation_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 1.0005120327700974
+          }
+        ],
+        "notes": [
+          "Attribution measures each part's direct contribution to the logit, not whether the model needs that part."
+        ],
+        "sources": [
+          "G4.2",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "jlens": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 24 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 26.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 24 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "jlens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 27.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 25 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 50.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 25 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "jlens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 29.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the answer at position 25 after block 3, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "25",
+              "3",
+              "answer"
+            ],
+            "unit": "rank",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "patch: share of answers swapped at query, after block 2",
+            "path": [
+              "swap_by_site",
+              "query",
+              2
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G4.1",
+            "label": "vocabulary of the two-hop model",
+            "path": [
+              "models",
+              "two_hop",
+              "model_config",
+              "vocab"
+            ],
+            "unit": "tokens",
+            "value": 51
+          },
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers swapped, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.0234375
+          },
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers unchanged, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "unchanged"
+            ],
+            "unit": "fraction",
+            "value": 0.62890625
+          }
+        ],
+        "notes": [
+          "J is fitted over D17's valid positions, 16 to 24, which leave out \u21d2, the position the answer is read from."
+        ],
+        "sources": [
+          "G4.1",
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "jswap": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers swapped, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.0234375
+          },
+          {
+            "gate": "G4.3",
+            "label": "aligned patch: share of answers swapped at the best site and block",
+            "path": [
+              "best_swap",
+              "rate"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "layer_structure": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "logit_lens": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 24 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 27.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 24 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "logit_lens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 26.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 25 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 50.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 25 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "logit_lens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 28.5
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the answer at position 25 after block 3, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "25",
+              "3",
+              "answer"
+            ],
+            "unit": "rank",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "patch: share of answers swapped at query, after block 2",
+            "path": [
+              "swap_by_site",
+              "query",
+              2
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G4.1",
+            "label": "vocabulary of the two-hop model",
+            "path": [
+              "models",
+              "two_hop",
+              "model_config",
+              "vocab"
+            ],
+            "unit": "tokens",
+            "value": 51
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.1",
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "mean": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "patch": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "copy target followed after a patch at block 0, least",
+            "path": [
+              "patch_after_block0_min"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G4.2",
+            "label": "copy target followed after a patch at block 1, most",
+            "path": [
+              "patch_after_block1_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "distractor-only control: answer unchanged, least",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          },
+          {
+            "gate": "G4.3",
+            "label": "aligned patch: share of answers swapped at the best site and block",
+            "path": [
+              "best_swap",
+              "rate"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2",
+          "G4.3"
+        ],
+        "status": "judged: pass"
+      },
+      "per_token_loss": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "resample": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "residual_norm": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "swap": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "checkpoint step the block-1 attention is swapped from",
+            "path": [
+              "swap_step"
+            ],
+            "unit": "step",
+            "value": 50
+          },
+          {
+            "gate": "G4.2",
+            "label": "accuracy above chance removed by the swap",
+            "path": [
+              "swap_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 0.9286994367639528
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      },
+      "zero": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "accuracy above chance removed by zeroing the induction heads together",
+            "path": [
+              "ablation_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 1.0005120327700974
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      }
+    },
+    "badges_file": "runs/phase4/badges.json",
+    "badges_sha256": "affe4b244aa88b9fc5c7292c655e5e15760c1f9a11998ec2f013ff8699c88eb0",
+    "builds": {
+      "badges": {
+        "files_compared": 1,
+        "files_differing": [],
+        "identical": true
+      },
+      "induction": {
+        "files_compared": 3,
+        "files_differing": [],
+        "identical": true,
+        "interventions_dir": "runs/phase4/induction/interventions",
+        "runs_failed": [],
+        "second_build_dir": "runs/phase4/scratch/interventions/induction"
+      },
+      "two_hop": {
+        "files_compared": 5,
+        "files_differing": [],
+        "identical": true,
+        "interventions_dir": "runs/phase4/two_hop/interventions",
+        "runs_failed": [],
+        "second_build_dir": "runs/phase4/scratch/interventions/two_hop"
+      }
+    },
+    "builds_identical": true,
+    "demo": {
+      "block": 2,
+      "file": "intervention-f4b6d4908f82dd133f857945d0bf517dcd6bd082936b46816f7778c824fed711-step-20000.json",
+      "position": 25,
+      "site": "query",
+      "swapped": 8,
+      "transplanted": 0,
+      "windows": [
+        {
+          "after": 23,
+          "before": 24,
+          "c": 24,
+          "d": 23,
+          "d_prime": 30
+        },
+        {
+          "after": 35,
+          "before": 45,
+          "c": 45,
+          "d": 35,
+          "d_prime": 34
+        },
+        {
+          "after": 11,
+          "before": 12,
+          "c": 12,
+          "d": 11,
+          "d_prime": 0
+        },
+        {
+          "after": 29,
+          "before": 11,
+          "c": 11,
+          "d": 29,
+          "d_prime": 40
+        },
+        {
+          "after": 11,
+          "before": 12,
+          "c": 12,
+          "d": 11,
+          "d_prime": 24
+        },
+        {
+          "after": 16,
+          "before": 9,
+          "c": 9,
+          "d": 16,
+          "d_prime": 27
+        },
+        {
+          "after": 40,
+          "before": 12,
+          "c": 12,
+          "d": 40,
+          "d_prime": 30
+        },
+        {
+          "after": 31,
+          "before": 41,
+          "c": 41,
+          "d": 31,
+          "d_prime": 15
+        }
+      ]
+    },
+    "examples": [
+      {
+        "file": "intervention-92fbe4610712d9f62ca9b30b648e405d6da8d3fe3f2279e7be44e84d144e31c0-step-4000.json",
+        "model": "induction",
+        "spec": "induction heads zeroed",
+        "spec_hash": "92fbe4610712d9f62ca9b30b648e405d6da8d3fe3f2279e7be44e84d144e31c0",
+        "taps": [
+          "blocks.0.hook_resid_post",
+          "blocks.1.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-f4b6d4908f82dd133f857945d0bf517dcd6bd082936b46816f7778c824fed711-step-20000.json",
+        "model": "two_hop",
+        "spec": "source patch",
+        "spec_hash": "f4b6d4908f82dd133f857945d0bf517dcd6bd082936b46816f7778c824fed711",
+        "taps": [
+          "blocks.0.hook_resid_post",
+          "blocks.1.hook_resid_post",
+          "blocks.2.hook_resid_post",
+          "blocks.3.hook_resid_post"
+        ]
+      },
+      {
+        "file": "intervention-856dc2cd43c175b07a4ab6e2797a597c53e47ba3f05ec94576cd1e8401680cf4-step-20000.json",
+        "model": "two_hop",
+        "spec": "control patch",
+        "spec_hash": "856dc2cd43c175b07a4ab6e2797a597c53e47ba3f05ec94576cd1e8401680cf4",
+        "taps": [
+          "blocks.0.hook_resid_post",
+          "blocks.1.hook_resid_post",
+          "blocks.2.hook_resid_post",
+          "blocks.3.hook_resid_post"
+        ]
+      }
+    ],
+    "payloads": {
+      "induction": 1,
+      "two_hop": 2
+    },
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "step": {
+      "induction": 4000,
+      "two_hop": 20000
+    },
+    "subjects_missing": 0,
+    "subjects_without_badge": [],
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-10T06:05:55Z",
+  "xla_flags": ""
+}
