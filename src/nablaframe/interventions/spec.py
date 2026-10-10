@@ -37,7 +37,7 @@ import numpy as np
 
 from ..trace.schema import canonical_json, sha256_hex
 
-OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap")
+OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap", "dpatch")
 
 # Each operation's arguments: name -> kind. Exactly these keys, no others.
 _ARGS: dict[str, dict[str, str]] = {
@@ -48,9 +48,13 @@ _ARGS: dict[str, dict[str, str]] = {
     "add": {"vector": "hash", "alpha": "float"},
     "swap": {"step": "int"},
     "jswap": {"J": "hash", "a": "int", "b": "int"},
+    "dpatch": {"dictionary": "hash", "source": "hash"},
 }
-# The other form an operation's arguments may take: ``zero`` of one head.
-_ALTERNATIVE: dict[str, dict[str, str]] = {"zero": {"head": "int"}}
+# The other form an operation's arguments may take: ``zero`` of one head, ``dpatch`` of some latents.
+_ALTERNATIVE: dict[str, dict[str, str]] = {
+    "zero": {"head": "int"},
+    "dpatch": {"dictionary": "hash", "source": "hash", "latents": "latents"},
+}
 _HASH = re.compile(r"[0-9a-f]{64}")
 _COMPONENT = re.compile(r"embeddings|ln_final|blocks\.(0|[1-9][0-9]*)(\.attn|\.mlp)?")
 
@@ -110,6 +114,12 @@ def _argument(op: str, name: str, kind: str, value: Any) -> Any:
         if _is_int(value) and value >= 0:
             return int(value)
         raise ValueError(f"{op}: {name} must be a non-negative int, not {value!r}")
+    if kind == "latents":
+        if not isinstance(value, (list, tuple)) or not all(_is_int(i) and i >= 0 for i in value):
+            raise ValueError(f"{op}: {name} must be a list of non-negative ints, not {value!r}")
+        if len(set(int(i) for i in value)) != len(value):
+            raise ValueError(f"{op}: {name} must be distinct: {value!r}")
+        return sorted(int(i) for i in value)  # sorted, so the same latents in another order hash equal
     if isinstance(value, (int, float, np.integer, np.floating)) and not isinstance(value, (bool, np.bool_)):
         if math.isfinite(value):
             return float(value)

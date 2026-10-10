@@ -64,6 +64,7 @@ from typing import Any
 import numpy as np
 
 from ..data.corpus import batch_hash
+from ..dictionaries.core import Dictionary, content_hash, decode_delta, encode
 from ..trace.registry import tap_names
 from ..trace.schema import tensor_sha256
 from .spec import InterventionSpec, position_index, spec_from_json, spec_json
@@ -141,6 +142,7 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
         else:
             selected.append(position_index(e.positions, seq))
     resolved: dict[str, np.ndarray] = {}
+    dictionaries: dict[str, Dictionary] = {}
     for e in edits:
         if e.op in _TOKEN_ARGS:
             digest = e.args[_TOKEN_ARGS[e.op]]
@@ -159,6 +161,17 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             if max(e.args["a"], e.args["b"]) >= vocab:
                 raise ValueError(f"jswap at {e.tap}: tokens {e.args['a']} and {e.args['b']} must be below the"
                                  f" vocabulary size {vocab}")
+        elif e.op == "dpatch":
+            d = dictionaries.setdefault(e.args["dictionary"], _dictionary(resolve, e.args["dictionary"]))
+            site = _dpatch_site(d, e.tap)
+            source = resolved.setdefault(e.args["source"], _resolved(resolve, e.args["source"], batch_hash))
+            if np.shape(source) != np.shape(tokens):
+                raise ValueError(f"dpatch at {e.tap}: its source batch is shaped {np.shape(source)}, not like the"
+                                 f" tokens, {np.shape(tokens)}")
+            latents = e.args.get("latents")
+            if latents and latents[-1] >= d.active_width(site):  # stored sorted, so the last is the largest
+                raise ValueError(f"dpatch at {e.tap}: latent {latents[-1]} is at or beyond the site's active width"
+                                 f" {d.active_width(site)}")
     heads = sorted({e.tap for e in edits if "head" in e.args})
     if heads:
         import jax
@@ -174,7 +187,7 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             params = swap_component(params, params_at(e.args["step"]), e.tap)
 
     # Each edit's operand: zeros, the scaled vector, the source or reference values at its tap, per
-    # sequence, or jswap's coefficient and direction differences.
+    # sequence, jswap's coefficient and direction differences, or dpatch's change in the output.
     operations: list[tuple[str, str, np.ndarray, int | None, Any]] = []
     for e, index in zip(edits, selected):
         if e.op == "swap" or (e.op == "jswap" and e.args["a"] == e.args["b"]):
@@ -188,6 +201,11 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             operand = (np.float64(e.args["alpha"]) * vector.astype(np.float64)).astype(np.float32)
         elif e.op == "jswap":
             operand = _jswap_operand(resolved[e.args["J"]], params.wte, e.args["a"], e.args["b"])
+        elif e.op == "dpatch":
+            operand = _dpatch_operand(model, params, tokens, resolved[e.args["source"]],
+                                      dictionaries[e.args["dictionary"]], e.tap, e.args.get("latents"))
+            if not np.any(operand[:, index]):
+                continue  # no change at any selected position adds no operation at all (D25)
         elif e.op == "patch":
             operand = _tap_value(model, params, resolved[e.args["source"]], e.tap)
         else:
@@ -231,6 +249,49 @@ def _jswap_operand(J: np.ndarray, wte: Any, a: int, b: int) -> np.ndarray:
     return np.stack([P[1] - P[0], U[:, 0] - U[:, 1]]).astype(np.float32)
 
 
+def _dictionary(resolve: Callable[[str], Any], digest: str) -> Dictionary:
+    value = resolve(digest)
+    if not isinstance(value, Dictionary):
+        raise ValueError(f"resolve({digest[:12]}...) returned a {type(value).__name__}, not a Dictionary")
+    if content_hash(value) != digest:
+        raise ValueError(f"resolve({digest[:12]}...) returned a dictionary whose hash is {content_hash(value)[:12]}...")
+    return value
+
+
+def _dpatch_site(dictionary: Dictionary, tap: str) -> int:
+    """The site whose output tap is ``tap``, or ValueError."""
+    for site, (_, output) in enumerate(dictionary.sites):
+        if output == tap:
+            return site
+    raise ValueError(f"dpatch applies at its dictionary's output taps "
+                     f"({', '.join(output for _, output in dictionary.sites)}), not {tap!r}")
+
+
+def _dpatch_operand(model: Any, params: Any, tokens: np.ndarray, source: np.ndarray, dictionary: Dictionary,
+                    tap: str, latents: list[int] | None) -> np.ndarray:
+    """``decode_delta`` of ``f_source − f_target``, shaped like the tap's values, (batch, pos, d_out): the codes
+    are read at the site's input tap with no other edits, and only ``latents`` change when given."""
+    site = _dpatch_site(dictionary, tap)
+    reads = dictionary.sites[site][0]
+    batch, seq = np.shape(tokens)
+    _, recorded = model.instrumented(params, tokens, list(dict.fromkeys([reads, tap])))
+    x_target, output = (np.asarray(getattr(recorded[name], "array", recorded[name])) for name in (reads, tap))
+    x_source = _tap_value(model, params, source, reads)
+    for name, value, width in ((reads, x_target, dictionary.d_in), (reads, x_source, dictionary.d_in),
+                               (tap, output, dictionary.d_out)):
+        if value.shape != (batch, seq, width):
+            raise ValueError(f"dpatch at {tap}: {name}'s values are shaped {value.shape}, not (batch, pos, the"
+                             f" dictionary's width there) = {(batch, seq, width)}")
+    f_target = encode(dictionary, site, x_target.reshape(-1, dictionary.d_in))
+    f_source = encode(dictionary, site, x_source.reshape(-1, dictionary.d_in))
+    change = f_source - f_target
+    if latents is not None:
+        others = np.ones(dictionary.settings.width, dtype=bool)
+        others[latents] = False
+        change[:, others] = 0.0
+    return decode_delta(dictionary, site, change).reshape(batch, seq, dictionary.d_out)
+
+
 def _hook(jnp: Any, op: str, mask: np.ndarray, head: int | None, operand: Any) -> Callable[[Any], Any]:
     """The edit as a pure function of the tap's value, whose axes are (Batch, Pos, ...)."""
 
@@ -245,7 +306,7 @@ def _hook(jnp: Any, op: str, mask: np.ndarray, head: int | None, operand: Any) -
         if tuple(operand.shape) != tuple(expected) or operand.dtype != value.dtype:
             raise ValueError(f"{op}: operand is {operand.dtype}{list(operand.shape)}, the tap needs"
                              f" {value.dtype}{list(expected)}")
-        if op == "add":
+        if op in ("add", "dpatch"):
             return jnp.where(where, value + operand, value)
         if op == "jswap":
             q, d = operand[0], operand[1]
