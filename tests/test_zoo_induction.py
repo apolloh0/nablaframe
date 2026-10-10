@@ -27,7 +27,7 @@ def test_induction_scores():
             pattern[b, 1, q, q] = 0.0
     scores = induction_scores(pattern, w, positions)
     assert scores.shape == (3,) and scores[1] == pytest.approx(0.7)
-    assert scores[0] == pytest.approx(uniform_baseline(positions)) == pytest.approx((1 / 4 + 1 / 5) / 2)
+    assert scores[0] == pytest.approx(uniform_baseline(w, positions)) == pytest.approx((1 / 4 + 1 / 5) / 2)
 
 
 def test_formation_steps_and_head_ablation():

@@ -19,10 +19,11 @@ def test_induction_windows():
     assert np.array_equal(b, t.batch_for_step(seed=0, step=3, batch=5)), "deterministic"
     assert not np.array_equal(b, t.batch_for_step(seed=0, step=4, batch=5))
     assert not np.array_equal(b, t.batch_for_step(seed=1, step=3, batch=5))
-    assert (b[:, 32:] == b[:, :32]).all(), "the second half repeats the first"
-    assert all(len(set(row[:32].tolist())) == 32 for row in b), "no token repeats within the first half"
+    for row in b:  # D36: a block of P distinct tokens, P from 8 to 32, repeated to fill the window
+        period = next(P for P in range(8, 33) if (row[P:] == row[:-P]).all())
+        assert len(set(row[:period].tolist())) == period, "no token repeats within a period"
     assert 0 <= b.min() and b.max() < 64
-    assert t.mechanism_positions.tolist() == list(range(32, 63)) and t.control_positions.tolist() == list(range(31))
+    assert t.mechanism_positions.tolist() == list(range(32, 63)) and t.control_positions.tolist() == list(range(7))
     assert t.chance == 1 / 64 and len(t.vocab) == 64
     assert Tokenizer.from_json(t.tokenizer_json()).vocab == t.vocab
 

@@ -83,7 +83,7 @@ On the two-hop model it asks the decisive question. If swapping the intermediate
   - **broken chains:** windows with the `b → c` fact removed, where the answer can't be known
 - **Model:** 4 blocks, d_model 128, 4 heads, d_mlp 512: four blocks, matching the reference run, so the lenses have middle layers to read.
 - **Training:** 20,000 steps at batch 64, seed 0, with checkpoints every 1,000 steps.
-- **J:** each block's summed Jacobian, fitted as D17 fits the reference run's, on the task's own windows with seed 1, over positions 16 to 25, so the J-lens and `jswap` have their J.
+- **J:** each block's summed Jacobian, fitted as D17 fits the reference run's, on the task's own windows with seed 1, over D17's valid positions, 16 to 24 for a sequence of 26, so the J-lens and `jswap` have their J.
 
 ## Discrimination tests at model level
 
@@ -156,6 +156,8 @@ Written with the stubs:
 - **4:** `test_induction_targets`, `test_induction_scores`, `test_formation_steps_and_head_ablation`
 - **5:** `test_sources_carry_the_counterpart`, `test_patch_outcomes`, `test_token_ranks`
 - **Delta 2:** `test_two_hop_answers_never_collide`, `test_patch_sources_keep_the_outcomes_distinct`
+- **Delta 3 (D36):** `test_periodic_windows_draw_in_a_fixed_order`, `test_a_fixed_period_draws_no_period`, `test_the_task_requires_its_mechanism`, `test_periods_are_checked`, `test_every_position_after_an_earlier_occurrence_is_a_target`, `test_scores_sum_the_attention_on_every_target`, `test_new_token_sources`, `test_aligned_sources_differ_only_where_the_chain_moves`, `test_outcomes_on_aligned_sources_are_three_different_tokens`, `test_aligned_sources_check_their_windows`
+- **Delta 3 (gates):** `test_settings_and_bars_are_fixed`, `test_schedules`, `test_fraction_removed_and_the_last_checkpoint_at_chance`, `test_the_gates_windows`, `test_configs_build_the_settings`, `test_phase4_gate_ids`, `test_phase4_status_rules`
 
 ## Out of scope
 
