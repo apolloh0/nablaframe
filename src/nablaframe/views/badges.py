@@ -62,8 +62,11 @@ its path within that report's measurements.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
+
+from nablaframe.reports import validate_report
 
 SUBJECTS = ("per_token_loss", "logit_lens", "jlens", "attribution", "attention_pattern", "residual_norm",
             "layer_structure", "zero", "mean", "resample", "patch", "add", "swap", "jswap")
@@ -75,6 +78,152 @@ ATTRIBUTION_NOTE = ("Attribution measures each part's direct contribution to the
 NOT_TESTED_NOTE = "No Phase 4 test exercises this operation on a model with known structure."
 READOUT_NOTE = "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
 
+_GATES = ("G4.1", "G4.2", "G4.3", "G4.4")
+_READOUTS = ("per_token_loss", "residual_norm", "layer_structure")
+_NOT_TESTED = ("mean", "resample", "add")
+_JUDGED_BY = {"attention_pattern": ("G4.2",), "zero": ("G4.2",), "swap": ("G4.2",), "patch": ("G4.2", "G4.3")}
+_ATTRIBUTION_PARTS = 2
+
+
+def _checked(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
+    out: dict[str, Mapping[str, Any]] = {}
+    for gate_id in _GATES:
+        if gate_id not in reports:
+            raise ValueError(f"reports must hold {', '.join(_GATES)}; {gate_id} is missing")
+        report = reports[gate_id]
+        problems = validate_report(report)
+        if problems:
+            raise ValueError(f"the {gate_id} report is invalid: {'; '.join(problems)}")
+        if report["gate_id"] != gate_id:
+            raise ValueError(f"the report filed under {gate_id} carries gate id {report['gate_id']!r}")
+        out[gate_id] = report
+    return out
+
+
+class _Facts:
+    """Collects facts, reading each value from the report at its path."""
+
+    def __init__(self, reports: Mapping[str, Mapping[str, Any]]) -> None:
+        self.reports = reports
+        self.facts: list[dict[str, Any]] = []
+
+    def value(self, gate: str, path: list) -> Any:
+        value: Any = self.reports[gate]["measurements"]
+        for segment in path:
+            try:
+                value = value[segment]
+            except (KeyError, IndexError, TypeError):
+                raise ValueError(f"the {gate} report has no measurement at {path!r}") from None
+        return value
+
+    def add(self, label: str, unit: str, gate: str, path: list) -> None:
+        self.facts.append({"label": label, "value": copy.deepcopy(self.value(gate, path)), "unit": unit,
+                           "gate": gate, "path": list(path)})
+
+
+def _lens_facts(f: _Facts, lens: str, site: str, best: int, last: str) -> None:
+    where = f"after block {best}"
+    for position in ("24", "25"):
+        for model in ("trained", "twin"):
+            f.add(f"{lens}: median rank of the intermediate at position {position} {where}, {model}", "rank",
+                  "G4.4", ["lens_ranks", model, lens, position, str(best), "intermediate"])
+    f.add(f"{lens}: median rank of the answer at position 25 after block {last}, trained", "rank", "G4.4",
+          ["lens_ranks", "trained", lens, "25", last, "answer"])
+    f.add(f"patch: share of answers swapped at {site}, {where}", "fraction", "G4.3", ["swap_by_site", site, best])
+    f.add("vocabulary of the two-hop model", "tokens", "G4.1", ["models", "two_hop", "model_config", "vocab"])
+
+
+def _top_parts(f: _Facts, model: str) -> list[str]:
+    means = f.value("G4.4", ["attribution", model, "trained"])
+    if not isinstance(means, Mapping) or not all(isinstance(v, (int, float)) for v in means.values()):
+        raise ValueError(f"the G4.4 report's attribution for {model} must map each part to a number")
+    return sorted(means, key=lambda part: (-abs(means[part]), part))[:_ATTRIBUTION_PARTS]
+
 
 def model_level_badges(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    raise NotImplementedError
+    checked = _checked(reports)
+    f = _Facts(checked)
+    best = f.value("G4.3", ["best_swap"])
+    if not isinstance(best, Mapping) or not isinstance(best.get("block"), int) or not isinstance(best.get("site"), str):
+        raise ValueError("the G4.3 report's best_swap must name a site and an integer block")
+    site, block = best["site"], best["block"]
+    n_layers = f.value("G4.1", ["models", "two_hop", "model_config", "n_layers"])
+    last = str(n_layers - 1)
+    jswap = ["jswap_by_layer", str(block)]
+
+    facts: dict[str, list[dict[str, Any]]] = {}
+
+    def collect(subject: str, build) -> None:
+        f.facts = []
+        build()
+        facts[subject] = f.facts
+
+    collect("logit_lens", lambda: _lens_facts(f, "logit_lens", site, block, last))
+
+    def jlens() -> None:
+        _lens_facts(f, "jlens", site, block, last)
+        f.add(f"J-lens coordinate swap: share of answers swapped, block {block}", "fraction", "G4.4", jswap + ["swap"])
+        f.add(f"J-lens coordinate swap: share of answers unchanged, block {block}", "fraction", "G4.4",
+              jswap + ["unchanged"])
+
+    collect("jlens", jlens)
+
+    def attribution() -> None:
+        for model in ("induction", "two_hop"):
+            for part in _top_parts(f, model):
+                f.add(f"{model}: mean contribution of {part}, trained", "logit", "G4.4",
+                      ["attribution", model, "trained", part])
+        f.add("induction: accuracy above chance removed by zeroing the induction heads together", "fraction removed",
+              "G4.2", ["ablation_fraction_removed"])
+
+    collect("attribution", attribution)
+
+    def attention() -> None:
+        f.add("best head's attention to induction targets", "fraction", "G4.2", ["best_head_attention"])
+        f.add("the random-weights twin's best head", "fraction", "G4.2", ["twin_best_attention"])
+        f.add("uniform baseline", "fraction", "G4.2", ["uniform_baseline"])
+
+    collect("attention_pattern", attention)
+    collect("zero", lambda: f.add("accuracy above chance removed by zeroing the induction heads together",
+                                  "fraction removed", "G4.2", ["ablation_fraction_removed"]))
+
+    def swap() -> None:
+        f.add("checkpoint step the block-1 attention is swapped from", "step", "G4.2", ["swap_step"])
+        f.add("accuracy above chance removed by the swap", "fraction removed", "G4.2", ["swap_fraction_removed"])
+
+    collect("swap", swap)
+
+    def patch() -> None:
+        f.add("copy target followed after a patch at block 0, least", "fraction", "G4.2", ["patch_after_block0_min"])
+        f.add("copy target followed after a patch at block 1, most", "fraction", "G4.2", ["patch_after_block1_max"])
+        f.add("distractor-only control: answer unchanged, least", "fraction", "G4.3", ["control_unchanged_min"])
+        f.add("aligned patch: share of answers swapped at the best site and block", "fraction", "G4.3",
+              ["best_swap", "rate"])
+
+    collect("patch", patch)
+
+    def jswap_facts() -> None:
+        f.add(f"J-lens coordinate swap: share of answers swapped, block {block}", "fraction", "G4.4", jswap + ["swap"])
+        f.add("aligned patch: share of answers swapped at the best site and block", "fraction", "G4.3",
+              ["best_swap", "rate"])
+
+    collect("jswap", jswap_facts)
+
+    notes = {"jlens": [JLENS_FIT_NOTE], "attribution": [ATTRIBUTION_NOTE]}
+    badges: dict[str, dict[str, Any]] = {}
+    for subject in SUBJECTS:
+        if subject in _READOUTS:
+            status, subject_notes = "readout", [READOUT_NOTE]
+        elif subject in _NOT_TESTED:
+            status, subject_notes = "not tested", [NOT_TESTED_NOTE]
+        else:
+            subject_notes = list(notes.get(subject, []))
+            if subject in _JUDGED_BY:
+                passed = all(checked[g]["status"] == "pass" for g in _JUDGED_BY[subject])
+                status = "judged: pass" if passed else "judged: fail"
+            else:
+                status = "recorded"
+        subject_facts = facts.get(subject, [])
+        badges[subject] = {"status": status, "sources": sorted({fact["gate"] for fact in subject_facts}),
+                           "facts": subject_facts, "notes": subject_notes}
+    return badges
