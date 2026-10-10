@@ -1,0 +1,294 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G4.2",
+  "git_commit": "98d92bfd5cfbe98107467a29556fa47dde2213f3",
+  "git_dirty": false,
+  "measurements": {
+    "ablation_accuracy": 0.015120967741935484,
+    "ablation_fraction_removed": 1.0005120327700974,
+    "accuracy_by_head_zeroed": {
+      "0.0": 0.9978578629032258,
+      "0.1": 0.6236139112903226,
+      "0.2": 0.38810483870967744,
+      "0.3": 0.9925655241935484,
+      "1.0": 0.9996219758064516,
+      "1.1": 0.9997479838709677,
+      "1.2": 1.0,
+      "1.3": 0.9998739919354839
+    },
+    "attention_by_head": [
+      0.9845888624652595,
+      0.9769230256227097,
+      0.9628861566606918,
+      0.985577030948416
+    ],
+    "bars": {
+      "ablation_fraction": 0.5,
+      "behaviour": 0.9,
+      "control_ratio": 2.0,
+      "control_unchanged": 0.95,
+      "induction_attention": 0.5,
+      "patch_after_read": 0.1,
+      "patch_followed": 0.9,
+      "swap_fraction": 0.5,
+      "twin_attention_ratio": 2.0
+    },
+    "best_head_attention": 0.985577030948416,
+    "chance": 0.015625,
+    "eval_windows": 256,
+    "eval_windows_sha256": "668d8425b49361b4f62a3bc8b53d29ef3c092a223fd6abc6efe432673fa30d71",
+    "fraction_removed_by_head": {
+      "0.0": 0.0021761392729135174,
+      "0.1": 0.3823604710701484,
+      "0.2": 0.6216077828981054,
+      "0.3": 0.007552483358934983,
+      "1.0": 0.0003840245775729538,
+      "1.1": 0.00025601638504863585,
+      "1.2": 0.0,
+      "1.3": 0.00012800819252431792
+    },
+    "induction_heads": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "mechanism_accuracy": 1.0,
+    "mechanism_accuracy_by_step": [
+      {
+        "accuracy": 0.014112903225806451,
+        "step": 0
+      },
+      {
+        "accuracy": 0.025957661290322582,
+        "step": 50
+      },
+      {
+        "accuracy": 0.043472782258064516,
+        "step": 100
+      },
+      {
+        "accuracy": 0.048639112903225805,
+        "step": 150
+      },
+      {
+        "accuracy": 0.055443548387096774,
+        "step": 200
+      },
+      {
+        "accuracy": 0.06010584677419355,
+        "step": 250
+      },
+      {
+        "accuracy": 0.06451612903225806,
+        "step": 300
+      },
+      {
+        "accuracy": 0.07195060483870967,
+        "step": 350
+      },
+      {
+        "accuracy": 0.09412802419354839,
+        "step": 400
+      },
+      {
+        "accuracy": 0.1775453629032258,
+        "step": 450
+      },
+      {
+        "accuracy": 0.3225806451612903,
+        "step": 500
+      },
+      {
+        "accuracy": 0.5328881048387096,
+        "step": 550
+      },
+      {
+        "accuracy": 0.7163558467741935,
+        "step": 600
+      },
+      {
+        "accuracy": 0.8279989919354839,
+        "step": 650
+      },
+      {
+        "accuracy": 0.8813004032258065,
+        "step": 700
+      },
+      {
+        "accuracy": 0.9296875,
+        "step": 750
+      },
+      {
+        "accuracy": 0.9514868951612904,
+        "step": 800
+      },
+      {
+        "accuracy": 0.9690020161290323,
+        "step": 850
+      },
+      {
+        "accuracy": 0.9823588709677419,
+        "step": 900
+      },
+      {
+        "accuracy": 0.9863911290322581,
+        "step": 950
+      },
+      {
+        "accuracy": 0.9910534274193549,
+        "step": 1000
+      },
+      {
+        "accuracy": 0.9965977822580645,
+        "step": 1050
+      },
+      {
+        "accuracy": 0.9954637096774194,
+        "step": 1100
+      },
+      {
+        "accuracy": 0.9978578629032258,
+        "step": 1150
+      },
+      {
+        "accuracy": 0.9983618951612904,
+        "step": 1200
+      },
+      {
+        "accuracy": 0.9974798387096774,
+        "step": 1250
+      },
+      {
+        "accuracy": 0.9993699596774194,
+        "step": 1300
+      },
+      {
+        "accuracy": 0.9987399193548387,
+        "step": 1350
+      },
+      {
+        "accuracy": 0.9993699596774194,
+        "step": 1400
+      },
+      {
+        "accuracy": 0.9996219758064516,
+        "step": 1450
+      },
+      {
+        "accuracy": 0.9998739919354839,
+        "step": 1500
+      },
+      {
+        "accuracy": 0.9998739919354839,
+        "step": 1750
+      },
+      {
+        "accuracy": 0.9998739919354839,
+        "step": 2000
+      },
+      {
+        "accuracy": 0.9998739919354839,
+        "step": 2250
+      },
+      {
+        "accuracy": 0.9998739919354839,
+        "step": 2500
+      },
+      {
+        "accuracy": 1.0,
+        "step": 2750
+      },
+      {
+        "accuracy": 1.0,
+        "step": 3000
+      },
+      {
+        "accuracy": 1.0,
+        "step": 3250
+      },
+      {
+        "accuracy": 1.0,
+        "step": 3500
+      },
+      {
+        "accuracy": 1.0,
+        "step": 3750
+      },
+      {
+        "accuracy": 1.0,
+        "step": 4000
+      }
+    ],
+    "mechanism_positions": [
+      32,
+      62
+    ],
+    "patch_after_block0_min": 1.0,
+    "patch_after_block1_max": 0.0,
+    "patch_followed_by_tap": {
+      "blocks.0.hook_resid_post": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "blocks.0.hook_resid_pre": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "blocks.1.hook_resid_post": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "patch_period": 20,
+    "patch_read_positions": [
+      32,
+      35,
+      38
+    ],
+    "patch_targets": [
+      13,
+      16,
+      19
+    ],
+    "patch_windows": 256,
+    "patch_windows_sha256": "de3ca93734d2f0735843628c85d0868e78e48580bd7f89aa45365aa6b374b7a8",
+    "run_id": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+    "step": 4000,
+    "swap_accuracy": 0.08581149193548387,
+    "swap_fraction_removed": 0.9286994367639528,
+    "swap_step": 50,
+    "twin_attention_by_head": [
+      0.04757002226069708,
+      0.04509015472326206,
+      0.04710779406045437,
+      0.045824098754036965
+    ],
+    "twin_best_attention": 0.04757002226069708,
+    "twin_seed": 1,
+    "uniform_baseline": 0.04583965457967783,
+    "unpatched_followed": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-10T02:08:59Z",
+  "xla_flags": ""
+}
