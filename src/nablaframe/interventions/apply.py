@@ -36,6 +36,19 @@ module imports without it.
   - A ``zero`` with ``head`` applies only at ``attn.hook_z``. It zeroes that head's slice at the
     selected positions and leaves every other head untouched. A head at or beyond the tap's head
     count raises ValueError.
+  - ``dpatch`` (D45) applies at one of its dictionary's output taps, which picks the site. For its
+    ``dictionary``, ``resolve`` returns a ``Dictionary``, checked with ``content_hash``. Each of
+    these raises ValueError before anything runs: any other tap, a transcoder's input tap among
+    them; a resolved value that isn't a ``Dictionary`` or doesn't hash to its name; a ``source``
+    batch shaped differently from the tokens; a latent at or beyond the site's ``active_width``.
+    The codes ``f_target`` and ``f_source`` are ``encode`` of the target and source batches'
+    values at the site's input tap, one row per sequence and position, from ``model.instrumented``
+    with the post-swap parameters and none of the spec's other edits. At the selected positions it
+    adds ``decode_delta`` of ``f_source − f_target``, with every latent not in ``latents`` zeroed
+    when ``latents`` is given, so the target's error term is kept. A tap whose values aren't
+    shaped (batch, pos, the dictionary's width there) raises ValueError. Where the change is zero
+    at every selected position, as with a source equal to the target or an empty ``latents``, it
+    adds no operation at all, so it reproduces the unintervened pass bit for bit (D25).
 * ``code_identity()``: this module's git blob hash (D18, D24).
 """
 

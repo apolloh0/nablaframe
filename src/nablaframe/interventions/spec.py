@@ -20,6 +20,9 @@ Spec: docs/specs/phase-3.md, D22.
 * ``OPERATIONS`` gains ``jswap``, taking ``J`` (a content hash) and the token ids ``a`` and ``b``
   (non-negative ints) (D33). ``zero`` takes either no arguments or exactly ``head``, a
   non-negative int: zeroing one attention head's output.
+* ``OPERATIONS`` gains ``dpatch`` (D45), taking ``dictionary`` and ``source`` (content hashes) and,
+  in its other form, ``latents`` as well: a list of distinct non-negative ints, possibly empty,
+  stored sorted, so two specs that list the same latents in another order hash equal.
 """
 
 from __future__ import annotations

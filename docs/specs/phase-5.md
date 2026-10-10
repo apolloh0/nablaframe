@@ -191,7 +191,9 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 
 ## Tests
 
-Written with the stubs, delta by delta.
+Written with the stubs, delta by delta:
+
+- **Delta 1 (D40, D43, D45):** `test_settings_are_checked`, `test_sites_are_checked`, `test_a_dictionary_checks_its_arrays`, `test_encode_keeps_the_k_largest_pre_activations`, `test_a_staircase_site_uses_only_its_share`, `test_decode_delta_and_reconstruct`, `test_the_content_hash_covers_everything`, `test_the_cache_key`, `test_files_round_trip_and_refuse_tampering`, `test_training_is_deterministic`, `test_initialisation_follows_the_seed`, `test_every_setting_reaches_the_trainer`, `test_a_topk_sae_finds_planted_features`, `test_a_staircase_sae_trains_every_block`, `test_a_transcoder_learns_a_sparse_map`, `test_mlp_matches_the_model`, `test_the_pair_jacobian_is_the_derivative`, `test_the_penalty_shrinks_the_jacobian`, `test_bad_inputs_are_refused`, `test_code_identity_is_the_modules_blob_hash`, `test_dpatch_arguments`, `test_dpatch_identities_are_exact`, `test_dpatch_moves_the_code`, `test_dpatch_latents_move_only_theirs`, `test_dpatch_on_a_transcoder_and_a_staircase`, `test_dpatch_reads_the_codes_after_a_swap`, `test_dpatch_refusals`
 
 ## Out of scope
 
