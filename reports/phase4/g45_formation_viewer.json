@@ -3,9 +3,55 @@
   "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
   "env_name": "nf-jax",
   "gate_id": "G4.5",
-  "git_commit": "335af0cbe8e7052ce4411b6ffff55067c12f7bf9",
+  "git_commit": "68db841eb7b73c944df3eefc8a836b9c7d2fdaa0",
   "git_dirty": false,
   "measurements": {
+    "answer_loss_by_step": [
+      3.9772827761171623,
+      2.163730869153585,
+      1.7891050746059043,
+      1.4262331062360403,
+      1.3034583655405423,
+      0.8293445574730305,
+      0.17812006004136627,
+      0.1936764007841112,
+      0.03729387276847246,
+      0.015540234645694772,
+      0.0044806204923703696,
+      0.011594304316075965,
+      0.0026622841668380737,
+      0.01357263505917162,
+      0.0018356100125414608,
+      0.0018386140082129456,
+      0.0010161935993754328,
+      0.00045531419675997253,
+      0.0017025101786998583,
+      0.0008415091561582363,
+      0.0005033453716233217
+    ],
+    "answer_steps": [
+      0,
+      1000,
+      2000,
+      3000,
+      4000,
+      5000,
+      6000,
+      7000,
+      8000,
+      9000,
+      10000,
+      11000,
+      12000,
+      13000,
+      14000,
+      15000,
+      16000,
+      17000,
+      18000,
+      19000,
+      20000
+    ],
     "attention_by_head_by_step": [
       [
         0.050425664635235255,
@@ -298,6 +344,15 @@
       0.9878891617513192
     ],
     "builds_identical": true,
+    "curves": {
+      "induction": [
+        "mechanism positions' loss",
+        "best block-1 head's attention to induction targets"
+      ],
+      "two_hop": [
+        "answer position's loss"
+      ]
+    },
     "external_url_matches": [],
     "external_urls": 0,
     "formation_attention_step": 600,
@@ -408,7 +463,7 @@
     ],
     "views": {
       "induction": {
-        "export_bytes": 12385759,
+        "export_bytes": 12442318,
         "files_compared": 165,
         "files_differing": [],
         "files_written": 165,
@@ -417,7 +472,7 @@
         "views_dir": "runs/phase4/induction/views"
       },
       "two_hop": {
-        "export_bytes": 4261165,
+        "export_bytes": 4303375,
         "files_compared": 85,
         "files_differing": [],
         "files_written": 85,
@@ -430,6 +485,6 @@
   "schema_version": 2,
   "status": "pass",
   "thread_count": 12,
-  "timestamp_utc": "2026-10-10T02:11:56Z",
+  "timestamp_utc": "2026-10-10T06:05:51Z",
   "xla_flags": ""
 }
