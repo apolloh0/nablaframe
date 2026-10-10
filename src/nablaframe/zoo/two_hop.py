@@ -11,6 +11,14 @@ Spec: docs/specs/phase-4.md, "Patch, on the two-hop model".
 * ``token_ranks(readings, tokens)``: ``readings`` is (Layer, Batch, Vocab) at one position and
   ``tokens`` (Batch,). Each token's 0-based rank per layer and sequence: how many tokens score
   higher, plus how many score the same with a lower id. Shape (Layer, Batch).
+* ``aligned_sources(task, targets, rng)``: ``(sources, controls, counterparts)`` for G4.3 (D36). For each target window, in order:
+
+  * the counterpart ``k`` is the first subject in window order that is neither ``a`` nor ``b``
+  * ``d′`` is ``rng.choice`` of the entities the window doesn't contain
+  * the source is the target with ``a``'s object set to ``k``, ``k``'s object set to ``d′`` and the last token set to ``d′``: it asks ``a → k → d′`` and differs in nothing else
+  * the control is the target with only ``k``'s object set to ``d′``
+
+  Sources and controls are int32, shaped like ``targets``; ``counterparts`` is (Batch,). With them, ``patch_outcomes`` counts a swap as ``k``'s object in the target and a transplant as ``d′``. ValueError unless ``targets`` is (Batch, ``task.window_length``). The targets are left unchanged.
 """
 
 from __future__ import annotations
@@ -43,6 +51,30 @@ def source_for(task: Any, target: np.ndarray, counterpart: int, rng: np.random.G
         source = task.window(rng, intermediate=counterpart)
         if int(source[-1]) not in (p.c, d):
             return source
+
+
+def aligned_sources(task: Any, targets: np.ndarray, rng: np.random.Generator
+                    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    targets = np.asarray(targets)
+    if targets.ndim != 2 or targets.shape[1] != task.window_length:
+        raise ValueError(f"targets must be (Batch, {task.window_length}), got {targets.shape}")
+    sources, controls = targets.astype(np.int32), targets.astype(np.int32)  # astype copies, so targets stay as given
+    counterparts = np.empty(len(targets), dtype=np.int64)
+    end = task.window_length - 3
+    for i, w in enumerate(targets):
+        subjects = w[0:end:4]
+        a = int(w[end])
+        b = task.parse(w).b
+        rest = [int(x) for x in subjects if x not in (a, b)]
+        if not rest:
+            raise ValueError(f"window {i} has no distractor subject to be the counterpart")
+        k = rest[0]
+        d_new = int(rng.choice(np.setdiff1d(np.arange(task.entities), w)))
+        a_slot, k_slot = 4 * int(np.flatnonzero(subjects == a)[0]) + 2, 4 * int(np.flatnonzero(subjects == k)[0]) + 2
+        sources[i, a_slot], sources[i, k_slot], sources[i, -1] = k, d_new, d_new
+        controls[i, k_slot] = d_new
+        counterparts[i] = k
+    return sources, controls, counterparts
 
 
 def patch_outcomes(answers: np.ndarray, targets: np.ndarray, sources: np.ndarray,
