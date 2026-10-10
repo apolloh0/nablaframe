@@ -1,0 +1,526 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G4.1",
+  "git_commit": "3a292027682a45e1eec3c7457f38c52a5b17fb83",
+  "git_dirty": false,
+  "measurements": {
+    "bars": {
+      "ablation_fraction": 0.5,
+      "behaviour": 0.9,
+      "control_ratio": 2.0,
+      "control_unchanged": 0.95,
+      "induction_attention": 0.5,
+      "patch_after_read": 0.1,
+      "patch_followed": 0.9,
+      "swap_fraction": 0.5,
+      "twin_attention_ratio": 2.0
+    },
+    "checkpoints_scheduled": 62,
+    "checkpoints_written": 62,
+    "events_expected": 1576,
+    "events_recorded": 1576,
+    "induction_chance": 0.015625,
+    "induction_control_accuracy": 0.0033482142857142855,
+    "induction_mechanism_accuracy": 1.0,
+    "induction_twin_accuracy": 0.017011088709677418,
+    "models": {
+      "induction": {
+        "behaviour": {
+          "control_accuracy": 0.0033482142857142855,
+          "control_positions": [
+            0,
+            6
+          ],
+          "eval_windows": 256,
+          "eval_windows_sha256": "668d8425b49361b4f62a3bc8b53d29ef3c092a223fd6abc6efe432673fa30d71",
+          "mechanism_accuracy": 1.0,
+          "mechanism_positions": [
+            32,
+            62
+          ],
+          "twin_accuracy": 0.017011088709677418,
+          "twin_seed": 1
+        },
+        "chance": 0.015625,
+        "checkpoint_schedule": [
+          0,
+          50,
+          100,
+          150,
+          200,
+          250,
+          300,
+          350,
+          400,
+          450,
+          500,
+          550,
+          600,
+          650,
+          700,
+          750,
+          800,
+          850,
+          900,
+          950,
+          1000,
+          1050,
+          1100,
+          1150,
+          1200,
+          1250,
+          1300,
+          1350,
+          1400,
+          1450,
+          1500,
+          1750,
+          2000,
+          2250,
+          2500,
+          2750,
+          3000,
+          3250,
+          3500,
+          3750,
+          4000
+        ],
+        "checkpoints_scheduled": 41,
+        "checkpoints_written": 41,
+        "corpus_sha256": "b533e16e1567774b5f02084315cf408bbfa19023dd9f5a1b984c551144763631",
+        "error": null,
+        "error_stage": null,
+        "events_expected": 820,
+        "events_recorded": 820,
+        "final_state_sha256": "11e7647f0c4e616c2a53d43a6963ef42637328443433abcde0e7d98100f6993b",
+        "mechanism_accuracy_by_step": [
+          {
+            "accuracy": 0.014112903225806451,
+            "step": 0
+          },
+          {
+            "accuracy": 0.025957661290322582,
+            "step": 50
+          },
+          {
+            "accuracy": 0.043472782258064516,
+            "step": 100
+          },
+          {
+            "accuracy": 0.048639112903225805,
+            "step": 150
+          },
+          {
+            "accuracy": 0.055443548387096774,
+            "step": 200
+          },
+          {
+            "accuracy": 0.06010584677419355,
+            "step": 250
+          },
+          {
+            "accuracy": 0.06451612903225806,
+            "step": 300
+          },
+          {
+            "accuracy": 0.07195060483870967,
+            "step": 350
+          },
+          {
+            "accuracy": 0.09412802419354839,
+            "step": 400
+          },
+          {
+            "accuracy": 0.1775453629032258,
+            "step": 450
+          },
+          {
+            "accuracy": 0.3225806451612903,
+            "step": 500
+          },
+          {
+            "accuracy": 0.5328881048387096,
+            "step": 550
+          },
+          {
+            "accuracy": 0.7163558467741935,
+            "step": 600
+          },
+          {
+            "accuracy": 0.8279989919354839,
+            "step": 650
+          },
+          {
+            "accuracy": 0.8813004032258065,
+            "step": 700
+          },
+          {
+            "accuracy": 0.9296875,
+            "step": 750
+          },
+          {
+            "accuracy": 0.9514868951612904,
+            "step": 800
+          },
+          {
+            "accuracy": 0.9690020161290323,
+            "step": 850
+          },
+          {
+            "accuracy": 0.9823588709677419,
+            "step": 900
+          },
+          {
+            "accuracy": 0.9863911290322581,
+            "step": 950
+          },
+          {
+            "accuracy": 0.9910534274193549,
+            "step": 1000
+          },
+          {
+            "accuracy": 0.9965977822580645,
+            "step": 1050
+          },
+          {
+            "accuracy": 0.9954637096774194,
+            "step": 1100
+          },
+          {
+            "accuracy": 0.9978578629032258,
+            "step": 1150
+          },
+          {
+            "accuracy": 0.9983618951612904,
+            "step": 1200
+          },
+          {
+            "accuracy": 0.9974798387096774,
+            "step": 1250
+          },
+          {
+            "accuracy": 0.9993699596774194,
+            "step": 1300
+          },
+          {
+            "accuracy": 0.9987399193548387,
+            "step": 1350
+          },
+          {
+            "accuracy": 0.9993699596774194,
+            "step": 1400
+          },
+          {
+            "accuracy": 0.9996219758064516,
+            "step": 1450
+          },
+          {
+            "accuracy": 0.9998739919354839,
+            "step": 1500
+          },
+          {
+            "accuracy": 0.9998739919354839,
+            "step": 1750
+          },
+          {
+            "accuracy": 0.9998739919354839,
+            "step": 2000
+          },
+          {
+            "accuracy": 0.9998739919354839,
+            "step": 2250
+          },
+          {
+            "accuracy": 0.9998739919354839,
+            "step": 2500
+          },
+          {
+            "accuracy": 1.0,
+            "step": 2750
+          },
+          {
+            "accuracy": 1.0,
+            "step": 3000
+          },
+          {
+            "accuracy": 1.0,
+            "step": 3250
+          },
+          {
+            "accuracy": 1.0,
+            "step": 3500
+          },
+          {
+            "accuracy": 1.0,
+            "step": 3750
+          },
+          {
+            "accuracy": 1.0,
+            "step": 4000
+          }
+        ],
+        "model_config": {
+          "d_mlp": 256,
+          "d_model": 64,
+          "n_heads": 4,
+          "n_layers": 2,
+          "seq": 63,
+          "vocab": 64
+        },
+        "probe_batch_hash": "b5d0578a9385be18fbff4b7d134ec0177da744555fe1a0a01677259417cd89d5",
+        "probe_shape": [
+          8,
+          63
+        ],
+        "recompute_dir": "runs/phase4/scratch/induction",
+        "recompute_identical": true,
+        "recompute_state_sha256": "11e7647f0c4e616c2a53d43a6963ef42637328443433abcde0e7d98100f6993b",
+        "run_dir": "runs/phase4/induction",
+        "run_id": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+        "seconds": {
+          "behaviour": 0.07421333389356732,
+          "recompute": 45.67962770909071,
+          "trace": 0.910378540866077,
+          "train": 45.50324737513438
+        },
+        "store": "runs/phase4/induction/store",
+        "taps_per_checkpoint": 20,
+        "task": {
+          "class": "InductionTask",
+          "fields": {
+            "max_period": 32,
+            "min_period": 8,
+            "vocab_size": 64,
+            "window": 64
+          }
+        },
+        "tokenizer_sha256": "81755a1fc884a4e04c8177adf8d44a8bdfa19ca4b3974823328eacb74cf7a789",
+        "train_config": {
+          "batch": 32,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "clip": 1.0,
+          "data_seed": 0,
+          "eps": 1e-08,
+          "lr": 0.001,
+          "min_lr_ratio": 0.1,
+          "param_seed": 0,
+          "seq": 63,
+          "total_steps": 4000,
+          "warmup_steps": 100,
+          "weight_decay": 0.1
+        }
+      },
+      "two_hop": {
+        "behaviour": {
+          "accuracy": 0.99609375,
+          "broken_accuracy": 0.01171875,
+          "broken_windows_sha256": "3f9a5fbe9272394c4c893e6d85c88fccd8664e3854a47a6a14308d552ebc5b97",
+          "eval_windows": 256,
+          "eval_windows_sha256": "49daccf629480c943caf79e25321ff7ced0b37e39f14fc8a93a03232c9195425",
+          "mechanism_positions": [
+            25
+          ],
+          "twin_accuracy": 0.0078125,
+          "twin_seed": 1
+        },
+        "chance": 0.020833333333333332,
+        "checkpoint_schedule": [
+          0,
+          1000,
+          2000,
+          3000,
+          4000,
+          5000,
+          6000,
+          7000,
+          8000,
+          9000,
+          10000,
+          11000,
+          12000,
+          13000,
+          14000,
+          15000,
+          16000,
+          17000,
+          18000,
+          19000,
+          20000
+        ],
+        "checkpoints_scheduled": 21,
+        "checkpoints_written": 21,
+        "corpus_sha256": "46da53119d09a114d447227652aa3229b681fe4858babb00b3d1f951e360229d",
+        "error": null,
+        "error_stage": null,
+        "events_expected": 756,
+        "events_recorded": 756,
+        "final_state_sha256": "76a4a48492dd44b9aba2f4a8165ad92bf716cddbda20eb6897f53466be57e221",
+        "mechanism_accuracy_by_step": [
+          {
+            "accuracy": 0.03125,
+            "step": 0
+          },
+          {
+            "accuracy": 0.16796875,
+            "step": 1000
+          },
+          {
+            "accuracy": 0.17578125,
+            "step": 2000
+          },
+          {
+            "accuracy": 0.4765625,
+            "step": 3000
+          },
+          {
+            "accuracy": 0.625,
+            "step": 4000
+          },
+          {
+            "accuracy": 0.78515625,
+            "step": 5000
+          },
+          {
+            "accuracy": 0.9765625,
+            "step": 6000
+          },
+          {
+            "accuracy": 0.9921875,
+            "step": 7000
+          },
+          {
+            "accuracy": 0.9921875,
+            "step": 8000
+          },
+          {
+            "accuracy": 0.9921875,
+            "step": 9000
+          },
+          {
+            "accuracy": 1.0,
+            "step": 10000
+          },
+          {
+            "accuracy": 0.9921875,
+            "step": 11000
+          },
+          {
+            "accuracy": 1.0,
+            "step": 12000
+          },
+          {
+            "accuracy": 0.9921875,
+            "step": 13000
+          },
+          {
+            "accuracy": 1.0,
+            "step": 14000
+          },
+          {
+            "accuracy": 0.99609375,
+            "step": 15000
+          },
+          {
+            "accuracy": 0.99609375,
+            "step": 16000
+          },
+          {
+            "accuracy": 0.99609375,
+            "step": 17000
+          },
+          {
+            "accuracy": 0.99609375,
+            "step": 18000
+          },
+          {
+            "accuracy": 0.99609375,
+            "step": 19000
+          },
+          {
+            "accuracy": 0.99609375,
+            "step": 20000
+          }
+        ],
+        "model_config": {
+          "d_mlp": 512,
+          "d_model": 128,
+          "n_heads": 4,
+          "n_layers": 4,
+          "seq": 26,
+          "vocab": 51
+        },
+        "probe_batch_hash": "e730273beb3a9d6079c729f92c1f17d436fa84cc65b09fff00b5c63de5580dc7",
+        "probe_shape": [
+          8,
+          26
+        ],
+        "recompute_dir": "runs/phase4/scratch/two_hop",
+        "recompute_identical": true,
+        "recompute_state_sha256": "76a4a48492dd44b9aba2f4a8165ad92bf716cddbda20eb6897f53466be57e221",
+        "run_dir": "runs/phase4/two_hop",
+        "run_id": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97",
+        "seconds": {
+          "behaviour": 0.1448722081258893,
+          "recompute": 901.6845520827919,
+          "trace": 0.8722754158079624,
+          "train": 874.0498323752545
+        },
+        "store": "runs/phase4/two_hop/store",
+        "taps_per_checkpoint": 36,
+        "task": {
+          "class": "TwoHopTask",
+          "fields": {
+            "entities": 48,
+            "facts": 6
+          }
+        },
+        "tokenizer_sha256": "5a598427d68fe5bb4233253ba80fbb332a7067748fa139e009bd7deb54a24e28",
+        "train_config": {
+          "batch": 64,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "clip": 1.0,
+          "data_seed": 0,
+          "eps": 1e-08,
+          "lr": 0.001,
+          "min_lr_ratio": 0.1,
+          "param_seed": 0,
+          "seq": 26,
+          "total_steps": 20000,
+          "warmup_steps": 500,
+          "weight_decay": 0.1
+        }
+      }
+    },
+    "recompute_identical": true,
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "two_hop_accuracy": 0.99609375,
+    "two_hop_broken_accuracy": 0.01171875,
+    "two_hop_chance": 0.020833333333333332,
+    "two_hop_twin_accuracy": 0.0078125,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-10T02:00:05Z",
+  "xla_flags": ""
+}
