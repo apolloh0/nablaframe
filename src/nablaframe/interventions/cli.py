@@ -10,6 +10,8 @@ constants, which XLA may fold, breaking D25's identities (found in PR #38).
   ``"tap_changes"``, mapping each requested tap to the L2 norm over its trailing axes of the
   intervened value minus the unintervened one, (Batch, Pos), in float64. The unintervened
   pass is ``run_intervened`` with an empty spec.
+* ``top_tokens(logits, k=5)``: ``(tokens, probs)``, nested lists (Batch, Pos, k): each position's k most probable tokens, best first, ties to the lower id, and their softmax probabilities in float64. The same rule as the logit lens payload's top tokens.
+* ``compare_payload`` gains ``"top_tokens"`` and ``"top_probs"``, each ``{"unintervened": ..., "intervened": ...}``, from ``top_tokens`` of each pass's logits. So the viewer can show what each pass predicts.
 * ``main(argv)``: ``--config`` (a JSON of ``GPT2Config``'s fields), ``--checkpoints`` (a
   folder of ``step-<n>.safetensors``), ``--step``, ``--tokens`` (an int32 ``.npy``), ``--spec``
   (the spec's JSON), ``--objects`` (a folder of ``<hash>.npy`` files that ``resolve`` reads),
@@ -55,6 +57,16 @@ def _array(value: Any) -> np.ndarray:
     return np.asarray(getattr(value, "array", value))
 
 
+def top_tokens(logits: Any, k: int = 5) -> tuple[list, list]:
+    """Each position's k most probable tokens, best first, ties to the lower id, and their float64 softmax."""
+    shifted = _array(logits).astype(np.float64)
+    shifted -= shifted.max(axis=-1, keepdims=True)
+    p = np.exp(shifted)
+    p /= p.sum(axis=-1, keepdims=True)
+    top = np.argsort(-p, axis=-1, kind="stable")[..., :k]
+    return top.tolist(), np.take_along_axis(p, top, axis=-1).tolist()
+
+
 def _compare(model: Any, params: Any, tokens: np.ndarray, spec: Any, *, n_layers: int,
              resolve: Callable[[str], np.ndarray], params_at: Callable[[int], Any] | None,
              taps: Sequence[str]) -> tuple[dict[str, Any], np.ndarray]:
@@ -75,6 +87,10 @@ def _compare(model: Any, params: Any, tokens: np.ndarray, spec: Any, *, n_layers
         change = _array(moved_taps[tap]).astype(np.float64) - _array(base_taps[tap]).astype(np.float64)
         tap_changes[tap] = np.sqrt((change * change).sum(axis=tuple(range(2, change.ndim)))).tolist()
     payload = effect_payload(spec, base_logits, logits, tokens)
+    base_top, base_probs = top_tokens(base_logits)
+    top, probs = top_tokens(logits)
+    payload.update(top_tokens={"unintervened": base_top, "intervened": top},
+                   top_probs={"unintervened": base_probs, "intervened": probs})
     payload.update(taps=taps, tokens=np.asarray(tokens).tolist(), tap_changes=tap_changes)
     return payload, logits
 
