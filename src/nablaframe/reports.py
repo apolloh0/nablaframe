@@ -1,8 +1,8 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes".
 
-Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/`` or ``reports/phase3/``. The Phase 0
+Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/`` or ``reports/phase4/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
 status must agree with its own measurements.
 
@@ -10,7 +10,7 @@ Report fields, all required, no others allowed (version 2 adds two; see below):
 
 ==================  =============================================================
 schema_version      1 or 2
-gate_id             one of GATE_IDS, PHASE1_GATE_IDS, PHASE2_GATE_IDS or PHASE3_GATE_IDS
+gate_id             one of GATE_IDS, PHASE1_GATE_IDS, PHASE2_GATE_IDS, PHASE3_GATE_IDS or PHASE4_GATE_IDS
 status              one of STATUSES; see STATUS RULES below
 measurements        JSON object containing at least REQUIRED_MEASUREMENTS[gate_id];
                     every number finite
@@ -30,6 +30,8 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE3_GATE_IDS = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")`. The validator accepts them, and a Phase 3 report must use schema version 2.
 
+`PHASE4_GATE_IDS = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")`. The validator accepts them, and a Phase 4 report must use schema version 2.
+
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
 * G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
@@ -40,7 +42,7 @@ STATUS RULES (a report whose status contradicts its measurements is invalid):
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
-* fail is allowed for any gate except G0.6, G2.5, G3.3 and G3.4
+* fail is allowed for any gate except G0.6, G2.5, G3.3, G3.4 and G4.4
 
 Status rules for Phase 1:
 
@@ -70,6 +72,27 @@ Status rules for Phase 3:
 * G3.2 pass requires `recompute_identical == sample_size` and `cache_keys_distinct` true.
 * G3.3's and G3.4's status is always `pass`: they record, not judge.
 * G3.5 pass requires `builds_identical` true and `external_urls == 0`.
+
+Status rules for Phase 4:
+
+* G4.1 pass requires:
+  * `recompute_identical` true
+  * `checkpoints_written == checkpoints_scheduled`
+  * `events_recorded == events_expected`
+  * `induction_mechanism_accuracy >= 0.9`
+  * `induction_control_accuracy` and `induction_twin_accuracy` each `<= 2 * induction_chance`
+  * `two_hop_accuracy >= 0.9`
+  * `two_hop_broken_accuracy` and `two_hop_twin_accuracy` each `<= 2 * two_hop_chance`
+* G4.2 pass requires:
+  * `best_head_attention >= 0.5`
+  * `twin_best_attention <= 2 * uniform_baseline`
+  * `ablation_fraction_removed >= 0.5`
+  * `swap_fraction_removed >= 0.5`
+  * `patch_after_block0_min >= 0.9`
+  * `patch_after_block1_max <= 0.1`
+* G4.3 pass requires `control_unchanged_min >= 0.95`. Its swap and transplant profiles are recorded, not judged (D36).
+* G4.4's status is always `pass`: it records, not judges (D34).
+* G4.5 pass requires `builds_identical` true and `external_urls == 0`.
 
 Measurements:
 
@@ -105,6 +128,14 @@ Required measurements for Phase 3:
 * G3.4: `meters_by_step`
 * G3.5: `builds_identical`, `external_urls`, `payloads`
 
+Required measurements for Phase 4:
+
+* G4.1: `recompute_identical`, `checkpoints_written`, `checkpoints_scheduled`, `events_recorded`, `events_expected`, `induction_mechanism_accuracy`, `induction_control_accuracy`, `induction_twin_accuracy`, `induction_chance`, `two_hop_accuracy`, `two_hop_broken_accuracy`, `two_hop_twin_accuracy`, `two_hop_chance`
+* G4.2: `mechanism_accuracy`, `chance`, `attention_by_head`, `best_head_attention`, `induction_heads`, `twin_best_attention`, `uniform_baseline`, `ablation_fraction_removed`, `fraction_removed_by_head`, `swap_step`, `swap_fraction_removed`, `patch_followed_by_tap`, `patch_after_block0_min`, `patch_after_block1_max`
+* G4.3: `unpatched_accuracy`, `swap_by_site`, `transplant_by_site`, `control_unchanged_by_site`, `control_unchanged_min`, `best_swap`
+* G4.4: `lens_ranks`, `jswap_by_layer`, `attribution`
+* G4.5: `formation_loss_step`, `formation_attention_step`, `builds_identical`, `external_urls`
+
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
 
@@ -125,9 +156,12 @@ GATE_IDS: tuple[str, ...] = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6")
 PHASE1_GATE_IDS: tuple[str, ...] = ("G1.1", "G1.2", "G1.3", "G1.4", "G1.5", "G1.6")
 PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.6", "G2.7", "G2.8", "G2.9", "G2.10")
 PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
-_ALL_GATE_IDS: tuple[str, ...] = GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS
+PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")
+_ALL_GATE_IDS: tuple[str, ...] = (
+    GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS
+)
 # Gates written from Phase 1 on, which must use schema version 2.
-_V2_ONLY_GATE_IDS: tuple[str, ...] = PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS
+_V2_ONLY_GATE_IDS: tuple[str, ...] = PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS
 STATUSES: tuple[str, ...] = ("pass", "conditional_pass", "fail")
 ENV_NAMES: tuple[str, ...] = ("nf-jax", "nf-metal", "nf-torch")
 
@@ -192,9 +226,26 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
     "G3.3": ("layers", "scale_factors", "results_by_layer"),
     "G3.4": ("meters_by_step",),
     "G3.5": ("builds_identical", "external_urls", "payloads"),
+    "G4.1": (
+        "recompute_identical", "checkpoints_written", "checkpoints_scheduled", "events_recorded", "events_expected",
+        "induction_mechanism_accuracy", "induction_control_accuracy", "induction_twin_accuracy", "induction_chance",
+        "two_hop_accuracy", "two_hop_broken_accuracy", "two_hop_twin_accuracy", "two_hop_chance",
+    ),
+    "G4.2": (
+        "mechanism_accuracy", "chance", "attention_by_head", "best_head_attention", "induction_heads",
+        "twin_best_attention", "uniform_baseline", "ablation_fraction_removed", "fraction_removed_by_head",
+        "swap_step", "swap_fraction_removed", "patch_followed_by_tap", "patch_after_block0_min",
+        "patch_after_block1_max",
+    ),
+    "G4.3": (
+        "unpatched_accuracy", "swap_by_site", "transplant_by_site", "control_unchanged_by_site",
+        "control_unchanged_min", "best_swap",
+    ),
+    "G4.4": ("lens_ranks", "jswap_by_layer", "attribution"),
+    "G4.5": ("formation_loss_step", "formation_attention_step", "builds_identical", "external_urls"),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
-_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4")
+_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4")
 # Gates whose three final-state hashes must agree with ``identical`` under every status.
 _HASH_GATES: tuple[str, ...] = ("G0.2", "G1.3")
 
@@ -443,6 +494,22 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         ("G3.1", "pass"): [equals_key("identities_exact", "identities_checked")],
         ("G3.2", "pass"): [equals_key("recompute_identical", "sample_size"), is_("cache_keys_distinct", True)],
         ("G3.5", "pass"): [is_("builds_identical", True), equals("external_urls", 0)],
+        ("G4.1", "pass"): [
+            is_("recompute_identical", True), equals_key("checkpoints_written", "checkpoints_scheduled"),
+            equals_key("events_recorded", "events_expected"), at_least("induction_mechanism_accuracy", 0.9),
+            at_most_times_key("induction_control_accuracy", 2, "induction_chance"),
+            at_most_times_key("induction_twin_accuracy", 2, "induction_chance"),
+            at_least("two_hop_accuracy", 0.9),
+            at_most_times_key("two_hop_broken_accuracy", 2, "two_hop_chance"),
+            at_most_times_key("two_hop_twin_accuracy", 2, "two_hop_chance"),
+        ],
+        ("G4.2", "pass"): [
+            at_least("best_head_attention", 0.5), at_most_times_key("twin_best_attention", 2, "uniform_baseline"),
+            at_least("ablation_fraction_removed", 0.5), at_least("swap_fraction_removed", 0.5),
+            at_least("patch_after_block0_min", 0.9), at_most("patch_after_block1_max", 0.1),
+        ],
+        ("G4.3", "pass"): [at_least("control_unchanged_min", 0.95)],
+        ("G4.5", "pass"): [is_("builds_identical", True), equals("external_urls", 0)],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
 
