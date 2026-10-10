@@ -1,0 +1,319 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G4.4",
+  "git_commit": "e940ed0d159b20088d0bef2182c6b44eec4b6501",
+  "git_dirty": false,
+  "measurements": {
+    "answer_position": 25,
+    "attribution": {
+      "induction": {
+        "trained": {
+          "blocks.0.hook_attn_out": 0.013676600364625716,
+          "blocks.0.hook_mlp_out": 0.043352161212875925,
+          "blocks.1.hook_attn_out": 3.3522505860769654,
+          "blocks.1.hook_mlp_out": 9.953374187374656,
+          "hook_embed": 0.0018449617224042425,
+          "hook_pos_embed": -0.015746223598816698,
+          "ln_bias": 0.011865839140982905
+        },
+        "twin": {
+          "blocks.0.hook_attn_out": -0.0036132590096970975,
+          "blocks.0.hook_mlp_out": 0.0031997631170918063,
+          "blocks.1.hook_attn_out": 0.005437623740327987,
+          "blocks.1.hook_mlp_out": -0.00837896918230815,
+          "hook_embed": -1.7822005821845529e-06,
+          "hook_pos_embed": 3.0542363541689e-05,
+          "ln_bias": 0.0
+        }
+      },
+      "two_hop": {
+        "trained": {
+          "blocks.0.hook_attn_out": 0.3888502189552504,
+          "blocks.0.hook_mlp_out": 0.48300036106762284,
+          "blocks.1.hook_attn_out": -1.254497666383302,
+          "blocks.1.hook_mlp_out": 0.08242020422503774,
+          "blocks.2.hook_attn_out": 0.19050396694300586,
+          "blocks.2.hook_mlp_out": 0.019251174507088204,
+          "blocks.3.hook_attn_out": 11.131236079312075,
+          "blocks.3.hook_mlp_out": 2.61186261564989,
+          "hook_embed": 0.06015255978758452,
+          "hook_pos_embed": 0.026191048619122508,
+          "ln_bias": 0.022634157637611285
+        },
+        "twin": {
+          "blocks.0.hook_attn_out": -0.005635139997628441,
+          "blocks.0.hook_mlp_out": -0.0016865999712253033,
+          "blocks.1.hook_attn_out": 0.019620001801834097,
+          "blocks.1.hook_mlp_out": 0.0011762681062843878,
+          "blocks.2.hook_attn_out": 0.012479425266071837,
+          "blocks.2.hook_mlp_out": -0.00733087976766632,
+          "blocks.3.hook_attn_out": 0.010362220032080477,
+          "blocks.3.hook_mlp_out": -0.012466125074592499,
+          "hook_embed": -0.00024033534385386356,
+          "hook_pos_embed": -4.6672828246237765e-05,
+          "ln_bias": 0.0
+        }
+      }
+    },
+    "attribution_error": {
+      "induction": {
+        "trained": 7.410222492509888e-06,
+        "twin": 2.0092960695272666e-07
+      },
+      "two_hop": {
+        "trained": 6.848826968663957e-06,
+        "twin": 1.7257918033530828e-07
+      }
+    },
+    "eval_windows": 256,
+    "eval_windows_sha256": "49daccf629480c943caf79e25321ff7ced0b37e39f14fc8a93a03232c9195425",
+    "fit_windows_sha256": "e31ca0bb1c4663266a64f8a4eb0a5123ef4f222007ba8678e704c70776ce0237",
+    "jacobians": {
+      "trained": [
+        {
+          "key": "013ccfc1b23e10a8529be55b042afb3da2f53d4c08ef01adf9a27f7a46315f86",
+          "layer": 0,
+          "reused": false,
+          "seconds": 5.903936415910721
+        },
+        {
+          "key": "12932a09b695c0ecbb79f7f5bac2ba37f901f8e9b8ca05d80581e5276a47a8a9",
+          "layer": 1,
+          "reused": false,
+          "seconds": 3.8866182090714574
+        },
+        {
+          "key": "f526ff912110526b82400478649c0c8886c04a79d87836b92b3b19b71e908ef0",
+          "layer": 2,
+          "reused": false,
+          "seconds": 1.9917204999364913
+        }
+      ],
+      "twin": [
+        {
+          "key": "98039a6177444b44324e29d68380652a1b1a3d555f6a82d894a74afab599472c",
+          "layer": 0,
+          "reused": false,
+          "seconds": 5.735182832926512
+        },
+        {
+          "key": "d999df02ee2aa14c7877bd38eb1aa9f6adb4843cd887395511e60c36c2b8169b",
+          "layer": 1,
+          "reused": false,
+          "seconds": 3.8974162503145635
+        },
+        {
+          "key": "6b596c6e7ae6d24fdc8265b1848f7c2e0d73c4a190fab7f8c12c7f165c103644",
+          "layer": 2,
+          "reused": false,
+          "seconds": 1.9949134169146419
+        }
+      ]
+    },
+    "jswap_by_layer": {
+      "0": {
+        "swap": 0.0234375,
+        "unchanged": 0.9453125
+      },
+      "1": {
+        "swap": 0.02734375,
+        "unchanged": 0.7578125
+      },
+      "2": {
+        "swap": 0.0234375,
+        "unchanged": 0.62890625
+      },
+      "3": {
+        "swap": 0.0,
+        "unchanged": 0.9921875
+      }
+    },
+    "lens_ranks": {
+      "trained": {
+        "jlens": {
+          "24": {
+            "0": {
+              "answer": 29.0,
+              "intermediate": 24.0
+            },
+            "1": {
+              "answer": 44.0,
+              "intermediate": 29.5
+            },
+            "2": {
+              "answer": 40.0,
+              "intermediate": 26.0
+            },
+            "3": {
+              "answer": 31.0,
+              "intermediate": 21.0
+            }
+          },
+          "25": {
+            "0": {
+              "answer": 13.0,
+              "intermediate": 6.0
+            },
+            "1": {
+              "answer": 34.0,
+              "intermediate": 50.0
+            },
+            "2": {
+              "answer": 31.0,
+              "intermediate": 50.0
+            },
+            "3": {
+              "answer": 0.0,
+              "intermediate": 21.5
+            }
+          }
+        },
+        "logit_lens": {
+          "24": {
+            "0": {
+              "answer": 27.0,
+              "intermediate": 24.5
+            },
+            "1": {
+              "answer": 43.5,
+              "intermediate": 29.5
+            },
+            "2": {
+              "answer": 38.0,
+              "intermediate": 27.0
+            },
+            "3": {
+              "answer": 31.0,
+              "intermediate": 21.0
+            }
+          },
+          "25": {
+            "0": {
+              "answer": 9.0,
+              "intermediate": 3.0
+            },
+            "1": {
+              "answer": 33.0,
+              "intermediate": 50.0
+            },
+            "2": {
+              "answer": 30.0,
+              "intermediate": 50.0
+            },
+            "3": {
+              "answer": 0.0,
+              "intermediate": 21.5
+            }
+          }
+        }
+      },
+      "twin": {
+        "jlens": {
+          "24": {
+            "0": {
+              "answer": 24.0,
+              "intermediate": 26.0
+            },
+            "1": {
+              "answer": 25.0,
+              "intermediate": 27.0
+            },
+            "2": {
+              "answer": 28.0,
+              "intermediate": 27.0
+            },
+            "3": {
+              "answer": 30.0,
+              "intermediate": 28.5
+            }
+          },
+          "25": {
+            "0": {
+              "answer": 25.0,
+              "intermediate": 27.0
+            },
+            "1": {
+              "answer": 24.5,
+              "intermediate": 28.0
+            },
+            "2": {
+              "answer": 28.0,
+              "intermediate": 29.0
+            },
+            "3": {
+              "answer": 28.0,
+              "intermediate": 30.0
+            }
+          }
+        },
+        "logit_lens": {
+          "24": {
+            "0": {
+              "answer": 23.0,
+              "intermediate": 26.0
+            },
+            "1": {
+              "answer": 25.0,
+              "intermediate": 28.0
+            },
+            "2": {
+              "answer": 29.0,
+              "intermediate": 26.0
+            },
+            "3": {
+              "answer": 30.0,
+              "intermediate": 28.5
+            }
+          },
+          "25": {
+            "0": {
+              "answer": 24.0,
+              "intermediate": 25.0
+            },
+            "1": {
+              "answer": 24.5,
+              "intermediate": 27.0
+            },
+            "2": {
+              "answer": 28.0,
+              "intermediate": 28.5
+            },
+            "3": {
+              "answer": 28.0,
+              "intermediate": 30.0
+            }
+          }
+        }
+      }
+    },
+    "query_positions": [
+      24,
+      25
+    ],
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "source_seed": 5,
+    "steps": {
+      "induction": 4000,
+      "two_hop": 20000
+    },
+    "twin_seed": 1,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-10T02:11:52Z",
+  "xla_flags": ""
+}
