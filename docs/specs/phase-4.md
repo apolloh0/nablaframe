@@ -1,6 +1,6 @@
 # Phase 4 spec: the ground-truth zoo and discrimination tests
 
-Status: ready for stubs and tests once D29 to D35 are committed. Charter: [../charter.md](../charter.md). Decisions: [../decisions.md](../decisions.md).
+Status: complete. Ruled at human gate H4 on 2026-10-10: see D39 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
