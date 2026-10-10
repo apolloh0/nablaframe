@@ -135,6 +135,28 @@
       font-size: 13px; color: var(--text-secondary); border-radius: 0 4px 4px 0;
     }
     .badge b { color: var(--text-primary); }
+    /* Model-level badges (D38), from the reports */
+    .model-badge {
+      border-left: 3px solid var(--text-muted); background: var(--surface-2); padding: 4px 8px; margin: 4px 0 8px;
+      font-size: 13px; color: var(--text-secondary); border-radius: 0 4px 4px 0;
+    }
+    .model-badge summary { cursor: pointer; }
+    .model-badge b { color: var(--text-primary); }
+    .model-badge .status { font-weight: 700; color: var(--text-primary); }
+    .model-badge.ok { border-left-color: var(--good); }
+    .model-badge.ok .status { color: var(--good-text); }
+    .model-badge.bad { border-left-color: var(--critical); }
+    .model-badge.bad .status, .model-badge.bad > b { color: var(--critical-text); }
+    .model-badge.warn { border-left-color: var(--warning); }
+    .model-badge.warn .status { color: var(--warning-text); }
+    .model-badge ul { margin: 4px 0; padding-left: 18px; }
+    .model-badge li { margin: 1px 0; overflow-wrap: anywhere; }
+    .model-badge .value { font-variant-numeric: tabular-nums; }
+    .model-badge .odd { color: var(--critical-text); }
+    .model-badge .gate {
+      font-size: 11px; border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; color: var(--text-muted); cursor: help;
+    }
+    .model-badge .note { margin: 2px 0; font-style: italic; }
 
     /* Probe text */
     .probe { line-height: 1.95; max-height: 260px; overflow: auto; padding: 4px; border: 1px solid var(--border); border-radius: 6px; }
@@ -145,6 +167,7 @@
     .tok.special { font-style: italic; }
     .tok.blank { background-image: repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px); }
     .tok.sel { border-color: var(--text-primary); box-shadow: 0 0 0 1px var(--text-primary); }
+    .tok.after { border: 1px dashed var(--text-secondary); color: var(--text-secondary); cursor: default; margin-left: 4px; }
     .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
     .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
     .legend .ramp { display: inline-block; width: 120px; height: 10px; border-radius: 3px; vertical-align: -1px; margin: 0 4px; }
@@ -205,6 +228,7 @@
     }
     .mismatch button { margin-left: 6px; }
     .tap-labels { display: flex; flex-direction: column; flex: none; width: 210px; }
+    table.top-compare { width: auto; }
     .tap-labels div { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   </style>
 </head>
@@ -227,6 +251,7 @@
     <section class="panel" id="probe-panel">
       <h2>Probe text and per-token loss <span class="sub">readout of the traced logits</span></h2>
       <div class="meter" id="loss-meter"></div>
+      <div id="loss-model-badge"></div>
       <div class="controls" id="seq-buttons"></div>
       <div class="probe" id="probe-text"></div>
       <div class="legend" id="loss-legend"></div>
@@ -236,6 +261,7 @@
       <h2>Compare: an intervention against the unintervened pass <span class="sub" id="compare-sub"></span></h2>
       <div class="controls" id="compare-list"></div>
       <div class="meter" id="compare-meter"></div>
+      <div id="compare-model-badges"></div>
       <div id="compare-body"></div>
     </section>
 
@@ -244,12 +270,14 @@
         <h2>Logit lens <span class="sub" id="lens-sub"></span></h2>
         <div class="meter" id="lens-meter"></div>
         <div id="lens-badge"></div>
+        <div id="lens-model-badge"></div>
         <div id="lens-body"></div>
       </section>
       <section class="panel" id="jlens-panel" hidden>
         <h2>J-lens <span class="sub" id="jlens-sub"></span></h2>
         <div class="meter" id="jlens-meter"></div>
         <div id="jlens-badge"></div>
+        <div id="jlens-model-badge"></div>
         <div id="jlens-body"></div>
       </section>
     </div>
@@ -259,6 +287,7 @@
         <h2>Direct logit attribution <span class="sub" id="attr-sub"></span></h2>
         <div class="meter" id="attr-meter"></div>
         <div id="attr-badge"></div>
+        <div id="attr-model-badge"></div>
         <div id="attr-body"></div>
       </section>
       <section class="panel" id="attn-panel">
@@ -269,6 +298,7 @@
           <label><input type="checkbox" id="attn-sqrt" checked> square-root color scale</label>
         </div>
         <div class="meter" id="attn-meter"></div>
+        <div id="attn-model-badge"></div>
         <div id="attn-body"></div>
       </section>
     </div>
@@ -276,12 +306,14 @@
     <section class="panel" id="resid-panel">
       <h2>Residual stream norm <span class="sub" id="resid-sub"></span></h2>
       <div class="meter" id="resid-meter"></div>
+      <div id="resid-model-badge"></div>
       <div id="resid-body"></div>
     </section>
 
     <section class="panel" id="layers-panel">
       <h2>Layer structure <span class="sub">across every checkpoint</span></h2>
       <div class="meter" id="layers-meter"></div>
+      <div id="layers-model-badge"></div>
       <div id="layers-body"></div>
     </section>
   </main>

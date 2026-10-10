@@ -33,6 +33,30 @@
 //   A payload whose step differs from the timeline's current step says so, rather than
 //   mixing two steps' numbers. The panel computes nothing: every number comes from the
 //   payload.
+// * When the index has `curves`, the timeline draws each as its own row on the step axis. Each
+//   row has its name and unit, a line through its points on its own vertical scale, with nulls
+//   left as gaps, and its value at the current step. With neither `curves` nor
+//   `val_loss_curve`, it says so.
+// * When the index has `next_token`, each probe sequence's last position is scored like any
+//   other. The probe text colors it by its loss, and the lens tables outline its next token,
+//   decoded with the index's vocab.
+// * Model-level badges: it reads `../runs/phase4/badges.json`, or the file `?badges=` names,
+//   which G4.6 writes.
+//   - Each view's panel shows its subject's badge under its D14 badge or meter: the probe text
+//     `per_token_loss`; the lens panels `logit_lens` and `jlens`; then `attribution`,
+//     `attention_pattern`, `residual_norm` and `layer_structure`. The compare panel shows the
+//     badge of each operation in the chosen spec.
+//   - A badge shows its status, each fact as its label, its value in its unit and its gate, and
+//     its notes.
+//   - Units: a fraction as a percentage; a fraction removed to three decimals; a rank, 0-based
+//     in the file, as #n counted from 1, so a median of 50 reads #51, followed by "of <the
+//     tokens fact>" when the badge has one; a step as an integer; a logit signed, to three
+//     decimals.
+//   - A missing file at the default path hides the badges. A named file that is missing or
+//     unreadable says so. Nothing is computed: every value is the file's.
+// * Compare mode: when the payload has `top_tokens` and `top_probs`, the panel shows both
+//   passes' top five tokens at the chosen position, with their probabilities, decoded with the
+//   index's vocab, side by side. A payload without them says so.
 //
 // How this page meets it:
 //
@@ -84,6 +108,38 @@
 //   the steps matched it also prints `kl_mean`.
 // * On a step mismatch, the spec and the meter stay, the effect's numbers are hidden, and a
 //   button moves the timeline to the payload's step when the index has it.
+// * The timeline's rows share one log-scaled step axis: the validation loss first, when the
+//   index has a non-empty `val_loss_curve`, then each of `curves` in the index's order. Every
+//   row draws its finite points, lone ones as dots, and puts each checkpoint's marker on its
+//   line where it has a value there; the step axis carries every checkpoint's marker too, so
+//   a step no row has a value at stays reachable. A click anywhere on the timeline moves to
+//   the nearest checkpoint. A row's value at the current step reads "not in this curve" when
+//   the curve has no point there and "blank" when the point is null. A curve that doesn't
+//   follow build.py's form isn't drawn: the timeline says which and why.
+// * `next_token` must be one int per probe sequence; otherwise the header says so and the
+//   page reads it as absent. The token after each window is shown after the probe text,
+//   dashed, as the last position's target. The lenses, the attribution and the compare
+//   panel's top tokens take the last position's next token from it; a view built without it
+//   still has nulls there, and they read as such.
+// * Badges are loaded once and placed under each panel's D14 badge, or under its meter when
+//   it has none. A file that isn't {"badges": {...}} is unreadable; a subject the file has no
+//   badge for, or a badge that isn't {"status", "facts", "notes"} with each fact {"label",
+//   "value", "unit", "gate", "path"}, says so in its panel. Each fact's gate shows, on
+//   hover, the path to its value in that gate's measurements and the report's commit, time
+//   and SHA-256 from the file's "reports". A judged pass is marked as passing, a judged
+//   fail as failing, "not tested" as a warning; a value that isn't a number in a numeric
+//   unit is shown as the file holds it and marked. A fraction reads to one decimal place of
+//   its percentage, and a rank's #n keeps the median's half. The compare panel shows one
+//   badge per distinct operation, in the spec's order, whatever the step. So that a jswap
+//   spec's badge doesn't sit beside an "unknown operation", a jswap edit reads as a swap of
+//   tokens a's and b's J-lens coordinates at its tap, with J's hash shortened, and a zero
+//   with a head names it, as the induction demo zeroes several heads of one tap.
+// * The compare panel's top tokens sit between the colored text and the tap changes, at the
+//   page's position, as one table: each rank's token and probability in the unintervened
+//   pass, then the intervened. The probe's next token is outlined in both when the payload
+//   ran on the probe, and a line names each pass's top token, or says it didn't change.
+//   Top tokens shaped other than (Batch, Pos, k) with k the same in both passes are an error
+//   in that section only.
 "use strict";
 
 (() => {
@@ -160,6 +216,9 @@
   const TRACE_DIR = dirParam("trace", "../runs/phase1/g16_trace/store/");
   const INTERVENTIONS_DIR = dirParam("interventions", "../runs/phase3/interventions/");
   const INTERVENTIONS_NAMED = new URLSearchParams(location.search).has("interventions");
+  // Model-level badges (D38): a file, not a folder.
+  const BADGES_NAMED = !!new URLSearchParams(location.search).get("badges");
+  const BADGES_PATH = new URLSearchParams(location.search).get("badges") || "../runs/phase4/badges.json";
 
   // Resolves a relative path against the page; refuses anything that leaves its origin.
   function localUrl(path) {
@@ -502,6 +561,10 @@
     // Compare mode: the intervention index's entries, the chosen one as `${spec_hash}-${step}`,
     // the probe's coloring ("kl" or "logit"), and loaded payloads by file name.
     compare: { entries: null, chosen: null, color: "kl", payloads: new Map() },
+    // The index's next_token, when it's one int per probe sequence; otherwise null.
+    nextToken: null,
+    // Model-level badges: "loading", "hidden" (no file at the default path), "error" or "ok".
+    modelBadges: { status: "loading", error: null, badges: null, reports: null },
   };
 
   const step = () => state.index.steps[state.stepIndex];
@@ -511,6 +574,14 @@
     return vocab && id >= 0 && id < vocab.length ? vocab[id] : `#${id}`;
   }
   const probeRow = () => state.index.probe[state.seq];
+
+  // The token a probe position predicts: the next one in the window, or after the last position,
+  // the index's next_token for that sequence. Null when there is none.
+  function targetAt(seq, pos) {
+    const tokens = state.index.probe[seq];
+    if (pos + 1 < tokens.length) return tokens[pos + 1];
+    return state.nextToken ? state.nextToken[seq] : null;
+  }
 
   function readHash() {
     const values = new URLSearchParams(location.hash.slice(1));
@@ -569,6 +640,15 @@
     if (!runMatches) {
       parts.push(el("span", { class: "error", text: `trace run_id ${traceIds.map(short).join(", ") || "none"} doesn't match the index's ${short(idx.run_id)}` }));
     }
+    if ("next_token" in idx && !state.nextToken) {
+      parts.push(el("span", { class: "error", text: `the index's next_token isn't one int per probe sequence (${idx.probe.length}), so the last position has no target here` }));
+    }
+    const mb = state.modelBadges;
+    if (mb.status === "ok") {
+      parts.push(el("span", { title: modelBadgeReportsTitle() }, "model-level badges: ", el("code", { text: BADGES_PATH })));
+    } else if (mb.status === "error") {
+      parts.push(el("span", { class: "error", text: `model-level badges: ${mb.error}` }));
+    }
     const checks = el("span", {}, "hash checks: ",
       el("span", { style: { color: "var(--good-text)", fontWeight: 600 }, text: `${tally.ok} ✓` }), " · ",
       el("span", { class: tally.bad ? "error" : "muted", text: `${tally.bad} ✗ mismatched` }));
@@ -602,67 +682,157 @@
     return ticks;
   }
 
+  // Why a curve doesn't follow build.py's form, or null when it does.
+  function curveProblem(c) {
+    if (!c || typeof c !== "object" || Array.isArray(c)) return "it isn't {\"name\", \"unit\", \"points\"}";
+    if (typeof c.name !== "string" || !c.name) return "its name isn't a non-empty string";
+    if (typeof c.unit !== "string" || !c.unit) return "its unit isn't a non-empty string";
+    if (!Array.isArray(c.points)) return "its points aren't a list";
+    const bad = c.points.findIndex((p) => !p || typeof p !== "object" || !Number.isInteger(p.step)
+      || !(p.value === null || (typeof p.value === "number" && Number.isFinite(p.value))));
+    return bad === -1 ? null : `point ${bad} isn't {"step": an int, "value": a finite number or null}`;
+  }
+
+  // The timeline's rows, each {name, unit, points: [{step, value}] sorted by step}: the validation
+  // loss when the index has one, then each well-formed curve. Malformed curves come back as problems.
+  function timelineRows() {
+    const idx = state.index;
+    const rows = [];
+    const problems = [];
+    const byStep = (a, b) => a.step - b.step;
+    const val = Array.isArray(idx.val_loss_curve) ? idx.val_loss_curve : [];
+    if (val.length) {
+      rows.push({ name: "validation loss", unit: "nats",
+        points: val.filter((p) => p && Number.isFinite(p.step)).map((p) => ({ step: p.step, value: p.loss })).sort(byStep) });
+    }
+    if ("curves" in idx) {
+      if (!Array.isArray(idx.curves)) {
+        problems.push("the index's curves aren't a list, so none is drawn");
+      } else {
+        idx.curves.forEach((c, i) => {
+          const why = curveProblem(c);
+          if (why) problems.push(`curve ${i}${c && typeof c.name === "string" && c.name ? ` “${c.name}”` : ""} isn't drawn: ${why}`);
+          else rows.push({ name: c.name, unit: c.unit, points: c.points.map((p) => ({ step: p.step, value: p.value })).sort(byStep) });
+        });
+      }
+    }
+    return { rows, problems };
+  }
+
+  const finiteValue = (v) => v !== null && v !== undefined && Number.isFinite(v);
+
   function renderTimeline() {
     const box = $("timeline");
     const idx = state.index;
     const steps = idx.steps;
-    const width = Math.max(320, box.clientWidth || 800);
-    const height = 170;
-    const m = { l: 52, r: 24, t: 24, b: 34 };
-    const maxStep = Math.max(...steps, ...(idx.val_loss_curve || []).map((p) => p.step));
-    const x = xScaleLog(maxStep, m.l, width - m.r);
-    const curve = (idx.val_loss_curve || []).filter((p) => Number.isFinite(p.step)).sort((a, b) => a.step - b.step);
-    const losses = curve.map((p) => p.loss).filter((v) => v !== null && Number.isFinite(v));
-    const lo = losses.length ? Math.min(...losses) : 0;
-    const hi = losses.length ? Math.max(...losses) : 1;
-    const pad = (hi - lo) * 0.08 || 0.5;
-    const y = (v) => m.t + (height - m.t - m.b) * (1 - (v - (lo - pad)) / (hi - lo + 2 * pad));
-    const lossAt = new Map(curve.map((p) => [p.step, p.loss]));
-
-    const root = svg("svg", { width, height, role: "img", "aria-label": "Validation loss over training, with the trace checkpoints marked" });
-    for (const t of niceTicks(lo - pad, hi + pad)) {
-      root.append(svg("line", { class: "gridline", x1: m.l, x2: width - m.r, y1: y(t), y2: y(t) }),
-        svg("text", { x: m.l - 6, y: y(t) + 4, "text-anchor": "end" }, fmt(t, 2)));
-    }
-    root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: height - m.b, y2: height - m.b }));
-    for (const t of logTicks(maxStep)) {
-      root.append(svg("text", { x: x(t), y: height - m.b + 14, "text-anchor": "middle" }, String(t)));
-    }
-    root.append(svg("text", { x: width - m.r, y: height - 4, "text-anchor": "end" }, "training step (log scale)"),
-      svg("text", { x: 4, y: 12 }, losses.length ? "validation loss (nats)" : ""));
-
-    if (curve.length) {
-      let d = "";
-      let pen = false;
-      for (const p of curve) {
-        if (p.loss === null || !Number.isFinite(p.loss)) { pen = false; continue; }
-        d += `${pen ? "L" : "M"}${x(p.step).toFixed(1)},${y(p.loss).toFixed(1)}`;
-        pen = true;
-      }
-      root.append(svg("path", { d, fill: "none", stroke: cssVar("--series-1"), "stroke-width": 2, "stroke-linejoin": "round" }));
-    }
-
     const current = step();
-    const cx = x(current);
-    root.append(svg("line", { x1: cx, x2: cx, y1: m.t, y2: height - m.b, stroke: cssVar("--text-secondary"), "stroke-dasharray": "3 3" }));
-    steps.forEach((s, i) => {
-      const v = lossAt.get(s);
-      const cy = v !== undefined && v !== null && Number.isFinite(v) ? y(v) : height - m.b;
+    const { rows, problems } = timelineRows();
+    const width = Math.max(320, box.clientWidth || 800);
+    const m = { l: 52, r: 24 };
+    const hereTexts = rows.map((row) => {
+      const at = row.points.find((p) => p.step === current);
+      return at === undefined ? `step ${current}: not in this curve` : at.value === null ? `step ${current}: blank`
+        : `step ${current}: ${fmt(at.value)} ${row.unit}`;
+    });
+    // When a row's name and its value at the current step can't share a line (about 6.4px a
+    // character at 11px), every row puts its value on a line of its own.
+    const twoLines = rows.some((row, r) => (row.name.length + row.unit.length + 3 + hereTexts[r].length) * 6.4 + 24 > width - m.r - 4);
+    const labelH = twoLines ? 30 : 16;
+    const plotH = rows.length > 1 ? 64 : 112;
+    const rowH = labelH + plotH + 18;
+    const top = 4;
+    const axisY = top + (rows.length ? rows.length * rowH : 40);
+    const height = axisY + 34;
+    const maxStep = Math.max(...steps, ...rows.flatMap((r) => r.points.map((p) => p.step)));
+    const x = xScaleLog(maxStep, m.l, width - m.r);
+
+    const root = svg("svg", { width, height, role: "img",
+      "aria-label": `${rows.length ? rows.map((r) => r.name).join(", ") : "Checkpoints"} over training, with the trace checkpoints marked` });
+    // A click anywhere moves to the nearest checkpoint; the markers on top take their own clicks.
+    root.append(svg("rect", {
+      x: 0, y: 0, width, height, fill: "transparent", style: "cursor:pointer",
+      onclick: (event) => {
+        const px = event.clientX - root.getBoundingClientRect().left;
+        let best = 0;
+        steps.forEach((s, i) => { if (Math.abs(x(s) - px) < Math.abs(x(steps[best]) - px)) best = i; });
+        selectStep(best);
+      },
+    }));
+    const marker = (s, i, cx, cy, label, small = false) => {
       const isCurrent = i === state.stepIndex;
-      const label = `step ${s}${v !== undefined && v !== null ? ` · val loss ${fmt(v)}` : " · no val loss recorded"}`;
-      const g = svg("g", { style: "cursor:pointer", onclick: () => selectStep(i) },
-        svg("circle", { cx: x(s), cy, r: 10, fill: "transparent" }),
+      const r = small ? (isCurrent ? 5 : 3.5) : (isCurrent ? 6 : 4);
+      return svg("g", { style: "cursor:pointer", onclick: () => selectStep(i) },
+        svg("circle", { cx, cy, r: 10, fill: "transparent" }),
         svg("circle", {
-          cx: x(s), cy, r: isCurrent ? 6 : 4,
+          cx, cy, r,
           fill: isCurrent ? cssVar("--accent") : cssVar("--surface-1"),
           stroke: isCurrent ? cssVar("--surface-1") : cssVar("--accent"), "stroke-width": 2,
         }),
         svg("title", {}, label));
-      root.append(g);
+    };
+
+    rows.forEach((row, r) => {
+      const y0 = top + r * rowH;
+      const p0 = y0 + labelH;
+      const p1 = p0 + plotH;
+      const values = row.points.map((p) => p.value).filter(finiteValue);
+      const lo = values.length ? Math.min(...values) : 0;
+      const hi = values.length ? Math.max(...values) : 1;
+      const pad = (hi - lo) * 0.08 || Math.abs(hi) * 0.1 || 0.5;
+      const y = (v) => p0 + plotH * (1 - (v - (lo - pad)) / (hi - lo + 2 * pad));
+      const at = new Map(row.points.map((p) => [p.step, p.value]));
+      root.append(
+        svg("text", { x: 4, y: y0 + 12, style: "font-weight:600" }, row.name, svg("tspan", { style: "font-weight:normal" }, ` (${row.unit})`)),
+        svg("text", { x: width - m.r, y: y0 + (twoLines ? 26 : 12), "text-anchor": "end", style: "font-weight:600" }, hereTexts[r]));
+      for (const t of niceTicks(lo - pad, hi + pad, plotH > 80 ? 4 : 2)) {
+        if (y(t) < p0 - 0.5 || y(t) > p1 + 0.5) continue;
+        root.append(svg("line", { class: "gridline", x1: m.l, x2: width - m.r, y1: y(t), y2: y(t) }),
+          svg("text", { x: m.l - 6, y: y(t) + 4, "text-anchor": "end" }, fmt(t, 2)));
+      }
+      root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: p1, y2: p1 }));
+      if (!values.length) {
+        root.append(svg("text", { x: (m.l + width - m.r) / 2, y: (p0 + p1) / 2 + 4, "text-anchor": "middle" }, "every value in this curve is null"));
+      }
+      const colour = r === 0 && idx.val_loss_curve?.length ? cssVar("--series-1") : SERIES()[r % 8];
+      let d = "";
+      let pen = false;
+      row.points.forEach((p, k) => {
+        if (!finiteValue(p.value)) { pen = false; return; }
+        d += `${pen ? "L" : "M"}${x(p.step).toFixed(1)},${y(p.value).toFixed(1)}`;
+        pen = true;
+        // A point with no finite neighbour draws no line, so it gets a dot.
+        const alone = !finiteValue(row.points[k - 1]?.value) && !finiteValue(row.points[k + 1]?.value);
+        if (alone && !steps.includes(p.step)) {
+          root.append(svg("circle", { cx: x(p.step), cy: y(p.value), r: 2.5, fill: colour },
+            svg("title", {}, `${row.name} · step ${p.step}: ${fmt(p.value, 4)} ${row.unit}`)));
+        }
+      });
+      if (d) root.append(svg("path", { d, fill: "none", stroke: colour, "stroke-width": 2, "stroke-linejoin": "round" }));
+      steps.forEach((s, i) => {
+        const v = at.get(s);
+        if (finiteValue(v)) root.append(marker(s, i, x(s), y(v), `step ${s} · ${row.name} ${fmt(v, 4)} ${row.unit}`));
+      });
     });
+
+    // The current step's dashed line runs through each row's plot, not its label line.
+    const cx = x(current);
+    const spans = rows.length ? rows.map((_, r) => [top + r * rowH + labelH, top + (r + 1) * rowH]) : [[top, axisY]];
+    spans[spans.length - 1][1] = axisY;
+    for (const [y1, y2] of spans) {
+      root.append(svg("line", { x1: cx, x2: cx, y1, y2, stroke: cssVar("--text-secondary"), "stroke-dasharray": "3 3", "pointer-events": "none" }));
+    }
+    root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: axisY, y2: axisY }));
+    for (const t of logTicks(maxStep)) {
+      root.append(svg("text", { x: x(t), y: axisY + 18, "text-anchor": "middle" }, String(t)));
+    }
+    root.append(svg("text", { x: width - m.r, y: height - 2, "text-anchor": "end" }, "training step (log scale)"));
+    steps.forEach((s, i) => root.append(marker(s, i, x(s), axisY, `step ${s} (checkpoint ${i + 1} of ${steps.length})`, true)));
+
     clear(box, root);
-    if (!curve.length) box.append(el("div", { class: "note", text: "The index has no validation-loss curve; checkpoints are shown on the step axis." }));
-    const v = lossAt.get(current);
+    if (!rows.length) box.append(el("div", { class: "note", text: "The index has neither curves nor a validation-loss curve; checkpoints are shown on the step axis." }));
+    for (const problem of problems) box.append(errorBox(problem));
+    const val = (idx.val_loss_curve || []).find((p) => p && p.step === current);
+    const v = val ? val.loss : undefined;
     $("step-label").textContent = `step ${current} (checkpoint ${state.stepIndex + 1} of ${steps.length})${v !== undefined && v !== null ? ` · val loss ${fmt(v)}` : ""}`;
     $("step-slider").value = String(state.stepIndex);
   }
@@ -710,18 +880,31 @@
       }
       if (t === state.pos) span.classList.add("sel");
       span.addEventListener("click", () => { state.pos = t; changed({ posChanged: true }); });
+      const target = targetAt(state.seq, t);
+      const last = t + 1 === tokens.length;
       span.addEventListener("mousemove", (event) => showTip(event, [
         `position ${t} · “${word}” (id ${id})`,
-        loss === null ? "loss: blank, no next token inside the window" : loss === undefined ? "loss not loaded" : `loss predicting the next token: ${fmt(loss)} nats`,
-        t + 1 < tokens.length ? `next token: “${tokenText(tokens[t + 1])}”` : "",
+        loss === null
+          ? (target === null ? "loss: blank, no next token inside the window" : "loss: blank in this view, though the index names a next token; was the view built without it?")
+          : loss === undefined ? "loss not loaded" : `loss predicting the next token: ${fmt(loss)} nats`,
+        target === null ? "" : `next token: “${tokenText(target)}”${last ? " (the token after the window, from the index's next_token)" : ""}`,
       ].filter(Boolean)));
       span.addEventListener("mouseleave", hideTip);
       return span;
     });
-    clear($("probe-text"), spans);
+    // The token after the window, which the last position is scored against: shown, not clickable.
+    const after = state.nextToken ? state.nextToken[state.seq] : null;
+    const ghost = after === null ? null : el("span", {
+      class: "tok after", title: `the token after the window, “${tokenText(after)}” (id ${after}): the last position's target, from the index's next_token`,
+      text: tokenText(after),
+    });
+    clear($("probe-text"), spans, ghost);
     clear($("loss-legend"),
       el("span", {}, "loss on the next token: ", rampLegend("orange", 0, vocabSize ? `ln ${vocabSize} = ${fmt(top, 2)}` : fmt(top, 2), "nats")),
-      el("span", {}, el("span", { class: "sw", style: { backgroundImage: "repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px)" } }), "blank: no next token in the window"),
+      el("span", {}, el("span", { class: "sw", style: { backgroundImage: "repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px)" } }),
+        state.nextToken ? "blank: no loss in the view" : "blank: no next token in the window"),
+      state.nextToken ? el("span", {}, el("span", { class: "sw", style: { border: "1px dashed var(--text-secondary)" } }),
+        "after the window: the last position's next token, from the index") : null,
       el("span", { text: "Click a token to choose its position for the lenses and the attribution." }));
   }
 
@@ -777,7 +960,10 @@
     const rank = data.target_rank?.[l]?.[seq]?.[pos];
     const prob = data.target_prob?.[l]?.[seq]?.[pos];
     if (target === null) return [el("td", { class: "num vs muted", text: "none" }), el("td", { class: "num muted", text: "none" })];
-    if (!Number.isInteger(rank)) return [el("td", { class: "num vs", text: "?" }), el("td", { class: "num", text: "?" })];
+    if (!Number.isInteger(rank)) {
+      const why = rank === null ? "the view has no rank here; it may have been built without the index's next_token" : "the view has no rank here";
+      return [el("td", { class: "num vs", title: why, text: "?" }), el("td", { class: "num", title: why, text: "?" })];
+    }
     const word = tokenText(target);
     return [
       el("td", { class: `num vs${rank < topK(data) ? "" : " outside"}`, title: `“${word}” ranks #${rank + 1} of ${state.index.vocab?.length ?? "the vocabulary"} (0-based ${rank} in the view)`, text: `#${rank + 1}` }),
@@ -791,7 +977,8 @@
   // columns, so their own headings stay short and the table fits beside its neighbour.
   function lensTable(data, seq, pos, { meter, extra = null }) {
     const tokens = probeRow();
-    const target = pos + 1 < tokens.length ? tokens[pos + 1] : null;
+    const target = targetAt(seq, pos);
+    const last = pos + 1 === tokens.length;
     const color = rampFor("blue");
     const k = topK(data);
     const group = (text, span, title, cls = "") => el("th", { class: `group ${cls}`, colspan: String(span), title, text });
@@ -831,7 +1018,7 @@
     return [
       el("div", { class: "note" }, `Top tokens at “${tokenText(tokens[pos])}”. `,
         target === null ? "This is the last position, so there's no next token to outline or rank."
-          : `The actual next token, “${tokenText(target)}”, is outlined where it appears, and its rank and probability follow the top ${k}.`),
+          : `The actual next token, “${tokenText(target)}”${last ? ", the token after the window from the index's next_token," : ""} is outlined where it appears, and its rank and probability follow the top ${k}.`),
       missingRanks ? errorBox("This view has no target_rank or target_prob, so the next token's rank isn't shown. Rebuild the views.") : null,
       el("div", { class: "scrollx" }, el("table", { class: "lens" }, el("thead", {}, groups, head), el("tbody", {}, rows))),
       el("div", { class: "legend" }, el("span", {}, "probability ", rampLegend("blue", "0", "1", "")),
@@ -935,8 +1122,7 @@
       return;
     }
     if (atStep !== step() || seq !== state.seq || pos !== state.pos) return;
-    const tokens = probeRow();
-    const target = pos + 1 < tokens.length ? tokens[pos + 1] : null;
+    const target = targetAt(seq, pos);
     $("attr-sub").textContent = target === null ? `sequence ${seq}, position ${pos}` : `sequence ${seq}, position ${pos}, on the logit of “${tokenText(target)}”`;
     const m = data.meter || {};
     clear($("attr-meter"), m.kind === "decomposition_error"
@@ -946,7 +1132,8 @@
 
     const values = data.parts.map((_, p) => data.contributions[p][seq][pos]);
     if (values.every((v) => v === null)) {
-      clear(body, el("div", { class: "note", text: "Blank: the last position has no next token, so there's no logit to attribute." }));
+      clear(body, el("div", { class: "note", text: target === null ? "Blank: the last position has no next token, so there's no logit to attribute."
+        : "Blank: this view has no contributions here, though the index names a next token; it may have been built without it." }));
       return;
     }
     const sum = values.reduce((a, v) => a + (v ?? 0), 0);
@@ -1316,6 +1503,152 @@
       offAxis ? el("div", { class: "note", text: `${offAxis} value${offAxis === 1 ? " is" : "s are"} at or below zero, which a log scale can't place: open markers on the bottom edge.` }) : null);
   }
 
+  // ---------------------------------------------------------------- model-level badges (D38)
+
+  // Each view's subject and the slot under its D14 badge, or under its meter when it has none.
+  const MODEL_BADGE_SLOTS = [
+    ["per_token_loss", "loss-model-badge"], ["logit_lens", "lens-model-badge"], ["jlens", "jlens-model-badge"],
+    ["attribution", "attr-model-badge"], ["attention_pattern", "attn-model-badge"],
+    ["residual_norm", "resid-model-badge"], ["layer_structure", "layers-model-badge"],
+  ];
+
+  // Reads the badges G4.6 writes, if there are any. Without ?badges=, a 404 hides them.
+  async function loadModelBadges() {
+    const mb = state.modelBadges;
+    const settle = (status, error = null) => {
+      mb.status = status;
+      mb.error = error;
+      renderModelBadges();
+      renderFacts();
+      report(renderCompare(), "compare-meter");
+    };
+    if (!BADGES_NAMED) {
+      let head;
+      try {
+        head = await fetch(localUrl(BADGES_PATH), { method: "HEAD", cache: "no-cache" });
+      } catch (error) {
+        settle("hidden");
+        return;
+      }
+      if (head.status === 404) {
+        settle("hidden");
+        return;
+      }
+    }
+    let data;
+    try {
+      data = await fetchJSON(BADGES_PATH, "model-level badges");
+    } catch (error) {
+      settle("error", `${BADGES_PATH} is missing or unreadable (${error.message})`);
+      return;
+    }
+    const isMap = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+    if (!isMap(data) || !isMap(data.badges)) {
+      settle("error", `${BADGES_PATH} is unreadable: it isn't {"badges": {...}}, the form G4.6 writes`);
+      return;
+    }
+    mb.badges = data.badges;
+    mb.reports = isMap(data.reports) ? data.reports : null;
+    settle("ok");
+  }
+
+  function modelBadgeReportsTitle() {
+    const reports = state.modelBadges.reports;
+    if (!reports) return "the file names no reports";
+    return Object.entries(reports).map(([gate, r]) => `${gate}: ${reportProvenance(r)}`).join("\n");
+  }
+
+  function reportProvenance(r) {
+    if (!r || typeof r !== "object") return "not described in the file";
+    return `commit ${r.git_commit ?? "?"}, ${r.timestamp_utc ?? "?"}, report sha256 ${r.sha256 ?? "?"}`;
+  }
+
+  // Why a badge doesn't follow badges.py's form, or null when it does.
+  function badgeProblem(b) {
+    if (!b || typeof b !== "object" || Array.isArray(b)) return "it isn't an object";
+    if (typeof b.status !== "string") return "its status isn't a string";
+    if (!Array.isArray(b.facts)) return "its facts aren't a list";
+    if (!Array.isArray(b.notes) || !b.notes.every((n) => typeof n === "string")) return "its notes aren't a list of strings";
+    const bad = b.facts.findIndex((f) => !f || typeof f !== "object" || typeof f.label !== "string" || !f.label
+      || typeof f.unit !== "string" || typeof f.gate !== "string" || !Array.isArray(f.path) || !("value" in f));
+    return bad === -1 ? null : `fact ${bad} isn't {"label", "value", "unit", "gate", "path"}`;
+  }
+
+  // A fact's value in its unit, as {text, odd}: odd when the file's value doesn't fit the unit,
+  // in which case the text is the value as the file holds it. Display only; nothing is computed.
+  function factValue(fact, facts) {
+    const v = fact.value;
+    const asHeld = (why) => ({ text: `${JSON.stringify(v)} ${fact.unit}`, odd: why });
+    if (typeof v !== "number" || !Number.isFinite(v)) return asHeld(`not a number, in a badge whose unit is ${fact.unit}`);
+    switch (fact.unit) {
+      case "fraction":
+        return { text: `${(100 * v).toFixed(1)}%` };
+      case "fraction removed":
+        return { text: v.toFixed(3) };
+      case "rank": {
+        const tokens = facts.find((f) => f.unit === "tokens" && typeof f.value === "number");
+        return { text: `#${+(v + 1).toPrecision(12)}${tokens ? ` of ${tokens.value}` : ""}` };
+      }
+      case "step":
+        return Number.isInteger(v) ? { text: String(v) } : asHeld("not an integer step");
+      case "tokens":
+        return Number.isInteger(v) ? { text: `${v} tokens` } : asHeld("not a whole count of tokens");
+      case "logit":
+        return { text: `${v >= 0 ? "+" : ""}${v.toFixed(3)}` };
+      default:
+        return asHeld(`a unit the viewer doesn't know, ${JSON.stringify(fact.unit)}`);
+    }
+  }
+
+  const BADGE_STATUS = {
+    "judged: pass": ["ok", "judged: pass", "judged by a gate, which passed"],
+    "judged: fail": ["bad", "judged: FAIL", "judged by a gate, which didn't pass"],
+    recorded: ["info", "recorded", "recorded by the gates, not judged pass or fail"],
+    "not tested": ["warn", "not tested", "no Phase 4 test exercises it"],
+    readout: ["info", "readout", "an exact readout, with no model-level structure to recover"],
+  };
+
+  // The subject's model-level badge as a block, or null while there is nothing to show.
+  function modelBadgeBox(subject) {
+    const mb = state.modelBadges;
+    if (mb.status === "hidden" || mb.status === "loading") return null;
+    if (mb.status === "error") return el("div", { class: "model-badge bad" }, el("b", { text: "Model-level badge (D38) unavailable: " }), mb.error);
+    const b = mb.badges[subject];
+    if (b === undefined) return el("div", { class: "model-badge bad" }, el("b", { text: "No model-level badge: " }), `${BADGES_PATH} has none for `, el("code", { text: subject }));
+    const problem = badgeProblem(b);
+    if (problem) return el("div", { class: "model-badge bad" }, el("b", { text: "Model-level badge unreadable: " }), `the badge for `, el("code", { text: subject }), ` in ${BADGES_PATH}: ${problem}`);
+    const [kind, statusText, statusTitle] = BADGE_STATUS[b.status] || ["bad", `unknown status ${JSON.stringify(b.status)}`, "a status badges.py doesn't write"];
+    const reports = mb.reports || {};
+    const facts = b.facts.map((fact) => {
+      const { text, odd } = factValue(fact, b.facts);
+      const gateTitle = `${fact.gate}'s measurements at ${JSON.stringify(fact.path)}\n${fact.gate} report: ${reportProvenance(reports[fact.gate])}`;
+      return el("li", {},
+        `${fact.label}: `,
+        el("b", { class: `value${odd ? " odd" : ""}`, title: `${JSON.stringify(fact.value)} in the file, unit ${fact.unit}${odd ? `\n${odd}` : ""}`, text }),
+        odd ? el("span", { class: "odd", text: ` (${odd})` }) : null,
+        " ", el("span", { class: "gate", title: gateTitle, text: fact.gate }));
+    });
+    return el("details", { class: `model-badge ${kind}`, open: true },
+      el("summary", {},
+        el("b", { text: "Model-level badge (D38): " }),
+        el("span", { class: "status", title: statusTitle, text: statusText }),
+        " · ", el("code", { text: subject }),
+        b.facts.length ? el("span", { class: "muted", text: ` · ${b.facts.length} ${b.facts.length === 1 ? "fact" : "facts"} from the reports` }) : null),
+      facts.length ? el("ul", {}, facts) : null,
+      b.notes.map((note) => el("div", { class: "note", text: note })));
+  }
+
+  function renderModelBadges() {
+    for (const [subject, slot] of MODEL_BADGE_SLOTS) clear($(slot), modelBadgeBox(subject));
+  }
+
+  // One badge per distinct operation in the spec, in its order.
+  function compareModelBadges(data) {
+    if (!data || !data.spec || !Array.isArray(data.spec.edits)) return null;
+    const ops = [...new Set(data.spec.edits.map((e) => e && e.op).filter((op) => typeof op === "string"))];
+    return ops.map((op) => modelBadgeBox(op));
+  }
+
   // ---------------------------------------------------------------- compare mode (Phase 3, D27)
 
   const compareKey = (entry) => `${entry.spec_hash}-${entry.step}`;
@@ -1451,7 +1784,7 @@
     const args = e.args && typeof e.args === "object" ? e.args : {};
     switch (e.op) {
       case "zero":
-        return ["zero ", tapCode(e.tap), ` at ${at}`];
+        return ["zero ", "head" in args ? `head ${JSON.stringify(args.head)} of ` : "", tapCode(e.tap), ` at ${at}`];
       case "mean":
         return ["replace ", tapCode(e.tap), ` at ${at} with its per-position mean over reference batch `, hashCode(args.reference)];
       case "resample":
@@ -1465,6 +1798,9 @@
         return ["swap ", tapCode(e.tap), what ? ` (${what})` : "", ` with its weights from step ${JSON.stringify(args.step)}`,
           e.positions === "all" ? "" : `, at ${at}`];
       }
+      case "jswap":
+        return ["swap the J-lens coordinates of tokens ", tokenWithId(args.a), " and ", tokenWithId(args.b), " in ", tapCode(e.tap),
+          ` at ${at}, with J `, hashCode(args.J)];
       default:
         return [el("span", { class: "error", text: `unknown operation ${JSON.stringify(e.op)}: ` }), tapCode(String(e.tap)), ` at ${at}, arguments ${JSON.stringify(args)}`];
     }
@@ -1513,6 +1849,7 @@
     if (!entry) {
       $("compare-sub").textContent = `from ${INTERVENTIONS_DIR}`;
       clear(meter, c.chosen ? meterRow("warn", "not in the index", `the address names intervention ${short(c.chosen.split("-")[0])} at step ${c.chosen.split("-")[1]}, which the index doesn't list`) : null);
+      clear($("compare-model-badges"));
       clear(body, el("div", { class: "note", text: c.entries.length ? "Choose an intervention to see its spec and its effect." : "The intervention index lists no interventions." }));
       setPanelBad("compare-panel", false);
       return;
@@ -1527,6 +1864,7 @@
     } catch (error) {
       if (chosen !== c.chosen) return;
       clear(meter, meterRow("bad", "intervention unavailable", error.message));
+      clear($("compare-model-badges"));
       clear(body);
       setPanelBad("compare-panel", true);
       return;
@@ -1535,6 +1873,7 @@
     setPanelBad("compare-panel", false);
     const matched = data.step === atStep;
     clear(meter, exactnessRows(data, matched));
+    clear($("compare-model-badges"), compareModelBadges(data));
     if (!matched) {
       const onTimeline = state.index.steps.includes(data.step);
       clear(body, specBlock(data), el("div", { class: "mismatch" },
@@ -1560,6 +1899,7 @@
           onclick: () => { c.color = mode; report(renderCompare(), "compare-meter"); },
         }))),
       compareProbe(data, seq),
+      compareTopTokens(data, seq, pos),
       el("h3", { text: "Requested taps' change" }),
       tapChanges(data, seq));
   }
@@ -1607,6 +1947,81 @@
       el("div", { class: "legend" }, legend,
         top === 0 ? el("span", { text: "every value in this payload is 0" }) : el("span", { text: "scale: the payload's largest magnitude" }),
         mode === "logit" ? el("span", {}, el("span", { class: "sw", style: { backgroundImage: "repeating-linear-gradient(135deg, var(--border) 0 2px, transparent 2px 6px)" } }), "blank: no next token in the window") : null),
+    ];
+  }
+
+  const tokenWithId = (id) => (Number.isInteger(id) ? `“${tokenText(id)}” (id ${id})` : JSON.stringify(id));
+
+  // Why the payload's top tokens can't be drawn, or null. Each pass's tokens and probabilities are
+  // (Batch, Pos, k), shaped like the payload's tokens, with one k throughout.
+  function topTokensProblem(data) {
+    const tokens = data.tokens;
+    let k = null;
+    for (const field of ["top_tokens", "top_probs"]) {
+      const value = data[field];
+      if (!value || typeof value !== "object" || Array.isArray(value)) return `its ${field} isn't {"unintervened", "intervened"}`;
+      for (const pass of ["unintervened", "intervened"]) {
+        const rows = value[pass];
+        const ok = Array.isArray(rows) && rows.length === tokens.length && rows.every((row, b) => Array.isArray(row)
+          && row.length === tokens[b].length && row.every((cell) => {
+            if (!Array.isArray(cell) || !cell.length) return false;
+            if (k === null) k = cell.length;
+            return cell.length === k && cell.every((v) => (field === "top_tokens" ? Number.isInteger(v) : typeof v === "number"));
+          }));
+        if (!ok) return `its ${field}.${pass} isn't (Batch, Pos, k) like its tokens, (${tokens.length}, ${tokens[0].length}), with one k`;
+      }
+    }
+    return null;
+  }
+
+  // Both passes' top tokens at the page's position, side by side. Every number is the payload's.
+  function compareTopTokens(data, seq, pos) {
+    const heading = el("h3", { text: "What each pass predicts" });
+    if (!("top_tokens" in data) && !("top_probs" in data)) {
+      return [heading, el("div", { class: "note", text: "This payload has no top_tokens or top_probs, so what each pass predicts isn't shown. The command line writes them since Phase 4's delta 4; rewrite the payload to see them." })];
+    }
+    const problem = topTokensProblem(data);
+    if (problem) return [heading, errorBox(`The payload's top tokens can't be shown: ${problem}.`)];
+    const tokens = data.tokens[seq];
+    if (pos >= tokens.length) return [heading, errorBox(`The payload's sequences have ${tokens.length} positions; position ${pos} isn't one of them.`)];
+    const onProbe = sameTokens(data.tokens, state.index.probe);
+    const target = onProbe ? targetAt(seq, pos) : null;
+    const passes = ["unintervened", "intervened"];
+    const ids = passes.map((pass) => data.top_tokens[pass][seq][pos]);
+    const probs = passes.map((pass) => data.top_probs[pass][seq][pos]);
+    const k = ids[0].length;
+    const color = rampFor("blue");
+    const cell = (id, p, pass, first) => {
+      const rgb = color(p);
+      return [
+        el("td", {
+          class: `cell${id === target ? " target" : ""}${first ? "" : " vs"}`,
+          style: { background: rgbCss(rgb), color: inkFor(rgb) },
+          title: `${pass}: token “${tokenText(id)}” (id ${id}) · p = ${p}${id === target ? " · the probe's next token" : ""}`,
+          text: tokenText(id),
+        }),
+        el("td", { class: "num", title: `p = ${p}`, text: p * 100 < 0.1 && p > 0 ? fmt(p) : pct(p) }),
+      ];
+    };
+    const table = el("table", { class: "lens top-compare" },
+      el("thead", {},
+        el("tr", {}, el("th", {}), el("th", { class: "group", colspan: "2", text: "unintervened" }), el("th", { class: "group vs", colspan: "2", text: "intervened" })),
+        el("tr", {}, el("th", { text: "rank" }), el("th", { text: "token" }), el("th", { class: "num", text: "p" }),
+          el("th", { class: "vs", text: "token" }), el("th", { class: "num", text: "p" }))),
+      el("tbody", {}, Array.from({ length: k }, (_, i) => el("tr", {},
+        el("td", { class: "num", text: `#${i + 1}` }),
+        cell(ids[0][i], probs[0][i], "unintervened", true),
+        cell(ids[1][i], probs[1][i], "intervened", false)))));
+    const [before, after] = [ids[0][0], ids[1][0]];
+    return [
+      heading,
+      el("div", { class: "note" }, `Top ${k} tokens at position ${pos} “${tokenText(tokens[pos])}”, best first. `,
+        before === after ? `The top token is “${tokenText(before)}” in both passes.`
+          : `The top token changes from “${tokenText(before)}” to “${tokenText(after)}”.`,
+        target === null ? (onProbe ? " There's no next token here to outline." : " This payload didn't run on the probe, so no next token is outlined.")
+          : ` The probe's next token, “${tokenText(target)}”, is outlined where it appears.`),
+      el("div", { class: "scrollx" }, table),
+      el("div", { class: "legend" }, el("span", {}, "probability ", rampLegend("blue", "0", "1", ""))),
     ];
   }
 
@@ -1786,6 +2201,8 @@
       return;
     }
     state.index = index;
+    const next = index.next_token;
+    state.nextToken = Array.isArray(next) && next.length === index.probe.length && next.every((id) => Number.isInteger(id)) ? next : null;
     $("jlens-panel").hidden = !hasJLens();
     try {
       indexEvents(eventsText);
@@ -1818,6 +2235,7 @@
     });
     report(loadLayerStructure(), "layers-meter");
     report(loadInterventions(), "compare-meter");
+    loadModelBadges().catch((error) => console.error(error));
   }
 
   main();
