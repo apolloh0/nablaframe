@@ -88,8 +88,26 @@ The settings are the spec's, which are the feasibility runs' (D37):
 Every judgement helper returns plain Python floats, bools and None, ready for a report.
 """
 
+# Beyond the contract above, this module holds the paths and modules several Phase 5 gates share:
+#
+# * ``p4``: gates/phase4/_common.py, and through it ``p3``, ``p2`` and ``p1``, all loaded by path
+#   under their own module names (every one of these files is called ``_common``). ``p1`` is the
+#   module the others loaded, so pointing one set of globals at a scratch folder points every gate
+#   at it.
+# * ``REPORT_DIR``, ``RUN_DIR`` and ``DICTIONARY_DIR``: reports/phase5/, runs/phase5/ and
+#   runs/phase5/dictionaries/.
+#
+# Paths and Phase 1's settings are read from the modules' globals when a function runs, never bound
+# at import. Nothing here imports JAX at module level, so every gate script imports in any
+# environment.
+
 from __future__ import annotations
 
+import importlib.util
+import re
+import sys
+import threading
+import time
 from collections.abc import Callable, Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -112,66 +130,221 @@ BARS = {"fvu": 0.1, "ablation_cost": 0.1, "recovered": 0.9, "faithful_applies": 
         "edge_ratio": 0.2}
 READOUT = {"induction": tuple(range(32, 63)), "two_hop": (25,)}
 
+ZOO = ("induction", "two_hop")
+KINDS = ("topk", "staircase", "transcoder", "jsae")
+WHICH = ("train", "held_out")
+TESTS = ("follow", "break")
+_KEY = re.compile(r"[0-9a-f]{64}")
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REPORT_DIR = REPO_ROOT / "reports" / "phase5"
+RUN_DIR = REPO_ROOT / "runs" / "phase5"
+DICTIONARY_DIR = RUN_DIR / "dictionaries"
+
+
+def _load_phase4_common() -> Any:
+    """gates/phase4/_common.py, under its own module name: this file is also called ``_common``."""
+    name = "nablaframe_gates_phase4_common"
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parents[1] / "phase4"
+                                                      / "_common.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+p4 = _load_phase4_common()
+p3 = p4.p3
+p2 = p4.p2
+p1 = p4.p1
+
+
+def _is_int(value: Any) -> bool:
+    return isinstance(value, (int, np.integer)) and not isinstance(value, (bool, np.bool_))
+
 
 def settings(name: str, kind: str, d_model: int, *, seed: int = DICT_SEED, lam: float = 0.0, short: bool = False) -> Any:
-    raise NotImplementedError
+    if name not in RUNS:
+        raise ValueError(f"no run {name!r}; expected one of {RUNS}")
+    from nablaframe.dictionaries.core import Settings
+
+    steps, batch = (SHORT["steps"], SHORT["batch"]) if short else (STEPS[name], BATCH[name])
+    return Settings(kind, WIDTH_FACTOR * d_model, K, steps, batch, lr=LR, seed=seed, lam=lam, jac_batch=JAC_BATCH)
 
 
 def sites(kind: str, n_layers: int, layer: int | None = None) -> list[tuple[str, str]]:
-    raise NotImplementedError
+    if kind not in KINDS:
+        raise ValueError(f"no dictionary kind {kind!r}; expected one of {KINDS}")
+    if not _is_int(n_layers) or n_layers < 1:
+        raise ValueError(f"n_layers must be a positive int, got {n_layers!r}")
+    if kind == "staircase":
+        if layer is not None:
+            raise ValueError(f"a staircase covers every block; it takes no layer, got {layer!r}")
+        return [(f"blocks.{l}.hook_resid_post",) * 2 for l in range(n_layers)]
+    if layer is None:
+        raise ValueError(f"a {kind} needs a layer")
+    if not _is_int(layer) or not 0 <= layer < n_layers:
+        raise ValueError(f"layer must be an int in range({n_layers}), got {layer!r}")
+    layer = int(layer)
+    if kind == "topk":
+        return [(f"blocks.{layer}.hook_resid_post",) * 2]
+    if kind == "transcoder":
+        return [(f"blocks.{layer}.ln2.hook_normalized", f"blocks.{layer}.hook_mlp_out")]
+    return [(f"blocks.{layer}.ln2.hook_normalized",) * 2, (f"blocks.{layer}.hook_mlp_out",) * 2]
 
 
 def zoo_windows(task: Any, name: str, which: str, *, dict_seed: int = DICT_SEED) -> np.ndarray:
-    raise NotImplementedError
+    if name not in ZOO:
+        raise ValueError(f"no zoo run {name!r}; expected one of {ZOO}")
+    if which == "train":
+        windows = task.batch_for_step(TRAIN_SEED + 10 * dict_seed, 0, TRAIN_WINDOWS[name])
+    elif which == "held_out":
+        windows = task.batch_for_step(EVAL_SEED, 0, EVAL_WINDOWS[name])
+    else:
+        raise ValueError(f"which must be one of {WHICH}, got {which!r}")
+    return np.ascontiguousarray(windows, dtype=np.int32)
 
 
 def reference_windows(train: np.ndarray, validation: np.ndarray, seq: int, which: str, *,
                       dict_seed: int = DICT_SEED) -> np.ndarray:
-    raise NotImplementedError
+    from nablaframe.data.corpus import batch_for_step, eval_windows
+
+    if which == "train":
+        windows = batch_for_step(np.asarray(train), TRAIN_SEED + 10 * dict_seed, 0, TRAIN_WINDOWS["reference"], seq)
+    elif which == "held_out":
+        windows = eval_windows(np.asarray(validation), p1.EVAL_TOKENS, seq)[:EVAL_WINDOWS["reference"]]
+    else:
+        raise ValueError(f"which must be one of {WHICH}, got {which!r}")
+    return np.ascontiguousarray(windows, dtype=np.int32)
 
 
 def variables(task: Any, name: str, windows: np.ndarray) -> tuple[dict[Any, dict[str, np.ndarray]], int]:
-    raise NotImplementedError
+    windows = np.asarray(windows)
+    if name == "two_hop":
+        parsed = [task.parse(window) for window in windows]
+        values = {v: np.array([getattr(p, v) for p in parsed], dtype=np.int64) for v in ("a", "b", "c")}
+        subject = 4 * task.facts  # the query's subject a, then the query token ⇒
+        return {position: {v: values[v].copy() for v in values} for position in (subject, subject + 1)}, int(task.entities)
+    if name == "induction":
+        positions = np.asarray(task.mechanism_positions)
+        by_name = {"cur": windows[:, positions], "prev": windows[:, positions - 1], "next": windows[:, positions + 1]}
+        return {"mechanism": {v: a.reshape(-1).astype(np.int64) for v, a in by_name.items()}}, int(task.vocab_size)
+    raise ValueError(f"no zoo run {name!r}; expected one of {ZOO}")
 
 
 def induction_sources(task: Any, windows: np.ndarray, j: int, test: str) -> np.ndarray:
-    raise NotImplementedError
+    from nablaframe.zoo.induction import new_token_sources
+
+    if test == "follow":
+        return new_token_sources(windows, j, np.random.default_rng(j), task.vocab_size)
+    if test == "break":
+        return new_token_sources(windows, j - 1, np.random.default_rng(100 + j), task.vocab_size)
+    raise ValueError(f"test must be one of {TESTS}, got {test!r}")
 
 
 def dictionary_key(state_sha256: str, sites: Sequence[Sequence[str]], settings: Any, tokens: np.ndarray) -> str:
-    raise NotImplementedError
+    from nablaframe.data.corpus import batch_hash
+    from nablaframe.dictionaries import core, train
+
+    return core.dictionary_key(state_sha256=state_sha256, sites=sites, settings=settings,
+                               batch_hashes=[batch_hash(tokens)], code=train.code_identity())
 
 
 def twin_state(params: Any) -> str:
-    raise NotImplementedError
+    from nablaframe.train.checkpoint import state_hash
+
+    return state_hash(params)
+
+
+def _say(line: str) -> None:
+    print(line, flush=True)
 
 
 def train_dictionary(model: Any, params: Any, tokens: np.ndarray, settings: Any, sites: Sequence[Sequence[str]], *,
                      key: str, chunk: int, label: str, mlp_weights: Any = None) -> Any:
-    raise NotImplementedError
+    from nablaframe.dictionaries import core, measure, train
+
+    checked = core.check_sites(settings.kind, sites)
+    taps = [tap for site in checked for tap in site]
+
+    def progress(step: int, steps: int, losses: list[float]) -> None:
+        _say(f"{label}: step {step:,}/{steps:,}, reconstruction {', '.join(f'{loss:.4g}' for loss in losses)}")
+
+    _say(label)
+    with ticking(label, write=_say):
+        acts = measure.activations(model, params, tokens, taps, chunk=chunk)
+        rows = {tap: value.reshape(-1, value.shape[-1]) for tap, value in acts.items()}
+        data = [(rows[reads], rows[writes]) for reads, writes in checked]
+        return train.train(settings, checked, data, mlp_weights=mlp_weights, key=key, progress=progress)
 
 
 def cached(cache_dir: str | Path, key: str, make: Callable[[], Any]) -> tuple[Any, float | None]:
-    raise NotImplementedError
+    from nablaframe.dictionaries import core
+
+    if not isinstance(key, str) or _KEY.fullmatch(key) is None:
+        raise ValueError(f"a cache key is 64 lowercase hex characters, got {key!r}")
+    folder = Path(cache_dir) / key
+    if folder.exists():
+        if not folder.is_dir():
+            raise ValueError(f"{folder} is not a folder")
+        entries = sorted(folder.iterdir())
+        if entries:
+            stems = {entry.stem for entry in entries}
+            if (len(entries) != 2 or len(stems) != 1 or not all(entry.is_file() for entry in entries)
+                    or {entry.suffix for entry in entries} != {".json", ".safetensors"}):
+                raise ValueError(f"{folder} must hold one dictionary's two files, not {[e.name for e in entries]}")
+            dictionary = core.load_dictionary(folder / f"{stems.pop()}.safetensors")
+            if dictionary.key != key:
+                raise ValueError(f"{folder} holds a dictionary trained under key {dictionary.key}, not {key}")
+            return dictionary, None
+    start = time.perf_counter()
+    dictionary = make()
+    seconds = time.perf_counter() - start
+    if getattr(dictionary, "key", None) != key:
+        raise ValueError(f"made a dictionary under key {getattr(dictionary, 'key', None)}, not {key}; not saved")
+    core.save_dictionary(dictionary, folder)
+    return dictionary, float(seconds)
 
 
 @contextmanager
 def ticking(label: str, interval_s: float = 30.0, *, write: Callable[[str], Any] = print) -> Iterator[None]:
-    raise NotImplementedError
-    yield
+    if not interval_s > 0:
+        raise ValueError(f"interval_s must be positive, got {interval_s!r}")
+    start, stop = time.monotonic(), threading.Event()
+
+    def beat() -> None:
+        while not stop.wait(interval_s):
+            write(f"{label}: still working, {p1._duration(time.monotonic() - start)} in")
+            if write is print:
+                sys.stdout.flush()
+
+    thread = threading.Thread(target=beat, name=f"ticking: {label}", daemon=True)
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join()
 
 
 def loss_recovered(clean: float, spliced: float, ablated: float) -> dict[str, float | None]:
-    raise NotImplementedError
+    cost = float(ablated) - float(clean)
+    recovered = (float(ablated) - float(spliced)) / cost if cost >= BARS["ablation_cost"] else None
+    return {"cost": cost, "recovered": recovered}
 
 
 def faithful(residual: float, code: float) -> dict[str, Any]:
-    raise NotImplementedError
+    residual = float(residual)
+    applies = residual >= BARS["faithful_applies"]
+    return {"applies": applies, "ratio": float(code) / residual if applies else None}
 
 
 def selective_margin(trained: float, twin: float) -> float:
-    raise NotImplementedError
+    return float(trained) - BARS["selective_twin_factor"] * float(twin)
 
 
 def edge_ratio(trained: int | None, twin: int | None, twin_scored: int) -> float | None:
-    raise NotImplementedError
+    if trained is None:
+        return None
+    return float(trained) / float(twin_scored if twin is None else twin)
