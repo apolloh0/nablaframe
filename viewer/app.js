@@ -57,6 +57,27 @@
 // * Compare mode: when the payload has `top_tokens` and `top_probs`, the panel shows both
 //   passes' top five tokens at the chosen position, with their probabilities, decoded with the
 //   index's vocab, side by side. A payload without them says so.
+// * Phase 5 badges: the badges file may also hold `topk`, `staircase`, `transcoder` and `dpatch`,
+//   which G5.6 writes beside Phase 4's subjects into `runs/phase5/badges.json`. Their units add to
+//   the badges': a score and a ratio to three decimals, edges and a count as integers. The compare
+//   panel shows `dpatch`'s badge for a spec with a dpatch edit, and a dpatch edit reads as a patch
+//   through dictionary <hash>'s code from batch <hash> at its tap, naming its latents when it has
+//   them, each hash shortened with the full hash on hover.
+// * Features: when the index has `features`, a features panel lists them by kind, taps and site.
+//   Choosing one fetches its payload, whose shape is in src/nablaframe/views/features.py, and
+//   shows:
+//   - above it, the payload's `meters`, each value with its name, citing their gate and path on
+//     hover; the payload's `meter`, the reconstruction's FVU on the probe; and the badge of the
+//     payload's kind
+//   - at the page's sequence and position, the probe's active latents, largest code first: each
+//     latent's number, its code, its frequency and its three largest effect tokens
+//   - for one latent, chosen from that list or by number: its frequency; its top contexts, each as
+//     its held-out window's tokens from 8 before the position to 1 after, the position outlined,
+//     with its code and, when the payload has `variables`, that window's values; and its effect's
+//     top and bottom tokens with their logits, under the payload's effect label
+//   The panel computes nothing: every number is the payload's. A payload whose step isn't the
+//   timeline's says so, as the compare panel does, and offers to move there. A payload without a
+//   meter isn't drawn. The chosen payload and latent live in the address's #fragment.
 //
 // How this page meets it:
 //

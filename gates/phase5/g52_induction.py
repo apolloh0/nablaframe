@@ -13,7 +13,9 @@ reading each window's first 63 tokens. Every dictionary comes through ``cached``
 * on the trained model only: ``topk`` at blocks 0 and 1 at each of ``ROBUST_SEEDS``, each on its
   own training windows
 
-Each site is named ``"<kind> <output tap>"``. Everything below is measured on
+Each site is named ``"<kind> <output tap>"``. A dictionary's ``tokens``, for its key and for its training
+alike, are what the model reads of its training windows, ``p4.tokens(task, windows)``; G5.6 finds each
+shipped dictionary by recomputing that key. Everything below is measured on
 ``zoo_windows(task, "induction", "held_out")``.
 
 * **Meters (judged):** per site, ``fvu`` and ``dead_share`` over every position, on both models.
@@ -35,8 +37,9 @@ Each site is named ``"<kind> <output tap>"``. Everything below is measured on
   For each, the ``"residual"``, ``"code"`` and ``"latents"`` passes' rates, one per target. The
   ``"latents"`` pass moves the latents ``assigned`` at the site to ``cur`` for following and to
   ``prev`` for breaking, from ``f1_table``s of every variable at the mechanism positions.
-  ``faithful``: ``{kind: {"follow": {pass: [rate per target]}, "break": {...}, "latents":
-  {"cur": count, "prev": count}}}``. ``faithful_ratio_min``: the least ``faithful(residual,
+  ``faithful``: ``{kind: {"follow": {pass: [rate per target]}, "break": {...}, "assigned":
+  {"cur": count, "prev": count}}}``, ``"assigned"`` counting the latents the ``"latents"`` pass
+  moves. ``faithful_ratio_min``: the least ``faithful(residual,
   code)["ratio"]`` over every kind and target of following where it applies, or None when it
   applies nowhere. ``break_excess_max``: the greatest ``code - residual`` over every kind and
   target of breaking.

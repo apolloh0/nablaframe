@@ -9,7 +9,9 @@ window's first ``seq`` tokens. Every dictionary comes through ``cached``, under 
 with that checkpoint's state hash, trained with ``settings("reference", ...)`` on
 ``reference_windows(train, validation, seq, "train")``: ``topk`` at every block, the
 ``staircase``, a ``transcoder`` at every block, and TopK pairs (the ``jsae`` at ``lam`` 0.0) across
-blocks 1 and 2's MLPs. Everything is measured on ``reference_windows(..., "held_out")``.
+blocks 1 and 2's MLPs. A dictionary's ``tokens``, for its key and for its training alike, are what the
+model reads of the training windows, ``windows[:, :seq]``; G5.6 finds each shipped dictionary by
+recomputing that key. Everything is measured on ``reference_windows(..., "held_out")``.
 
 * ``meters``: as G5.2's, without a twin, the readout being every position. TinyStories has no
   ground truth, so nothing is judged.

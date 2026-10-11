@@ -1,6 +1,6 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes".
 
 Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/`` or ``reports/phase5/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
@@ -32,7 +32,7 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE4_GATE_IDS = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5")`. The validator accepts them, and a Phase 4 report must use schema version 2. `PHASE4_GATE_IDS` gains G4.6.
 
-`PHASE5_GATE_IDS = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5")`. The validator accepts them, and a Phase 5 report must use schema version 2.
+`PHASE5_GATE_IDS = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5")`. The validator accepts them, and a Phase 5 report must use schema version 2. `PHASE5_GATE_IDS` gains G5.6.
 
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
@@ -116,6 +116,7 @@ Status rules for Phase 5:
   * `selective_margin_min >= 0`
 * G5.4 pass requires `edge_ratio_max <= 0.2`.
 * G5.5's status is always `pass`: it records, not judges (D44).
+* G5.6 pass requires `builds_identical` true, `external_urls == 0`, `dictionaries_missing == 0` and `subjects_missing == 0`.
 
 Measurements:
 
@@ -167,6 +168,7 @@ Required measurements for Phase 5:
 * G5.3: `meters`, `fvu_max`, `recovered_min`, `faithful`, `faithful_ratio_min`, `control_unchanged_min`, `selectivity`, `selective_f1_min`, `selective_margin_min`, `best_swap_block`, `recovery`, `robustness`, `train_seconds`
 * G5.4: `edge_pairs`, `judged_mlps`, `edge_ratio_max`, `block_pairs`, `jsae`
 * G5.5: `meters`, `edge_pairs`, `train_seconds`
+* G5.6: `badges`, `subjects_missing`, `dictionaries`, `dictionaries_missing`, `features`, `builds_identical`, `external_urls`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """

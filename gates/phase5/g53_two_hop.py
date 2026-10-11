@@ -11,7 +11,7 @@ each window's first 26 tokens. Every dictionary comes through ``cached``, as in 
 * on both models: ``topk`` at every block, the ``staircase``, and a ``transcoder`` at every block
 * on the trained model only: ``topk`` at every block at each of ``ROBUST_SEEDS``
 
-Sites are named as in G5.2. Everything below is measured on ``zoo_windows(task, "two_hop",
+Sites are named, and dictionaries keyed, as in G5.2. Everything below is measured on ``zoo_windows(task, "two_hop",
 "held_out")`` unless it says otherwise. The best swap block ``B`` is ``best_swap["block"]`` from
 G4.3's report, which must exist, pass ``validate_report`` and say ``pass``; it is recorded as
 ``best_swap_block``.
@@ -27,7 +27,8 @@ G4.3's report, which must exist, pass ``validate_report`` and say ``pass``; it i
   ``control_unchanged`` is how often the control patch's prediction is the unpatched pass's own.
   The ``"latents"`` pass moves, at each position, the latents ``assigned`` to ``b`` there, from
   ``f1_table``s of ``a``, ``b`` and ``c`` at that position. ``faithful``: ``{kind: {block:
-  {pass: {"swap", "transplant", "control_unchanged"}, "latents": {position: count}}}}``.
+  {pass: {"swap", "transplant", "control_unchanged"}, "assigned": {position: count}}}}``,
+  ``"assigned"`` counting the latents the ``"latents"`` pass moves at each position.
   ``faithful_ratio_min``: the least ``faithful(residual, code)["ratio"]`` over every kind, block
   and rate (swap and transplant) where it applies, or None when it applies nowhere.
   ``control_unchanged_min``: the least ``"code"`` pass's ``control_unchanged`` over every kind and

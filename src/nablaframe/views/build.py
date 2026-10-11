@@ -46,6 +46,8 @@ the viewer reads. All floats are plain Python floats; NaN is written as null.
   `jlens-step-<step>`, and the index's `views` is `VIEWS` followed by `"jlens"`. Without
   it, nothing changes.
   ``view_payloads`` takes ``next_token=None`` and passes it to ``per_token_loss``, ``target_ranks`` and ``attribution_from_trace``. ``build_views`` takes ``next_token=None`` and ``curves=None``. It passes ``next_token`` to every payload, the J-lens's included. When it's given, the index gains ``"next_token"``, a list of ints. When ``curves`` is given, the index gains ``"curves"``: a list of ``{"name", "unit", "points"}``, ``name`` and ``unit`` non-empty strings, each point ``{"step", "value"}`` with an int step and a finite value or null. Anything else raises ValueError before a file is written. Without either keyword, the index has exactly its earlier keys and every file is byte-identical to before, so earlier runs' builds don't change.
+
+  `build_views` takes `features=None`: payloads from `views.features.features_payload`. Each is written with `export_view` as `features-<dictionary>-site-<site>`, after every step's views and before the index, and the index gains `"features"`: one entry per payload, in the given order, `{"dictionary", "kind", "site", "taps", "step", "file"}`, the first five copied from the payload and `file` its file name. Given as an empty list, the index gains `"features": []`. A payload that isn't a dict holding those five keys and a `"meter"`, two payloads with the same dictionary and site, or a payload whose step isn't one of the reader's raises ValueError before a file is written. Without it, the index and every file are byte-identical to a build without it.
 """
 
 from __future__ import annotations
@@ -68,10 +70,10 @@ VIEWS = ("per_token_loss", "logit_lens", "attribution", "layer_structure")
 TOP_K = 5
 BADGES = {
     "logit_lens": ("Discrimination tests: recovers planted structure at decoder level, and is empty on random "
-                   "weights, checked by G2.3. Planted structure at model level waits for Phase 4's zoo."),
+                   "weights, checked by G2.3. Its model-level result is in the badge below (D38)."),
     "attribution": ("Discrimination tests: recovers planted structure at decoder level, and is an exact "
-                    "decomposition whose error is its meter, checked by G2.4. Planted structure at model level "
-                    "waits for Phase 4's zoo."),
+                    "decomposition whose error is its meter, checked by G2.4. Its model-level result is in the "
+                    "badge below (D38)."),
 }
 
 

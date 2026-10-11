@@ -187,7 +187,7 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | 3 | Meters, readability, selectivity and the faithful-code and single-latent patches (D41) | `dictionaries/measure.py` | 1, 2 |
 | 4 | The edge-sparsity meter and the Jacobian SAE's penalty (D42, D43) | `dictionaries/edges.py` | 1 |
 | 5 | Phase 5 gates and their report rules | `gates/phase5/`, `reports.py` | 1 to 4 |
-| 6 | The features view and its payloads; dictionary badges from the reports; the D14 badges' new wording (D38, D39, D44, D45) | `views/`, `viewer/`, `gates/phase5/` | 5 |
+| 6 | The features view and its payloads; dictionary badges from the reports; the D14 badges' new wording (D38, D39, D44, D45) | `views/`, `viewer/`, `gates/phase5/`, `reports.py` | 5 |
 
 ## Tests
 
@@ -197,6 +197,7 @@ Written with the stubs, delta by delta:
 - **Delta 2 (D41):** `test_activations_come_in_chunks`, `test_fvu`, `test_dead_share`, `test_readout_loss`, `test_spliced_logits`, `test_ablated_logits`, `test_f1_table`, `test_mean_best_f1`, `test_assigned`, `test_probe_accuracy`, `test_patch_predictions`
 - **Delta 3 (D42, D43):** `test_edge_counts`, `test_meter`, `test_kl`, `test_mlp_jacobian_is_the_derivative`, `test_jacobian_stats`, `test_mlp_edge_scores`, `test_block_edge_scores`, `test_mlp_curve`, `test_block_curve`, `test_pairs_are_checked`
 - **Delta 4 (gates):** `test_settings_and_bars_are_fixed`, `test_settings_and_sites`, `test_windows`, `test_variables`, `test_induction_sources`, `test_judgements`, `test_ticking`, `test_cached`, `test_keys_and_training`, `test_phase5_gate_ids`, `test_phase5_status_rules`
+- **Delta 5 (views, badges and G5.6):** `test_features_constants`, `test_the_payload_describes_its_site_and_the_probe`, `test_frequency_and_top_contexts`, `test_the_direct_effect`, `test_staircase_and_transcoder_sites`, `test_meters_are_copied_and_the_meter_measures_the_probe`, `test_the_payload_is_plain_json_and_repeatable`, `test_bad_inputs_are_refused`, `test_d14_badges_end_with_d39s_sentence`, `test_features_are_written_and_indexed`, `test_bad_features_are_refused_before_anything_is_written`, `test_subjects_units_and_notes`, `test_badges_cite_the_reports`, `test_paths_follow_the_reports_blocks_and_judged_mlps`, `test_status_follows_the_judging_gates`, `test_bad_reports_are_refused`, `test_g56_status_rules`
 
 ## Out of scope
 

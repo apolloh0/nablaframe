@@ -44,7 +44,7 @@ from .readouts import checked_next_token
 
 JLENS_BADGE = ("Discrimination tests: recovers planted structure at decoder level (a J that carries planted "
                "directions to tokens), and is empty on random weights, checked by G2.10. Its definition matches "
-               "anthropics/jacobian-lens to 1.1e-7 (G2.8). Planted structure at model level waits for Phase 4's zoo.")
+               "anthropics/jacobian-lens to 1.1e-7 (G2.8). Its model-level result is in the badge below (D38).")
 
 
 def _softmax(logits: np.ndarray) -> np.ndarray:
