@@ -72,8 +72,11 @@ the TopK badge, beside their own recorded meters.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
+
+from nablaframe.reports import validate_report
 
 SUBJECTS = ("topk", "staircase", "transcoder", "dpatch")
 UNITS = ("fraction", "score", "ratio", "edges", "count")
@@ -89,5 +92,122 @@ DPATCH_NOTE = ("The identities show dpatch changes nothing where it should chang
                "dictionaries together.")
 
 
+_GATES = ("G4.1", "G5.1", "G5.2", "G5.3", "G5.4")
+_JUDGED_BY = {"topk": ("G5.2", "G5.3", "G5.4"), "staircase": ("G5.2", "G5.3"), "transcoder": ("G5.2", "G5.3"),
+              "dpatch": ("G5.1", "G5.2", "G5.3")}
+_NOTES = {"topk": [BOUNDS_NOTE, TWIN_NOTE, EDGE_NOTE], "staircase": [BOUNDS_NOTE, TWIN_NOTE],
+          "transcoder": [BOUNDS_NOTE, TWIN_NOTE, TRANSCODER_NOTE], "dpatch": [BOUNDS_NOTE, DPATCH_NOTE]}
+_TAPS = {"topk": "hook_resid_post", "staircase": "hook_resid_post", "transcoder": "hook_mlp_out"}
+
+
+def _checked(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
+    out: dict[str, Mapping[str, Any]] = {}
+    for gate_id in _GATES:
+        if gate_id not in reports:
+            raise ValueError(f"reports must hold {', '.join(_GATES)}; {gate_id} is missing")
+        report = reports[gate_id]
+        problems = validate_report(report)
+        if problems:
+            raise ValueError(f"the {gate_id} report is invalid: {'; '.join(problems)}")
+        if report["gate_id"] != gate_id:
+            raise ValueError(f"the report filed under {gate_id} carries gate id {report['gate_id']!r}")
+        out[gate_id] = report
+    return out
+
+
+class _Facts:
+    """Collects facts, reading each value from the report at its path."""
+
+    def __init__(self, reports: Mapping[str, Mapping[str, Any]]) -> None:
+        self.reports = reports
+        self.facts: list[dict[str, Any]] = []
+
+    def value(self, gate: str, path: list) -> Any:
+        value: Any = self.reports[gate]["measurements"]
+        for segment in path:
+            try:
+                value = value[segment]
+            except (KeyError, IndexError, TypeError):
+                raise ValueError(f"the {gate} report has no measurement at {path!r}") from None
+        return value
+
+    def add(self, label: str, unit: str, gate: str, path: list) -> None:
+        self.facts.append({"label": label, "value": copy.deepcopy(self.value(gate, path)), "unit": unit,
+                           "gate": gate, "path": list(path)})
+
+    def selective(self, label: str, gate: str, kind: str, block: int, variable: str) -> None:
+        key = f"{kind} blocks.{block}.{_TAPS[kind]} {variable}"
+        for side in ("trained", "twin"):
+            self.add(label if side == "trained" else f"{label}, twin", "score", gate, ["selectivity", key, side])
+
+    def induction_bounds(self) -> None:
+        self.add("induction: the code patch's rate over the residual patch's, least of any kind", "ratio", "G5.2",
+                 ["faithful_ratio_min"])
+        self.add("induction, breaking: how much more often the code patch keeps the prediction than the residual "
+                 "patch does, most of any kind", "fraction", "G5.2", ["break_excess_max"])
+
+    def bounds(self) -> None:
+        self.induction_bounds()
+        self.add("two-hop: the code patch's rate over the residual patch's, least of any kind", "ratio", "G5.3",
+                 ["faithful_ratio_min"])
+        self.add("two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+                 "fraction", "G5.3", ["control_unchanged_min"])
+
+
+def _int_value(f: _Facts, gate: str, path: list, what: str) -> int:
+    value = f.value(gate, path)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"the {gate} report's {what} must be an integer")
+    return value
+
+
+def _facts(f: _Facts, subject: str, best: int, last: int) -> list[dict[str, Any]]:
+    f.facts = []
+    if subject in ("topk", "staircase"):
+        f.selective("induction: mean best F1 for the current token after block 0", "G5.2", subject, 0, "cur")
+        f.selective("induction: mean best F1 for the next token after block 1", "G5.2", subject, 1, "next")
+        f.selective(f"two-hop: mean best F1 for the intermediate at ⇒ after block {best}", "G5.3", subject, best, "b")
+        f.selective(f"two-hop: mean best F1 for the answer at ⇒ after block {last}", "G5.3", subject, last, "c")
+        swap = ["faithful", subject, str(best)]
+        f.add(f"two-hop: the code patch at the query after block {best} swaps the answer", "fraction", "G5.3",
+              swap + ["code", "swap"])
+        f.add("two-hop: the residual patch there swaps it", "fraction", "G5.3", swap + ["residual", "swap"])
+        f.add("two-hop: moving only the intermediate's latents swaps it (recorded)", "fraction", "G5.3",
+              swap + ["latents", "swap"])
+        f.bounds()
+        if subject == "topk":
+            judged = f.value("G5.4", ["judged_mlps"])
+            if not isinstance(judged, list) or not all(isinstance(key, str) for key in judged):
+                raise ValueError("the G5.4 report's judged_mlps must be a list of names")
+            for key in judged:
+                for side in ("trained", "twin"):
+                    label = f"{key}: edges the meter needs"
+                    f.add(label if side == "trained" else f"{label}, twin", "edges", "G5.4",
+                          ["edge_pairs", key, side, "meter"])
+    elif subject == "transcoder":
+        f.selective("induction: mean best F1 for the current token, from block 0's MLP input", "G5.2", subject, 0, "cur")
+        f.selective("induction: mean best F1 for the next token, from block 1's MLP input", "G5.2", subject, 1, "next")
+        f.selective(f"two-hop: mean best F1 for the intermediate at ⇒, from block {best}'s MLP input", "G5.3",
+                    subject, best, "b")
+        f.induction_bounds()
+    else:
+        f.add("identities reproduced bit for bit", "count", "G5.1", ["identities_exact"])
+        f.add("identities checked", "count", "G5.1", ["identities_checked"])
+        f.bounds()
+    return f.facts
+
+
 def dictionary_badges(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    raise NotImplementedError
+    checked = _checked(reports)
+    f = _Facts(checked)
+    best = _int_value(f, "G5.3", ["best_swap_block"], "best_swap_block")
+    n_layers = _int_value(f, "G4.1", ["models", "two_hop", "model_config", "n_layers"], "two-hop n_layers")
+    last = n_layers - 1
+    badges: dict[str, dict[str, Any]] = {}
+    for subject in SUBJECTS:
+        facts = _facts(f, subject, best, last)
+        passed = all(checked[g]["status"] == "pass" for g in _JUDGED_BY[subject])
+        badges[subject] = {"status": "judged: pass" if passed else "judged: fail",
+                           "sources": sorted({fact["gate"] for fact in facts}), "facts": facts,
+                           "notes": list(_NOTES[subject])}
+    return badges
