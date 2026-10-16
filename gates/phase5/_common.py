@@ -348,3 +348,359 @@ def edge_ratio(trained: int | None, twin: int | None, twin_scored: int) -> float
     if trained is None:
         return None
     return float(trained) / float(twin_scored if twin is None else twin)
+
+
+# ---------------------------------------------------------------------------
+# Beyond the contract: what the Phase 5 gates share
+# ---------------------------------------------------------------------------
+#
+# * The start checks on earlier reports (``require_g41``, ``require_g43``, ``require_g51``), the report
+#   paths, and Phase 5's working folders (``fresh_dir``, under RUN_DIR).
+# * ``zoo_model``: G4.1's run of one zoo model at its final checkpoint, with its twin, read through
+#   Phase 4's ``zoo_run`` and its checks; ``reference_model``: G1.4's run at its final checkpoint,
+#   read through Phase 1's and Phase 2's helpers.
+# * ``dictionary``: one dictionary of a model, through ``cached`` under the key the gates and G5.6
+#   compute alike, its training time kept in the model's ``train_seconds``.
+# * The measurements several gates make the same way: each site's meters, a site's codes and
+#   activations at given positions, and the edge meter's reading of a pair.
+
+VERSIONS = ("jax", "jaxlib", "equinox", "marin-haliax", "optax", "safetensors", "numpy")
+G41_REPORT, G43_REPORT, G51_REPORT = "g41_zoo_training.json", "g43_two_hop.json", "g51_determinism.json"
+
+
+def report_relative(name: str) -> str:
+    """``reports/phase5/<name>``, as Phase 1's ``start`` takes it."""
+    return str((Path(REPORT_DIR) / name).relative_to(p1.REPO_ROOT))
+
+
+def _require(gate_id: str, path: Path, *, why: str) -> dict[str, Any]:
+    """The report at ``path``, once it exists, passes ``validate_report``, is ``gate_id``'s and says ``pass``."""
+    import json
+
+    from nablaframe.reports import validate_report
+
+    rel = p1.rel(path)
+    if not Path(path).exists():
+        raise SystemExit(f"{rel} is missing. Run {gate_id} first. No report written.")
+    try:
+        report = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"{rel} can't be read ({exc}). No report written.") from exc
+    problems = validate_report(report) if isinstance(report, dict) else ["not a JSON object"]
+    if problems:
+        raise SystemExit(f"{rel} is not a valid report: {'; '.join(problems)}. No report written.")
+    if report["gate_id"] != gate_id or report["status"] != "pass":
+        raise SystemExit(f"{rel} is {report['gate_id']} with status {report['status']}, not a passing {gate_id}:"
+                         f" {why}. No report written.")
+    return report
+
+
+def require_g41() -> dict[str, Any]:
+    """G4.1's report, passing: no dictionary is judged on a model that missed its behaviour bars."""
+    return p4.require_g41()
+
+
+def require_g43() -> dict[str, Any]:
+    """G4.3's report, passing: G5.3 reads its best swap block."""
+    return _require("G4.3", Path(p4.REPORT_DIR) / G43_REPORT, why="G5.3 reads its best swap block")
+
+
+def require_g51() -> dict[str, Any]:
+    """G5.1's report, passing: nothing is measured with a trainer or an operation that failed it."""
+    return _require("G5.1", Path(REPORT_DIR) / G51_REPORT,
+                    why="no dictionary is measured before training and dpatch pass their determinism checks")
+
+
+def fresh_dir(path: Path, *, overwrite: bool) -> Path:
+    """An empty working folder under RUN_DIR. An existing one is removed only with ``overwrite``."""
+    import shutil
+
+    if Path(RUN_DIR).resolve() not in Path(path).resolve().parents:
+        raise ValueError(f"refusing to manage {path}: Phase 5 working folders live under {RUN_DIR}")
+    if Path(path).exists():
+        if not overwrite:
+            raise SystemExit(f"{p1.rel(path)} exists. Pass --overwrite to start it over.")
+        shutil.rmtree(path)
+    Path(path).mkdir(parents=True)
+    return Path(path)
+
+
+def site_name(kind: str, output_tap: str) -> str:
+    """A site as the gates name it, ``"<kind> <output tap>"``."""
+    return f"{kind} {output_tap}"
+
+
+def site_names(kind: str, dictionary_sites: Sequence[Sequence[str]]) -> list[str]:
+    return [site_name(kind, writes) for _, writes in dictionary_sites]
+
+
+# ---------------------------------------------------------------------------
+# The models, and their dictionaries through the cache
+# ---------------------------------------------------------------------------
+
+
+def zoo_model(name: str, g41: dict[str, Any]) -> Any:
+    """G4.1's run of ``name`` at its final checkpoint, and its twin, as the Phase 5 gates read them.
+
+    ``tokens(windows)`` is what the model reads of windows; ``train_tokens(seed)`` those of the
+    training windows for dictionary seed ``seed``, every dictionary's key tokens and training data;
+    ``held_out`` the held-out windows and ``held_tokens`` what the model reads of them.
+    """
+    from types import SimpleNamespace
+
+    from nablaframe.zoo.ground_truth import TWIN_SEED, twin_params
+
+    run = p4.zoo_run(name, g41)
+    task = run.task
+    params = run.params_for(run.final)
+    twin = twin_params(run.config)
+    held_out = zoo_windows(task, name, "held_out")
+    trained = {}
+
+    def train_tokens(seed: int = DICT_SEED) -> np.ndarray:
+        if seed not in trained:
+            trained[seed] = p4.tokens(task, zoo_windows(task, name, "train", dict_seed=seed))
+        return trained[seed]
+
+    return SimpleNamespace(
+        name=name, run=run, task=task, model=run.model, config=run.config, n_layers=run.config.n_layers,
+        d_model=run.config.d_model, step=run.final, run_id=run.run_id, params=params, twin=twin,
+        state=run.state_sha256(run.final), twin_state=twin_state(twin), twin_seed=TWIN_SEED,
+        tokens=lambda windows: p4.tokens(task, windows), train_tokens=train_tokens, held_out=held_out,
+        held_tokens=p4.tokens(task, held_out), readout=list(READOUT[name]), chunk=CHUNK[name],
+        train_seconds={})
+
+
+def reference_model() -> Any:
+    """G1.4's run at its final checkpoint, read through Phase 1's and Phase 2's helpers, with its streams."""
+    import json
+    from types import SimpleNamespace
+
+    p1.require_data()
+    ref = p2.reference()
+    step = ref.steps[-1]
+    sidecar = p1.trace_checkpoint(ref.manifest, step).with_suffix(".json")
+    state = json.loads(sidecar.read_text(encoding="utf-8"))["state_sha256"]
+    train, validation = p1.load_split("train"), p1.load_split("validation")
+    seq = ref.config.seq
+    held_out = reference_windows(train, validation, seq, "held_out")
+    if len(held_out) < EVAL_WINDOWS["reference"]:
+        raise SystemExit(f"the validation split holds {len(held_out)} evaluation windows of {seq} tokens, fewer than"
+                         f" {EVAL_WINDOWS['reference']}. No report written.")
+    trained = {}
+
+    def train_tokens(seed: int = DICT_SEED) -> np.ndarray:
+        if seed not in trained:
+            windows = reference_windows(train, validation, seq, "train", dict_seed=seed)
+            trained[seed] = np.ascontiguousarray(windows[:, :seq], dtype=np.int32)
+        return trained[seed]
+
+    return SimpleNamespace(
+        name="reference", ref=ref, model=ref.model, config=ref.config, n_layers=ref.config.n_layers,
+        d_model=ref.config.d_model, step=step, run_id=ref.manifest.run_id, params=ref.params_for(step),
+        twin=None, state=state, twin_state=None, train_tokens=train_tokens, held_out=held_out,
+        held_tokens=np.ascontiguousarray(held_out[:, :seq], dtype=np.int32), readout=list(range(seq)),
+        chunk=CHUNK["reference"], train_seconds={})
+
+
+def dictionary_label(kind: str, n_layers: int, layer: int | None = None, *, lam: float = 0.0) -> str:
+    """A dictionary's name in a report: its kind, then its block's output tap, or ``lam`` for a pair."""
+    if kind == "staircase":
+        return "staircase"
+    writes = sites(kind, n_layers, layer)[-1][1]
+    return f"{kind} {writes}" + (f" lam {lam:g}" if kind == "jsae" else "")
+
+
+def dictionary(m: Any, kind: str, layer: int | None = None, *, twin: bool = False, seed: int = DICT_SEED,
+               lam: float = 0.0, short: bool = False) -> Any:
+    """One dictionary of model ``m`` (or its twin), through ``cached(DICTIONARY_DIR, ...)``.
+
+    Its key is ``dictionary_key`` of the model's state hash (``twin_state`` for the twin), its
+    sites, ``settings(...)`` and ``m.train_tokens(seed)``, which it trains on when the cache doesn't
+    hold it. A ``jsae`` trains with ``train.mlp_weights`` of its block. The training time, None from
+    the cache, goes into ``m.train_seconds`` under ``"<trained|twin|seed n> <label>"``.
+    """
+    from nablaframe.dictionaries.train import mlp_weights
+
+    if twin and m.twin is None:
+        raise ValueError(f"the {m.name} run has no twin")
+    params, state = (m.twin, m.twin_state) if twin else (m.params, m.state)
+    dictionary_sites = sites(kind, m.n_layers, layer)
+    chosen = settings(m.name, kind, m.d_model, seed=seed, lam=lam, short=short)
+    tokens = m.train_tokens(seed)
+    key = dictionary_key(state, dictionary_sites, chosen, tokens)
+    who = "twin" if twin else ("trained" if seed == DICT_SEED else f"seed {seed}")
+    name = f"{who} {dictionary_label(kind, m.n_layers, layer, lam=lam)}" + (" short" if short else "")
+    weights = mlp_weights(params, layer) if kind == "jsae" else None
+
+    def make() -> Any:
+        return train_dictionary(m.model, params, tokens, chosen, dictionary_sites, key=key, chunk=m.chunk,
+                                label=f"{m.name}: training {name}, key {key[:12]}", mlp_weights=weights)
+
+    made, seconds = cached(DICTIONARY_DIR, key, make)
+    if seconds is None:
+        _say(f"{m.name}: {name} from the cache, key {key[:12]}")
+    else:
+        _say(f"{m.name}: {name} trained in {p1._duration(seconds)}")
+    m.train_seconds[name] = seconds
+    return made
+
+
+# ---------------------------------------------------------------------------
+# Measurements several gates make alike
+# ---------------------------------------------------------------------------
+
+
+def activations(m: Any, params: Any, tokens: np.ndarray, taps: Sequence[str], label: str) -> dict[str, np.ndarray]:
+    """``measure.activations`` of ``taps`` over ``tokens``, in the run's chunks, inside ``ticking``."""
+    from nablaframe.dictionaries import measure
+
+    with ticking(label, write=_say):
+        return measure.activations(m.model, params, tokens, list(dict.fromkeys(taps)), chunk=m.chunk)
+
+
+def rows(values: np.ndarray, positions: Sequence[int] | None = None) -> np.ndarray:
+    """A tap's values (batch, pos, d) as rows (N, d): every position, or ``positions`` in window-major order."""
+    values = np.asarray(values)
+    if positions is not None:
+        values = values[:, list(positions)]
+    return values.reshape(-1, values.shape[-1])
+
+
+def codes(dictionary: Any, site: int, acts: dict[str, np.ndarray], positions: Sequence[int] | None = None) -> np.ndarray:
+    """The site's codes of its input tap's values in ``acts``, as rows: every position, or ``positions``."""
+    from nablaframe.dictionaries.core import encode
+
+    return encode(dictionary, site, rows(acts[dictionary.sites[site][0]], positions))
+
+
+def readout(logits: np.ndarray, m: Any) -> float:
+    """``readout_loss`` at the run's readout positions on its held-out windows, the loss alone."""
+    from nablaframe.dictionaries import measure
+
+    return measure.readout_loss(logits, m.held_out, m.readout)[0]
+
+
+class Meters:
+    """Each site's meters on one model's held-out windows (D41), the unintervened and ablated passes made once.
+
+    ``site(dictionary, site, twin=None)`` gives ``{"fvu", "dead_share", ["twin_fvu",
+    "twin_dead_share",] "clean_loss", "spliced_loss", "ablated_loss", "cost", "recovered"}``: the
+    FVU and dead share over every position; the readout losses of the unintervened pass, of
+    ``spliced_logits`` and of ``ablated_logits`` at the site's output tap, and ``loss_recovered``.
+    ``twin`` is ``(twin dictionary, twin activations)`` when the twin's FVU and dead share go beside.
+    """
+
+    def __init__(self, m: Any, acts: dict[str, np.ndarray]) -> None:
+        self.m, self.acts = m, acts
+        self.clean = readout(p3.unintervened(m.model, m.params, m.held_tokens, n_layers=m.n_layers)[0], m)
+        self.ablated: dict[str, float] = {}
+
+    def ablated_loss(self, tap: str) -> float:
+        from nablaframe.dictionaries import measure
+
+        if tap not in self.ablated:
+            m = self.m
+            self.ablated[tap] = readout(measure.ablated_logits(m.model, m.params, m.held_tokens, tap,
+                                                               n_layers=m.n_layers), m)
+        return self.ablated[tap]
+
+    def site(self, dictionary: Any, site: int, twin: tuple[Any, dict[str, np.ndarray]] | None = None) -> dict[str, Any]:
+        from nablaframe.dictionaries import measure
+
+        m = self.m
+        reads, writes = dictionary.sites[site]
+        x, y = rows(self.acts[reads]), rows(self.acts[writes])
+        out: dict[str, Any] = {"fvu": measure.fvu(dictionary, site, x, y), "dead_share": measure.dead_share(dictionary, site, x)}
+        if twin is not None:
+            twin_dictionary, twin_acts = twin
+            tx, ty = rows(twin_acts[reads]), rows(twin_acts[writes])
+            out |= {"twin_fvu": measure.fvu(twin_dictionary, site, tx, ty),
+                    "twin_dead_share": measure.dead_share(twin_dictionary, site, tx)}
+        spliced = readout(measure.spliced_logits(m.model, m.params, m.held_tokens, dictionary, site), m)
+        ablated = self.ablated_loss(writes)
+        out |= {"clean_loss": self.clean, "spliced_loss": spliced, "ablated_loss": ablated}
+        out |= loss_recovered(self.clean, spliced, ablated)
+        return out
+
+
+def meter_summary(meters: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """``fvu_max`` over the sites, and ``recovered_min`` over those where ``recovered`` isn't None (None when none is)."""
+    recovered = [entry["recovered"] for entry in meters.values() if entry["recovered"] is not None]
+    return {"fvu_max": max(entry["fvu"] for entry in meters.values()) if meters else None,
+            "recovered_min": min(recovered) if recovered else None}
+
+
+def mlp_pair(m: Any, params: Any, tokens: np.ndarray, pair: Any, layer: int, label: str) -> dict[str, Any]:
+    """The edge meter across block ``layer``'s MLP for a pair's sites 0 and 1 (D42).
+
+    ``{"meter", "share", "scored_edges", "pair_kl", "curve"}``: ``mlp_edge_scores``, ``mlp_curve`` and
+    ``meter``, with ``share`` the meter over the scored edges, None with the meter.
+    """
+    from nablaframe.dictionaries import edges
+    from nablaframe.dictionaries.train import mlp_weights
+
+    weights = mlp_weights(params, layer)
+    with ticking(label, write=_say):
+        scores = edges.mlp_edge_scores(m.model, params, tokens, (pair, 0), (pair, 1), weights)
+        curve = edges.mlp_curve(m.model, params, tokens, (pair, 0), (pair, 1), weights, scores)
+    return _reading(curve, label)
+
+
+def block_pair(m: Any, params: Any, tokens: np.ndarray, up: tuple[Any, int], down: tuple[Any, int],
+               label: str) -> dict[str, Any]:
+    """The edge meter across a block, from ``up`` to ``down``, each ``(dictionary, site)``, as ``mlp_pair``'s."""
+    from nablaframe.dictionaries import edges
+
+    with ticking(label, write=_say):
+        scores = edges.block_edge_scores(m.model, params, tokens, up, down)
+        curve = edges.block_curve(m.model, params, tokens, up, down, scores)
+    return _reading(curve, label)
+
+
+def _reading(curve: dict[str, Any], label: str) -> dict[str, Any]:
+    from nablaframe.dictionaries import edges
+
+    reading = edges.meter(curve["curve"], curve["pair_kl"])
+    scored = int(curve["scored_edges"])
+    share = None if reading is None else float(reading) / scored
+    _say(f"{label}: meter {reading if reading is not None else 'never settles'} of {scored:,} scored edges,"
+         f" spliced whole KL {curve['pair_kl']:.4g}")
+    return {"meter": None if reading is None else int(reading), "share": share, "scored_edges": scored,
+            "pair_kl": float(curve["pair_kl"]), "curve": [[int(n), float(kl)] for n, kl in curve["curve"]]}
+
+
+def f1_tables(dictionary: Any, site: int, acts: dict[str, np.ndarray], positions: Sequence[int] | None,
+              values: dict[str, np.ndarray], n_values: int) -> dict[str, np.ndarray]:
+    """``f1_table`` of the site's codes at ``positions`` for each variable in ``values``, in its order."""
+    from nablaframe.dictionaries import measure
+
+    rows_ = codes(dictionary, site, acts, positions)
+    return {name: measure.f1_table(rows_, value, n_values)[0] for name, value in values.items()}
+
+
+def readability(dictionary: Any, site: int, acts: dict[str, np.ndarray], positions: Sequence[int] | None,
+                values: dict[str, np.ndarray], n_values: int, tables: dict[str, np.ndarray]) -> dict[str, Any]:
+    """Per variable, ``{"mean_best_f1", "probe_activation", "probe_code"}``: the code's mean best F1, and how well a
+    ridge probe reads the variable from the site's input activation and from its code."""
+    from nablaframe.dictionaries import measure
+
+    x = rows(acts[dictionary.sites[site][0]], positions)
+    rows_ = codes(dictionary, site, acts, positions)
+    return {name: {"mean_best_f1": measure.mean_best_f1(tables[name]),
+                   "probe_activation": measure.probe_accuracy(x, value, n_values),
+                   "probe_code": measure.probe_accuracy(rows_, value, n_values)}
+            for name, value in values.items()}
+
+
+def selectivity_entry(trained: np.ndarray, twin: np.ndarray) -> dict[str, float]:
+    """``{"trained", "twin", "margin"}`` for one variable at one site: the mean best F1s and ``selective_margin``."""
+    from nablaframe.dictionaries import measure
+
+    a, b = measure.mean_best_f1(trained), measure.mean_best_f1(twin)
+    return {"trained": a, "twin": b, "margin": selective_margin(a, b)}
+
+
+def number(value: Any) -> bool:
+    """A plain int or float, not a bool or None: what a bar can be held to."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
