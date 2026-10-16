@@ -1,0 +1,588 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G5.2",
+  "git_commit": "cab71f9c52cd0b191603a298378ee0134c2bab86",
+  "git_dirty": false,
+  "measurements": {
+    "bars": {
+      "ablation_cost": 0.1,
+      "break_excess": 0.05,
+      "control_unchanged": 0.95,
+      "edge_ratio": 0.2,
+      "faithful_applies": 0.5,
+      "faithful_ratio": 0.9,
+      "fvu": 0.1,
+      "recovered": 0.9,
+      "selective_f1": 0.5,
+      "selective_twin_factor": 2.0
+    },
+    "break_excess_max": 0.015625,
+    "faithful": {
+      "staircase": {
+        "assigned": {
+          "cur": 70,
+          "prev": 0
+        },
+        "break": {
+          "code": [
+            0.046875,
+            0.04296875,
+            0.015625
+          ],
+          "latents": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "residual": [
+            0.04296875,
+            0.04296875,
+            0.0234375
+          ]
+        },
+        "follow": {
+          "code": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "latents": [
+            0.5,
+            0.546875,
+            0.59765625
+          ],
+          "residual": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "topk": {
+        "assigned": {
+          "cur": 136,
+          "prev": 0
+        },
+        "break": {
+          "code": [
+            0.03125,
+            0.05859375,
+            0.03515625
+          ],
+          "latents": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "residual": [
+            0.04296875,
+            0.04296875,
+            0.0234375
+          ]
+        },
+        "follow": {
+          "code": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "latents": [
+            0.98046875,
+            0.9609375,
+            0.9765625
+          ],
+          "residual": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "transcoder": {
+        "assigned": {
+          "cur": 70,
+          "prev": 0
+        },
+        "break": {
+          "code": [
+            0.33203125,
+            0.21875,
+            0.2421875
+          ],
+          "latents": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "residual": [
+            0.32421875,
+            0.22265625,
+            0.26953125
+          ]
+        },
+        "follow": {
+          "code": [
+            0.7734375,
+            0.80859375,
+            0.8046875
+          ],
+          "latents": [
+            0.15234375,
+            0.125,
+            0.16796875
+          ],
+          "residual": [
+            0.7578125,
+            0.80078125,
+            0.828125
+          ]
+        }
+      }
+    },
+    "faithful_ratio_min": 0.9716981132075472,
+    "fvu_max": 0.02403573503975748,
+    "held_out_sha256": "63895ce69a5fb12ed679256f888ddde71fb93a838939f5e3d2fff69715b2ebfa",
+    "held_out_windows": 1024,
+    "mechanism_positions": [
+      32,
+      62
+    ],
+    "meters": {
+      "staircase blocks.0.hook_resid_post": {
+        "ablated_loss": 7.382833818221565,
+        "clean_loss": 0.0007672616219130253,
+        "cost": 7.382066556599652,
+        "dead_share": 0.0,
+        "fvu": 0.023020388996675554,
+        "recovered": 0.9999970165401427,
+        "spliced_loss": 0.0007892857211482283,
+        "twin_dead_share": 0.0,
+        "twin_fvu": 0.1625497241838286
+      },
+      "staircase blocks.1.hook_resid_post": {
+        "ablated_loss": 6.26165909313147,
+        "clean_loss": 0.0007672616219130253,
+        "cost": 6.260891831509557,
+        "dead_share": 0.06640625,
+        "fvu": 0.004793562830847754,
+        "recovered": 0.9999996640767266,
+        "spliced_loss": 0.000769364801191727,
+        "twin_dead_share": 0.0,
+        "twin_fvu": 0.1627762001536711
+      },
+      "topk blocks.0.hook_resid_post": {
+        "ablated_loss": 7.382833818221565,
+        "clean_loss": 0.0007672616219130253,
+        "cost": 7.382066556599652,
+        "dead_share": 0.00390625,
+        "fvu": 0.02403573503975748,
+        "recovered": 0.9999601873757754,
+        "spliced_loss": 0.0010611610637318398,
+        "twin_dead_share": 0.0,
+        "twin_fvu": 0.146006959307234
+      },
+      "topk blocks.1.hook_resid_post": {
+        "ablated_loss": 6.26165909313147,
+        "clean_loss": 0.0007672616219130253,
+        "cost": 6.260891831509557,
+        "dead_share": 0.009765625,
+        "fvu": 0.004377881038135424,
+        "recovered": 1.000008399231449,
+        "spliced_loss": 0.0007146749423435319,
+        "twin_dead_share": 0.0,
+        "twin_fvu": 0.14646747314313982
+      },
+      "transcoder blocks.0.hook_mlp_out": {
+        "ablated_loss": 6.2865442784836265,
+        "clean_loss": 0.0007672616219130253,
+        "cost": 6.285777016861713,
+        "dead_share": 0.169921875,
+        "fvu": 0.019629499606964758,
+        "recovered": 0.9999840287417927,
+        "spliced_loss": 0.0008676533896835209,
+        "twin_dead_share": 0.025390625,
+        "twin_fvu": 0.16987211039240374
+      },
+      "transcoder blocks.1.hook_mlp_out": {
+        "ablated_loss": 0.5038686548248557,
+        "clean_loss": 0.0007672616219130253,
+        "cost": 0.5031013932029427,
+        "dead_share": 0.201171875,
+        "fvu": 0.004531911234303639,
+        "recovered": 0.9999662755398402,
+        "spliced_loss": 0.0007842284448044575,
+        "twin_dead_share": 0.029296875,
+        "twin_fvu": 0.16827117086304713
+      }
+    },
+    "patch_lag": 19,
+    "patch_targets": [
+      13,
+      16,
+      19
+    ],
+    "readout_positions": [
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62
+    ],
+    "recovered_min": 0.9999601873757754,
+    "recovery": {
+      "staircase blocks.0.hook_resid_post": {
+        "cur": {
+          "trained": {
+            "mean_best_f1": 0.6834742541584418,
+            "probe_activation": 1.0,
+            "probe_code": 1.0
+          },
+          "twin": {
+            "mean_best_f1": 0.14986057750399168,
+            "probe_activation": 0.5838583669354839,
+            "probe_code": 0.42571824596774194
+          }
+        },
+        "next": {
+          "trained": {
+            "mean_best_f1": 0.04071315448233585,
+            "probe_activation": 0.03188004032258065,
+            "probe_code": 0.03024193548387097
+          },
+          "twin": {
+            "mean_best_f1": 0.045717215426340975,
+            "probe_activation": 0.03515625,
+            "probe_code": 0.03314012096774194
+          }
+        },
+        "prev": {
+          "trained": {
+            "mean_best_f1": 0.054084821800394985,
+            "probe_activation": 0.09047379032258064,
+            "probe_code": 0.07667590725806452
+          },
+          "twin": {
+            "mean_best_f1": 0.05593292385012828,
+            "probe_activation": 0.06672127016129033,
+            "probe_code": 0.05405745967741935
+          }
+        }
+      },
+      "staircase blocks.1.hook_resid_post": {
+        "cur": {
+          "trained": {
+            "mean_best_f1": 0.10416293572049629,
+            "probe_activation": 0.8114289314516129,
+            "probe_code": 0.4114793346774194
+          },
+          "twin": {
+            "mean_best_f1": 0.14733229330268355,
+            "probe_activation": 0.5047253024193549,
+            "probe_code": 0.3059475806451613
+          }
+        },
+        "next": {
+          "trained": {
+            "mean_best_f1": 0.847749116726127,
+            "probe_activation": 1.0,
+            "probe_code": 1.0
+          },
+          "twin": {
+            "mean_best_f1": 0.0492449366763328,
+            "probe_activation": 0.04057459677419355,
+            "probe_code": 0.041015625
+          }
+        },
+        "prev": {
+          "trained": {
+            "mean_best_f1": 0.05069788889150946,
+            "probe_activation": 0.04429183467741935,
+            "probe_code": 0.05846774193548387
+          },
+          "twin": {
+            "mean_best_f1": 0.054900594324549704,
+            "probe_activation": 0.05884576612903226,
+            "probe_code": 0.04756804435483871
+          }
+        }
+      },
+      "topk blocks.0.hook_resid_post": {
+        "cur": {
+          "trained": {
+            "mean_best_f1": 0.8897900636127322,
+            "probe_activation": 1.0,
+            "probe_code": 1.0
+          },
+          "twin": {
+            "mean_best_f1": 0.17134600607138678,
+            "probe_activation": 0.5838583669354839,
+            "probe_code": 0.44083921370967744
+          }
+        },
+        "next": {
+          "trained": {
+            "mean_best_f1": 0.042548869568676755,
+            "probe_activation": 0.03188004032258065,
+            "probe_code": 0.03559727822580645
+          },
+          "twin": {
+            "mean_best_f1": 0.04687805219678284,
+            "probe_activation": 0.03515625,
+            "probe_code": 0.03251008064516129
+          }
+        },
+        "prev": {
+          "trained": {
+            "mean_best_f1": 0.06810906920551114,
+            "probe_activation": 0.09047379032258064,
+            "probe_code": 0.07623487903225806
+          },
+          "twin": {
+            "mean_best_f1": 0.05769896635887867,
+            "probe_activation": 0.06672127016129033,
+            "probe_code": 0.05241935483870968
+          }
+        }
+      },
+      "topk blocks.1.hook_resid_post": {
+        "cur": {
+          "trained": {
+            "mean_best_f1": 0.12375318924166503,
+            "probe_activation": 0.8114289314516129,
+            "probe_code": 0.4146925403225806
+          },
+          "twin": {
+            "mean_best_f1": 0.13814106880083482,
+            "probe_activation": 0.5047253024193549,
+            "probe_code": 0.32541582661290325
+          }
+        },
+        "next": {
+          "trained": {
+            "mean_best_f1": 0.7900398260552235,
+            "probe_activation": 1.0,
+            "probe_code": 1.0
+          },
+          "twin": {
+            "mean_best_f1": 0.047703797610490505,
+            "probe_activation": 0.04057459677419355,
+            "probe_code": 0.03881048387096774
+          }
+        },
+        "prev": {
+          "trained": {
+            "mean_best_f1": 0.05116075104542668,
+            "probe_activation": 0.04429183467741935,
+            "probe_code": 0.0657132056451613
+          },
+          "twin": {
+            "mean_best_f1": 0.05395856097759559,
+            "probe_activation": 0.05884576612903226,
+            "probe_code": 0.04662298387096774
+          }
+        }
+      },
+      "transcoder blocks.0.hook_mlp_out": {
+        "cur": {
+          "trained": {
+            "mean_best_f1": 0.7694584570851777,
+            "probe_activation": 1.0,
+            "probe_code": 1.0
+          },
+          "twin": {
+            "mean_best_f1": 0.23504780051254295,
+            "probe_activation": 0.8869077620967742,
+            "probe_code": 0.5152469758064516
+          }
+        },
+        "next": {
+          "trained": {
+            "mean_best_f1": 0.04072798568431148,
+            "probe_activation": 0.028981854838709676,
+            "probe_code": 0.031060987903225805
+          },
+          "twin": {
+            "mean_best_f1": 0.04817010548408046,
+            "probe_activation": 0.03843245967741935,
+            "probe_code": 0.04063760080645161
+          }
+        },
+        "prev": {
+          "trained": {
+            "mean_best_f1": 0.05194549322902217,
+            "probe_activation": 0.10464969758064516,
+            "probe_code": 0.06930443548387097
+          },
+          "twin": {
+            "mean_best_f1": 0.06479095016984524,
+            "probe_activation": 0.07894405241935484,
+            "probe_code": 0.06111391129032258
+          }
+        }
+      },
+      "transcoder blocks.1.hook_mlp_out": {
+        "cur": {
+          "trained": {
+            "mean_best_f1": 0.1220327739375768,
+            "probe_activation": 0.9997479838709677,
+            "probe_code": 0.4392641129032258
+          },
+          "twin": {
+            "mean_best_f1": 0.15112309699757248,
+            "probe_activation": 0.5686743951612904,
+            "probe_code": 0.3210055443548387
+          }
+        },
+        "next": {
+          "trained": {
+            "mean_best_f1": 0.6239664165332157,
+            "probe_activation": 0.9999369959677419,
+            "probe_code": 1.0
+          },
+          "twin": {
+            "mean_best_f1": 0.05145490262342766,
+            "probe_activation": 0.04227570564516129,
+            "probe_code": 0.04240171370967742
+          }
+        },
+        "prev": {
+          "trained": {
+            "mean_best_f1": 0.04968247417771085,
+            "probe_activation": 0.09601814516129033,
+            "probe_code": 0.050970262096774195
+          },
+          "twin": {
+            "mean_best_f1": 0.05636021725777876,
+            "probe_activation": 0.06218497983870968,
+            "probe_code": 0.04945816532258065
+          }
+        }
+      }
+    },
+    "robustness": {
+      "1": {
+        "topk blocks.0.hook_resid_post": {
+          "fvu": 0.024119860198835014,
+          "mean_best_f1": {
+            "cur": 0.8886902544057496
+          }
+        },
+        "topk blocks.1.hook_resid_post": {
+          "fvu": 0.004625637224759828,
+          "mean_best_f1": {
+            "next": 0.7467820341572364
+          }
+        }
+      },
+      "2": {
+        "topk blocks.0.hook_resid_post": {
+          "fvu": 0.02284032466586042,
+          "mean_best_f1": {
+            "cur": 0.8681085254617429
+          }
+        },
+        "topk blocks.1.hook_resid_post": {
+          "fvu": 0.0052065611711566194,
+          "mean_best_f1": {
+            "next": 0.7718604668533238
+          }
+        }
+      }
+    },
+    "run_id": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+    "selective_f1_min": 0.6239664165332157,
+    "selective_margin_min": 0.2993628560600918,
+    "selectivity": {
+      "staircase blocks.0.hook_resid_post cur": {
+        "margin": 0.3837530991504584,
+        "trained": 0.6834742541584418,
+        "twin": 0.14986057750399168
+      },
+      "staircase blocks.1.hook_resid_post next": {
+        "margin": 0.7492592433734614,
+        "trained": 0.847749116726127,
+        "twin": 0.0492449366763328
+      },
+      "topk blocks.0.hook_resid_post cur": {
+        "margin": 0.5470980514699586,
+        "trained": 0.8897900636127322,
+        "twin": 0.17134600607138678
+      },
+      "topk blocks.1.hook_resid_post next": {
+        "margin": 0.6946322308342425,
+        "trained": 0.7900398260552235,
+        "twin": 0.047703797610490505
+      },
+      "transcoder blocks.0.hook_mlp_out cur": {
+        "margin": 0.2993628560600918,
+        "trained": 0.7694584570851777,
+        "twin": 0.23504780051254295
+      },
+      "transcoder blocks.1.hook_mlp_out next": {
+        "margin": 0.5210566112863604,
+        "trained": 0.6239664165332157,
+        "twin": 0.05145490262342766
+      }
+    },
+    "step": 4000,
+    "train_seconds": {
+      "seed 1 topk blocks.0.hook_resid_post": 80.65298887528479,
+      "seed 1 topk blocks.1.hook_resid_post": 81.20353799965233,
+      "seed 2 topk blocks.0.hook_resid_post": 80.57018999988213,
+      "seed 2 topk blocks.1.hook_resid_post": 78.83536062482744,
+      "trained staircase": 143.65941004175693,
+      "trained topk blocks.0.hook_resid_post": 79.10628291592002,
+      "trained topk blocks.1.hook_resid_post": 77.83543895790353,
+      "trained transcoder blocks.0.hook_mlp_out": 115.15554620837793,
+      "trained transcoder blocks.1.hook_mlp_out": 99.7959460830316,
+      "twin staircase": 141.80503841629252,
+      "twin topk blocks.0.hook_resid_post": 79.89484354108572,
+      "twin topk blocks.1.hook_resid_post": 78.94639554200694,
+      "twin transcoder blocks.0.hook_mlp_out": 103.81638695811853,
+      "twin transcoder blocks.1.hook_mlp_out": 101.7099222918041
+    },
+    "twin_seed": 1,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-16T23:37:51Z",
+  "xla_flags": ""
+}
