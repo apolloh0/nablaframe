@@ -1,0 +1,155 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G5.1",
+  "git_commit": "2fe12bedbff8ac61218dc96324ede3921b04b73a",
+  "git_dirty": false,
+  "measurements": {
+    "cache_keys_checked": 68,
+    "cache_keys_distinct": true,
+    "determinism_dir": "runs/phase5/g51_determinism",
+    "determinism_keys": {
+      "jsae": "3663f8936edd61aaee4f7f62cc3df42be9aa280d4a8e15c1adf5a9e05fd306e4",
+      "staircase": "92259b1828630fbd1cdc09f3e34dee9066d5ebb7c273d7079a6be38c41fc76fb",
+      "topk": "be40c2af38be58a3f768a9543709d869af841d2cbeb97402d292f6ad8fd03088",
+      "transcoder": "4acde1b98a0abcb8eda6d0e19675f67e499d53a49615677bf67ae48ff09df995"
+    },
+    "files_identical": true,
+    "identical_by_kind": {
+      "jsae": true,
+      "staircase": true,
+      "topk": true,
+      "transcoder": true
+    },
+    "identities_by_site": {
+      "induction staircase blocks.0.hook_resid_post": [
+        true,
+        true
+      ],
+      "induction staircase blocks.1.hook_resid_post": [
+        true,
+        true
+      ],
+      "induction topk blocks.0.hook_resid_post": [
+        true,
+        true
+      ],
+      "induction topk blocks.1.hook_resid_post": [
+        true,
+        true
+      ],
+      "induction transcoder blocks.0.hook_mlp_out": [
+        true,
+        true
+      ],
+      "induction transcoder blocks.1.hook_mlp_out": [
+        true,
+        true
+      ],
+      "two_hop staircase blocks.0.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop staircase blocks.1.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop staircase blocks.2.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop staircase blocks.3.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop topk blocks.0.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop topk blocks.1.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop topk blocks.2.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop topk blocks.3.hook_resid_post": [
+        true,
+        true
+      ],
+      "two_hop transcoder blocks.0.hook_mlp_out": [
+        true,
+        true
+      ],
+      "two_hop transcoder blocks.1.hook_mlp_out": [
+        true,
+        true
+      ],
+      "two_hop transcoder blocks.2.hook_mlp_out": [
+        true,
+        true
+      ],
+      "two_hop transcoder blocks.3.hook_mlp_out": [
+        true,
+        true
+      ]
+    },
+    "identities_checked": 36,
+    "identities_exact": 36,
+    "identity_windows": 64,
+    "kinds_checked": [
+      "topk",
+      "staircase",
+      "transcoder",
+      "jsae"
+    ],
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "short": {
+      "batch": 1024,
+      "steps": 300
+    },
+    "steps": {
+      "induction": 4000,
+      "two_hop": 20000
+    },
+    "train_seconds": {
+      "induction": {
+        "trained staircase short": 4.706640207674354,
+        "trained topk blocks.0.hook_resid_post short": 3.061957166995853,
+        "trained topk blocks.1.hook_resid_post short": 3.0128948339261115,
+        "trained transcoder blocks.0.hook_mlp_out short": 3.9044090411625803,
+        "trained transcoder blocks.1.hook_mlp_out short": 3.89408016577363
+      },
+      "two_hop": {
+        "trained staircase short": 17.26599079091102,
+        "trained topk blocks.0.hook_resid_post short": 6.872338625136763,
+        "trained topk blocks.1.hook_resid_post short": 6.499194167088717,
+        "trained topk blocks.2.hook_resid_post short": 6.650824750307947,
+        "trained topk blocks.3.hook_resid_post short": 6.623527999967337,
+        "trained transcoder blocks.0.hook_mlp_out short": 7.764013167005032,
+        "trained transcoder blocks.1.hook_mlp_out short": 7.7801854577846825,
+        "trained transcoder blocks.2.hook_mlp_out short": 7.627066791057587,
+        "trained transcoder blocks.3.hook_mlp_out short": 7.679639624897391
+      }
+    },
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-16T23:14:54Z",
+  "xla_flags": ""
+}
