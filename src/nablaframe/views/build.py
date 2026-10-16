@@ -145,6 +145,32 @@ def _checked_curves(curves: Any) -> list[dict[str, Any]] | None:
     return checked
 
 
+def _checked_features(features: Any, steps: Sequence[int]) -> list[Mapping[str, Any]] | None:
+    """``features`` as a list of payloads, or None; ValueError if one isn't well formed or two share a site."""
+    if features is None:
+        return None
+    if isinstance(features, str | bytes | Mapping) or not isinstance(features, Sequence):
+        raise ValueError(f"features must be a list of payloads, got {type(features).__name__}")
+    seen = set()
+    for i, payload in enumerate(features):
+        if not isinstance(payload, dict) or not {"dictionary", "kind", "site", "taps", "step", "meter"} <= set(payload):
+            raise ValueError(f"features payload {i} must be a dict with the keys 'dictionary', 'kind', 'site', "
+                             f"'taps', 'step' and 'meter'")
+        name = payload["dictionary"]
+        if not isinstance(name, str) or not name or "/" in name or "\\" in name:
+            raise ValueError(f"features payload {i}: 'dictionary' must be a non-empty string that is a plain file name part")
+        site = payload["site"]
+        if isinstance(site, bool) or not isinstance(site, int | np.integer):
+            raise ValueError(f"features payload {i}: 'site' must be an int, got {site!r}")
+        if payload["step"] not in steps:
+            raise ValueError(f"features payload {i}: step {payload['step']!r} is not one of the trace's steps")
+        key = (payload["dictionary"], int(site))
+        if key in seen:
+            raise ValueError(f"features payload {i}: dictionary {key[0]} site {key[1]} appears twice")
+        seen.add(key)
+    return list(features)
+
+
 def view_payloads(reader: Any, step: int, params: Any, probe: np.ndarray, n_layers: int, *,
                   next_token: Any = None) -> dict[str, dict[str, Any]]:
     probe = np.asarray(probe)
@@ -197,12 +223,14 @@ def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int],
                 val_loss_curve: Sequence[dict[str, Any]] | None = None,
                 progress: Callable[[int, int], None] | None = None,
                 jacobians_for: Callable[[int], Mapping[int, np.ndarray]] | None = None,
-                next_token: Any = None, curves: Sequence[dict[str, Any]] | None = None) -> list[Path]:
+                next_token: Any = None, curves: Sequence[dict[str, Any]] | None = None,
+                features: Sequence[dict[str, Any]] | None = None) -> list[Path]:
     out = Path(out_dir)
     probe = np.asarray(probe)
     next_token = checked_next_token(next_token, probe)
     curves = _checked_curves(curves)
     steps = reader.steps()
+    features = _checked_features(features, steps)
     views = VIEWS if jacobians_for is None else VIEWS + ("jlens",)
     files: dict[str, dict[str, str]] = {view: {} for view in views}
     paths: list[Path] = []
@@ -218,6 +246,12 @@ def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int],
             paths.append(path)
         if progress is not None:
             progress(done, len(steps))
+    feature_files = []
+    for payload in features or []:
+        path = export_view(out, f"features-{payload['dictionary']}-site-{int(payload['site'])}", payload)
+        feature_files.append({"dictionary": payload["dictionary"], "kind": payload["kind"], "site": int(payload["site"]),
+                              "taps": list(payload["taps"]), "step": int(payload["step"]), "file": path.name})
+        paths.append(path)
     index = {
         "run_id": run_id,
         "steps": list(steps),
@@ -232,6 +266,8 @@ def build_views(reader: Any, out_dir: str | Path, *, params_for: Callable[[int],
         index["next_token"] = next_token.tolist()
     if curves is not None:
         index["curves"] = curves
+    if features is not None:
+        index["features"] = feature_files
     out.mkdir(parents=True, exist_ok=True)
     index_path = out / "index.json"
     _write_atomic(index_path, canonical_json(index).encode("ascii"))
