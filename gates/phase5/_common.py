@@ -360,7 +360,7 @@ def edge_ratio(trained: int | None, twin: int | None, twin_scored: int) -> float
 #   Phase 4's ``zoo_run`` and its checks; ``reference_model``: G1.4's run at its final checkpoint,
 #   read through Phase 1's and Phase 2's helpers.
 # * ``dictionary``: one dictionary of a model, through ``cached`` under the key the gates and G5.6
-#   compute alike, its training time kept in the model's ``train_seconds``.
+#   compute alike (``dictionary_spec``), its training time kept in the model's ``train_seconds``.
 # * The measurements several gates make the same way: each site's meters, a site's codes and
 #   activations at given positions, and the edge meter's reading of a pair.
 
@@ -511,6 +511,18 @@ def dictionary_label(kind: str, n_layers: int, layer: int | None = None, *, lam:
     return f"{kind} {writes}" + (f" lam {lam:g}" if kind == "jsae" else "")
 
 
+def dictionary_spec(m: Any, kind: str, layer: int | None = None, *, twin: bool = False, seed: int = DICT_SEED,
+                    lam: float = 0.0, short: bool = False) -> tuple[list[tuple[str, str]], Any, str]:
+    """``(sites, settings, key)`` of one dictionary of model ``m`` (or its twin): what ``dictionary`` trains it
+    with, and the key it is cached under, which G5.6 recomputes to find it."""
+    if twin and m.twin is None:
+        raise ValueError(f"the {m.name} run has no twin")
+    state = m.twin_state if twin else m.state
+    dictionary_sites = sites(kind, m.n_layers, layer)
+    chosen = settings(m.name, kind, m.d_model, seed=seed, lam=lam, short=short)
+    return dictionary_sites, chosen, dictionary_key(state, dictionary_sites, chosen, m.train_tokens(seed))
+
+
 def dictionary(m: Any, kind: str, layer: int | None = None, *, twin: bool = False, seed: int = DICT_SEED,
                lam: float = 0.0, short: bool = False) -> Any:
     """One dictionary of model ``m`` (or its twin), through ``cached(DICTIONARY_DIR, ...)``.
@@ -522,13 +534,9 @@ def dictionary(m: Any, kind: str, layer: int | None = None, *, twin: bool = Fals
     """
     from nablaframe.dictionaries.train import mlp_weights
 
-    if twin and m.twin is None:
-        raise ValueError(f"the {m.name} run has no twin")
-    params, state = (m.twin, m.twin_state) if twin else (m.params, m.state)
-    dictionary_sites = sites(kind, m.n_layers, layer)
-    chosen = settings(m.name, kind, m.d_model, seed=seed, lam=lam, short=short)
+    params = m.twin if twin else m.params
+    dictionary_sites, chosen, key = dictionary_spec(m, kind, layer, twin=twin, seed=seed, lam=lam, short=short)
     tokens = m.train_tokens(seed)
-    key = dictionary_key(state, dictionary_sites, chosen, tokens)
     who = "twin" if twin else ("trained" if seed == DICT_SEED else f"seed {seed}")
     name = f"{who} {dictionary_label(kind, m.n_layers, layer, lam=lam)}" + (" short" if short else "")
     weights = mlp_weights(params, layer) if kind == "jsae" else None
