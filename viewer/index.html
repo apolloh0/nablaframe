@@ -230,6 +230,21 @@
     .tap-labels { display: flex; flex-direction: column; flex: none; width: 210px; }
     table.top-compare { width: auto; }
     .tap-labels div { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Features */
+    #features-list .kind { font-weight: 600; color: var(--text-primary); min-width: 8.5em; }
+    #features-list button { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    #features-latent { width: 7em; background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
+    table.features { width: auto; }
+    table.features tbody tr[title] { cursor: pointer; }
+    table.features tbody tr[title]:hover { background: var(--surface-2); }
+    table.features tr.chosen td { background: var(--surface-2); font-weight: 700; }
+    table.features th.group { text-align: center; font-weight: normal; font-size: 12px; color: var(--text-muted); border-bottom: none; padding-bottom: 0; }
+    table.features .eff { display: inline-block; padding: 0 4px; border: 1px solid var(--border); border-radius: 3px; }
+    table.features td.ctx .tok { cursor: default; margin: 0; }
+    .effects { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: flex-start; }
+    table.effect { width: auto; min-width: 160px; }
+    .effect-label { font-style: italic; }
   </style>
 </head>
 <body>
@@ -263,6 +278,21 @@
       <div class="meter" id="compare-meter"></div>
       <div id="compare-model-badges"></div>
       <div id="compare-body"></div>
+    </section>
+
+    <section class="panel" id="features-panel" hidden>
+      <h2>Features: a dictionary's latents <span class="sub" id="features-sub"></span></h2>
+      <div id="features-list"></div>
+      <div class="meter" id="features-meter"></div>
+      <div id="features-model-badge"></div>
+      <div id="features-body"></div>
+      <div id="features-latent-section" hidden>
+        <div class="controls">
+          <label>Latent <input type="number" id="features-latent" min="0" step="1" inputmode="numeric"></label>
+          <span class="muted" id="features-latent-range"></span>
+        </div>
+        <div id="features-latent-body"></div>
+      </div>
     </section>
 
     <div class="grid2">

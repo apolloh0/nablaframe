@@ -161,6 +161,49 @@
 //   ran on the probe, and a line names each pass's top token, or says it didn't change.
 //   Top tokens shaped other than (Batch, Pos, k) with k the same in both passes are an error
 //   in that section only.
+// * Phase 5's units: a score and a ratio read to three decimals, edges and a count as plain
+//   integers; a value that isn't a whole number in an integer unit is shown as the file holds it
+//   and marked, as a step's is. Without `?badges=` the page still reads Phase 4's file, which has
+//   no Phase 5 subject, so the features panel and a dpatch spec say their badge is missing; G5.6
+//   prints addresses naming runs/phase5/badges.json.
+// * A dpatch edit reads "patch through dictionary <hash>'s code from batch <hash> at <tap>,
+//   <positions>", then "; latents 3, 5 only" when it lists latents, as the JSON holds them, or
+//   "; no latent (an empty latents list, so it changes nothing)" when the list is empty.
+// * The features panel sits below the compare panel and is hidden unless the index has
+//   `features`; an empty list shows it with a note. Its entries are grouped by kind, in the
+//   index's order, each a button reading its site and its taps (one tap when both are the same,
+//   else input → output), with the dictionary's hash, the file and the step on hover. An entry
+//   that doesn't follow build.py's form, or repeats another's dictionary and site, isn't listed,
+//   and the panel says which and why. Nothing is chosen until a button is pressed.
+// * A features payload is drawn only when it has its meter, its step, dictionary, kind, site and
+//   taps match its index entry, and its lists have features.py's shapes: one entry per latent of
+//   its width, contexts inside its held-out windows, one value per window for each variable, and
+//   probe codes per sequence and position. Otherwise the panel says why. Probe codes shaped other
+//   than the index's probe are an error in the active latents' section only.
+// * Above the payload: one meter row for its copied meters, each value by name, numbers to three
+//   decimals and ints as ints, the value as the report holds it on hover, and on the row's hover
+//   the gate and path, with that report's commit, time and SHA-256 when the badges file describes
+//   it; one row for the reconstruction meter, its FVU, its probe positions and its two taps; then
+//   its kind's badge, placed and drawn as every model-level badge is.
+// * On a step mismatch the meters and the badge stay, the latents and the chosen latent are
+//   hidden, and a button moves the timeline to the payload's step when the index has it. The page
+//   still opens at the address's step or the first checkpoint, so a payload built at the final
+//   checkpoint first asks to move there.
+// * The active latents are a table in the payload's order: each latent's number, its code, its
+//   frequency and its first three `effect.top` tokens. Clicking a row chooses that latent. A
+//   position with no active latent says every code is 0 there.
+// * One latent is chosen by a row or by the number box under the table, whose range is the site's
+//   width; a number outside it, or anything but a whole number, says so. It shows its frequency;
+//   its contexts as a table of rank, window, position, code, one column per variable in the
+//   payload's order (the int as held, and on hover the token it names in the index's vocab), and
+//   the window's tokens from 8 before the position to 1 after, clipped to the window, "…" where
+//   the window goes on; then the effect's label, verbatim, over two tables, top and bottom, of
+//   each token and its logit signed to three decimals. A latent with no contexts says it never
+//   fires on the held-out windows.
+// * A frequency reads as a percentage to two decimals, or with an exponent below 0.01%; a code
+//   to three decimals, as values elsewhere on the page.
+// * The fragment gains features=<dictionary>-<site> and latent=<n>. Choosing another payload
+//   clears the latent, since a latent's number names another latent in another dictionary.
 "use strict";
 
 (() => {
@@ -473,7 +516,7 @@
     return el("div", { class: `row ${kind}`, title },
       el("span", { class: "icon", "aria-hidden": "true", text: ICONS[kind] }),
       el("span", { class: "label", text: label }),
-      detail ? el("span", { class: "detail", text: detail }) : null);
+      detail ? el("span", { class: "detail" }, detail) : null);
   }
 
   function hashRow(loaded, what) {
@@ -586,6 +629,10 @@
     nextToken: null,
     // Model-level badges: "loading", "hidden" (no file at the default path), "error" or "ok".
     modelBadges: { status: "loading", error: null, badges: null, reports: null },
+    // Features (D45): the index's well-formed entries (null without `features`), why any others
+    // aren't listed, the chosen one as `${dictionary}-${site}`, the chosen latent, and loaded
+    // payloads by file name.
+    features: { entries: null, problems: [], chosen: null, latent: null, payloads: new Map() },
   };
 
   const step = () => state.index.steps[state.stepIndex];
@@ -608,15 +655,21 @@
     const values = new URLSearchParams(location.hash.slice(1));
     const int = (name) => (values.has(name) && /^-?\d+$/.test(values.get(name)) ? Number(values.get(name)) : null);
     const compare = values.get("compare");
+    const features = values.get("features");
+    const latent = int("latent");
     return {
       step: int("step"), seq: int("seq"), pos: int("pos"), layer: int("layer"), head: int("head"),
       compare: compare && /^[0-9a-f]{64}-(0|[1-9]\d*)$/.test(compare) ? compare : null,
+      features: features && /^[0-9a-f]{64}-(0|[1-9]\d*)$/.test(features) ? features : null,
+      latent: latent !== null && latent >= 0 ? latent : null,
     };
   }
 
   function writeHash() {
     const values = new URLSearchParams({ step: step(), seq: state.seq, pos: state.pos, layer: state.layer, head: state.head });
     if (state.compare.chosen) values.set("compare", state.compare.chosen);
+    if (state.features.chosen) values.set("features", state.features.chosen);
+    if (state.features.chosen && Number.isInteger(state.features.latent)) values.set("latent", state.features.latent);
     history.replaceState(null, "", `${location.pathname}${location.search}#${values}`);
   }
 
@@ -1542,6 +1595,7 @@
       renderModelBadges();
       renderFacts();
       report(renderCompare(), "compare-meter");
+      report(renderFeatures(), "features-meter");
     };
     if (!BADGES_NAMED) {
       let head;
@@ -1616,6 +1670,13 @@
         return Number.isInteger(v) ? { text: `${v} tokens` } : asHeld("not a whole count of tokens");
       case "logit":
         return { text: `${v >= 0 ? "+" : ""}${v.toFixed(3)}` };
+      case "score":
+      case "ratio":
+        return { text: v.toFixed(3) };
+      case "edges":
+        return Number.isInteger(v) ? { text: String(v) } : asHeld("not a whole number of edges");
+      case "count":
+        return Number.isInteger(v) ? { text: String(v) } : asHeld("not a whole count");
       default:
         return asHeld(`a unit the viewer doesn't know, ${JSON.stringify(fact.unit)}`);
     }
@@ -1822,9 +1883,21 @@
       case "jswap":
         return ["swap the J-lens coordinates of tokens ", tokenWithId(args.a), " and ", tokenWithId(args.b), " in ", tapCode(e.tap),
           ` at ${at}, with J `, hashCode(args.J)];
+      case "dpatch":
+        return ["patch through dictionary ", hashCode(args.dictionary), "'s code from batch ", hashCode(args.source), " at ",
+          tapCode(e.tap), `, ${at}`, latentsText(args)];
       default:
         return [el("span", { class: "error", text: `unknown operation ${JSON.stringify(e.op)}: ` }), tapCode(String(e.tap)), ` at ${at}, arguments ${JSON.stringify(args)}`];
     }
+  }
+
+  // A dpatch edit's latents, when it names them: only their change counts (D45).
+  function latentsText(args) {
+    if (!("latents" in args)) return "";
+    const latents = args.latents;
+    if (!Array.isArray(latents)) return `; latents ${JSON.stringify(latents)}`;
+    if (!latents.length) return "; no latent (an empty latents list, so it changes nothing)";
+    return `; ${latents.length === 1 ? "latent" : "latents"} ${latents.map((l) => JSON.stringify(l)).join(", ")} only`;
   }
 
   function specBlock(data) {
@@ -2090,6 +2163,326 @@
     ];
   }
 
+  // ---------------------------------------------------------------- features (Phase 5, D45)
+
+  const KIND_NAMES = { topk: "TopK SAE", staircase: "Staircase SAE", transcoder: "transcoder" };
+  const kindName = (kind) => KIND_NAMES[kind] || kind;
+  const featureKey = (entry) => `${entry.dictionary}-${entry.site}`;
+  const isNumber = (v) => typeof v === "number" && Number.isFinite(v);
+  const isMapping = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+
+  // Why a features entry of the index doesn't follow build.py's form, or null when it does.
+  function featureEntryProblem(e) {
+    if (!isMapping(e)) return "it isn't an object";
+    if (typeof e.dictionary !== "string" || !/^[0-9a-f]{64}$/.test(e.dictionary)) return "its dictionary isn't a content hash";
+    if (typeof e.kind !== "string" || !e.kind) return "its kind isn't a non-empty string";
+    if (!isInt(e.site)) return "its site isn't a non-negative int";
+    if (!Array.isArray(e.taps) || e.taps.length !== 2 || !e.taps.every((t) => typeof t === "string" && t)) return "its taps aren't [input tap, output tap]";
+    if (!isInt(e.step)) return "its step isn't a non-negative int";
+    if (typeof e.file !== "string" || !e.file) return "its file isn't a non-empty string";
+    return null;
+  }
+
+  // Reads the index's `features`, if it has them: the panel shows only then.
+  function readFeatureIndex() {
+    const f = state.features;
+    if (!("features" in state.index)) return;
+    $("features-panel").hidden = false;
+    f.entries = [];
+    const list = state.index.features;
+    if (!Array.isArray(list)) {
+      f.problems.push("the index's features aren't a list, so none is listed");
+      return;
+    }
+    const seen = new Map();
+    list.forEach((e, i) => {
+      const why = featureEntryProblem(e) ?? (seen.has(featureKey(e)) ? `it repeats entry ${seen.get(featureKey(e))}'s dictionary and site` : null);
+      if (why) f.problems.push(`features entry ${i} isn't listed: ${why}`);
+      else {
+        seen.set(featureKey(e), i);
+        f.entries.push(e);
+      }
+    });
+  }
+
+  function featuresPayload(entry) {
+    const f = state.features;
+    if (!f.payloads.has(entry.file)) {
+      const promise = fetchJSON(VIEWS_DIR + entry.file, `features · ${kindName(entry.kind)} site ${entry.site}`)
+        .then((data) => checkFeaturesPayload(entry, data));
+      promise.catch(() => f.payloads.delete(entry.file));
+      f.payloads.set(entry.file, promise);
+      if (f.payloads.size > 6) f.payloads.delete(f.payloads.keys().next().value);
+    }
+    return f.payloads.get(entry.file);
+  }
+
+  // A payload is drawn only when it has its meter, matches its index entry, and holds its lists
+  // in features.py's shapes. Nothing is computed here; this only checks what the panel reads.
+  function checkFeaturesPayload(entry, data) {
+    const fail = (why) => { throw new Error(`${entry.file} isn't drawn: ${why}`); };
+    if (!isMapping(data) || !("meter" in data)) fail("it has no meter");
+    for (const key of ["step", "dictionary", "kind", "site"]) {
+      if (data[key] !== entry[key]) fail(`the index lists its ${key} as ${JSON.stringify(entry[key])}, but it holds ${JSON.stringify(data[key])}`);
+    }
+    if (!Array.isArray(data.taps) || data.taps.length !== 2 || data.taps[0] !== entry.taps[0] || data.taps[1] !== entry.taps[1]) {
+      fail(`the index lists its taps as ${JSON.stringify(entry.taps)}, but it holds ${JSON.stringify(data.taps)}`);
+    }
+    const width = data.width;
+    if (!Number.isInteger(width) || width < 1) fail("its width isn't a positive int");
+    if (!Number.isInteger(data.k) || data.k < 1) fail("its k isn't a positive int");
+    const perLatent = (v) => Array.isArray(v) && v.length === width;
+    if (!perLatent(data.frequency) || !data.frequency.every(isNumber)) fail(`its frequency isn't one number per latent (${width})`);
+    const held = data.held_out;
+    if (!Array.isArray(held) || !held.length || !held.every((row) => Array.isArray(row) && row.length && row.every(Number.isInteger))) {
+      fail("its held_out isn't a list of windows of token ids");
+    }
+    const inHeld = (c) => Array.isArray(c) && c.length === 3 && isInt(c[0]) && c[0] < held.length && isInt(c[1]) && c[1] < held[c[0]].length && isNumber(c[2]);
+    if (!perLatent(data.contexts) || !data.contexts.every((list) => Array.isArray(list) && list.every(inHeld))) {
+      fail("its contexts aren't, per latent, a list of [window, position, code] inside its held-out windows");
+    }
+    const effect = data.effect;
+    const tokenPairs = (v) => perLatent(v) && v.every((list) => Array.isArray(list) && list.every((p) => Array.isArray(p) && p.length === 2 && Number.isInteger(p[0]) && isNumber(p[1])));
+    if (!isMapping(effect) || typeof effect.label !== "string" || !effect.label || !tokenPairs(effect.top) || !tokenPairs(effect.bottom)) {
+      fail('its effect isn\'t {"label", "top", "bottom"}, with a list of [token, logit] per latent');
+    }
+    if (!isMapping(data.variables) || !Object.values(data.variables).every((v) => Array.isArray(v) && v.length === held.length && v.every(Number.isInteger))) {
+      fail(`its variables aren't {name: one int per held-out window (${held.length})}`);
+    }
+    const probe = data.probe;
+    const cellsOk = (ids, values) => Array.isArray(ids) && Array.isArray(values) && ids.length === values.length
+      && ids.every((i) => isInt(i) && i < width) && values.every(isNumber);
+    if (!isMapping(probe) || !Array.isArray(probe.latents) || !Array.isArray(probe.values) || probe.latents.length !== probe.values.length
+      || !probe.latents.every((row, b) => Array.isArray(row) && Array.isArray(probe.values[b]) && row.length === probe.values[b].length
+        && row.every((ids, t) => cellsOk(ids, probe.values[b][t])))) {
+      fail('its probe isn\'t {"latents", "values"}, (Batch, Pos) lists of latents and their codes');
+    }
+    return data;
+  }
+
+  function renderFeaturesList() {
+    const f = state.features;
+    const kinds = [...new Set(f.entries.map((e) => e.kind))];
+    clear($("features-list"),
+      kinds.map((kind) => el("div", { class: "controls" },
+        el("span", { class: "kind", text: kindName(kind) }),
+        f.entries.filter((e) => e.kind === kind).map((e) => el("button", {
+          type: "button",
+          "aria-pressed": String(featureKey(e) === f.chosen),
+          title: `${kindName(e.kind)}, site ${e.site}\ndictionary ${e.dictionary}\nreads ${e.taps[0]}, reconstructs ${e.taps[1]}\nstep ${e.step}\n${e.file}`,
+          text: `site ${e.site} · ${e.taps[0] === e.taps[1] ? e.taps[0] : `${e.taps[0]} → ${e.taps[1]}`}`,
+          onclick: () => chooseFeatures(e),
+        })))),
+      f.entries.length ? null : el("div", { class: "note", text: "The index lists no features payloads." }),
+      f.problems.map((problem) => errorBox(problem)));
+  }
+
+  function chooseFeatures(entry) {
+    const f = state.features;
+    if (featureKey(entry) !== f.chosen) f.latent = null; // a latent's number means another latent in another dictionary
+    f.chosen = featureKey(entry);
+    writeHash();
+    report(renderFeatures(), "features-meter");
+  }
+
+  function chooseLatent(latent) {
+    state.features.latent = latent;
+    writeHash();
+    report(renderFeatures(), "features-meter");
+  }
+
+  // A meter value as the report holds it: ints as ints, other numbers to three decimals.
+  const meterValue = (v) => (Number.isInteger(v) ? String(v) : isNumber(v) ? fmt(v) : JSON.stringify(v));
+
+  // The payload's meters, copied from its gate's report, then its own reconstruction meter.
+  function featuresMeterRows(data) {
+    const rows = [];
+    const ms = data.meters;
+    if (!isMapping(ms) || typeof ms.gate !== "string" || !Array.isArray(ms.path) || !isMapping(ms.values)) {
+      rows.push(meterRow("bad", "meters unreadable", `the payload's meters aren't {"gate", "path", "values"}: ${JSON.stringify(ms)}`));
+    } else {
+      const reports = state.modelBadges.reports;
+      const described = reports && reports[ms.gate] ? `\n${ms.gate} report: ${reportProvenance(reports[ms.gate])}` : "";
+      const values = Object.entries(ms.values);
+      rows.push(meterRow("info", `meters, from ${ms.gate}'s report`,
+        values.length ? values.map(([name, v], i) => [i ? " · " : null, `${name} `, el("span", { title: `${name}: ${JSON.stringify(v)} in the report`, text: meterValue(v) })])
+          : "the report's entry holds no values",
+        `${ms.gate}'s measurements at ${JSON.stringify(ms.path)}${described}`));
+    }
+    const m = data.meter;
+    if (!isMapping(m) || m.kind !== "reconstruction") {
+      rows.push(meterRow("bad", "unexpected meter", `kind ${JSON.stringify(m && m.kind)}, expected reconstruction`));
+    } else {
+      rows.push(meterRow("info", "reconstruction on the probe",
+        `FVU ${isNumber(m.fvu) ? fmt(m.fvu) : JSON.stringify(m.fvu)} over ${JSON.stringify(m.positions)} probe positions, from ${data.taps[0]} to ${data.taps[1]}`));
+    }
+    return rows;
+  }
+
+  // A share of held-out positions as a percentage; one too small for two decimals keeps its digits.
+  function fmtShare(v) {
+    const percent = 100 * v;
+    return percent > 0 && percent < 0.01 ? `${percent.toExponential(1)}%` : `${percent.toFixed(2)}%`;
+  }
+
+  const signedLogit = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(3)}`;
+
+  async function renderFeatures() {
+    const f = state.features;
+    if (!f.entries) return;
+    renderFeaturesList();
+    const meter = $("features-meter");
+    const body = $("features-body");
+    const section = $("features-latent-section");
+    const entry = f.entries.find((e) => featureKey(e) === f.chosen);
+    if (!entry) {
+      $("features-sub").textContent = "";
+      const [dictionary, site] = f.chosen ? f.chosen.split("-") : [];
+      clear(meter, f.chosen ? meterRow("warn", "not in the index", `the address names site ${site} of dictionary ${short(dictionary)}, which the index doesn't list`) : null);
+      clear($("features-model-badge"));
+      clear(body, f.entries.length ? el("div", { class: "note", text: "Choose a dictionary's site to see its latents." }) : null);
+      section.hidden = true;
+      setPanelBad("features-panel", false);
+      return;
+    }
+    const { chosen, latent } = f;
+    const atStep = step();
+    const { seq, pos } = state;
+    $("features-sub").textContent = `${kindName(entry.kind)}, site ${entry.site}, dictionary ${short(entry.dictionary)}, step ${entry.step}`;
+    clear($("features-model-badge"), modelBadgeBox(entry.kind));
+    let data;
+    try {
+      const pending = featuresPayload(entry);
+      clear(meter, meterRow("info", "loading the features payload…", ""));
+      data = await pending;
+    } catch (error) {
+      if (chosen !== f.chosen) return;
+      clear(meter, meterRow("bad", "features payload unavailable", error.message));
+      clear(body);
+      section.hidden = true;
+      setPanelBad("features-panel", true);
+      return;
+    }
+    if (chosen !== f.chosen || latent !== f.latent || atStep !== step() || seq !== state.seq || pos !== state.pos) return;
+    setPanelBad("features-panel", false);
+    clear(meter, featuresMeterRows(data));
+    if (data.step !== atStep) {
+      const onTimeline = state.index.steps.includes(data.step);
+      clear(body, el("div", { class: "mismatch" },
+        el("b", { text: `This payload was built at step ${data.step}; the timeline is at step ${atStep}. ` }),
+        "Its latents aren't shown beside another step's views. ",
+        onTimeline
+          ? el("button", { type: "button", text: `Move the timeline to step ${data.step}`, onclick: () => selectStep(state.index.steps.indexOf(data.step)) })
+          : el("span", { text: `Step ${data.step} isn't one of the view index's checkpoints, so the timeline can't reach it.` })));
+      section.hidden = true;
+      return;
+    }
+    clear(body, activeLatents(data, seq, pos));
+    const input = $("features-latent");
+    input.max = String(data.width - 1);
+    if (document.activeElement !== input) input.value = latent === null ? "" : String(latent);
+    $("features-latent-range").textContent = `0 to ${data.width - 1}`;
+    section.hidden = false;
+    clear($("features-latent-body"), latentDetail(data, latent));
+  }
+
+  // The probe's active latents at the page's sequence and position, as the payload lists them.
+  function activeLatents(data, seq, pos) {
+    const tokens = probeRow();
+    const heading = el("h3", { text: `Active latents at sequence ${seq}, position ${pos} “${tokenText(tokens[pos])}”` });
+    const probe = state.index.probe;
+    const latents = data.probe.latents;
+    if (latents.length !== probe.length || latents.some((row, b) => row.length !== probe[b].length)) {
+      return [heading, errorBox(`The payload's probe codes are for ${latents.length} sequence(s) of ${latents[0]?.length ?? 0} positions, the view index's probe is ${probe.length} of ${tokens.length}: it wasn't built on this probe, so its latents can't be placed at the page's position.`)];
+    }
+    const ids = latents[seq][pos];
+    const codes = data.probe.values[seq][pos];
+    if (!ids.length) return [heading, el("div", { class: "note", text: `No latent is active here: every one of the ${data.width} codes is 0.` })];
+    const rows = ids.map((id, i) => el("tr", {
+      class: id === state.features.latent ? "chosen" : null,
+      title: `latent ${id}: choose it to see its contexts and its effect`,
+      onclick: () => chooseLatent(id),
+    },
+    el("td", { class: "num", text: String(id) }),
+    el("td", { class: "num", title: `code ${codes[i]}`, text: fmt(codes[i]) }),
+    el("td", { class: "num", title: `frequency ${data.frequency[id]}`, text: fmtShare(data.frequency[id]) }),
+    el("td", {}, data.effect.top[id].slice(0, 3).map(([token, value], j) => [j ? " " : null,
+      el("span", { class: "eff", title: `“${tokenText(token)}” (id ${token}): ${value}`, text: tokenText(token) })]))));
+    return [
+      heading,
+      el("div", { class: "note", text: `${ids.length} of the site's ${data.width} latents are active here (k = ${data.k}), largest code first. Choose one to see its contexts and its effect.` }),
+      el("div", { class: "scrollx" }, el("table", { class: "features" },
+        el("thead", {}, el("tr", {},
+          el("th", { class: "num", text: "latent" }),
+          el("th", { class: "num", text: "code" }),
+          el("th", { class: "num", title: "the share of held-out positions at which it is active", text: "frequency" }),
+          el("th", { title: "its three largest direct effects on the logits, largest first (see the effect's label below)", text: "largest effect tokens" }))),
+        el("tbody", {}, rows))),
+    ];
+  }
+
+  // One latent: its frequency, its top held-out contexts, and its effect, all as the payload holds them.
+  function latentDetail(data, latent) {
+    if (latent === null) return el("div", { class: "note", text: "Choose a latent from the list above, or type its number." });
+    if (!Number.isInteger(latent)) return errorBox(`“${latent}” isn't a latent's number.`);
+    if (latent >= data.width) return errorBox(`Latent ${latent} isn't one of this site's ${data.width} latents, 0 to ${data.width - 1}.`);
+    const contexts = data.contexts[latent];
+    const names = Object.keys(data.variables);
+    const ctxRows = contexts.map(([w, p, code], i) => {
+      const window = data.held_out[w];
+      const lo = Math.max(0, p - 8);
+      const hi = Math.min(window.length - 1, p + 1);
+      const spans = [];
+      if (lo > 0) spans.push(el("span", { class: "muted", text: "… " }));
+      for (let t = lo; t <= hi; t++) {
+        const word = tokenText(window[t]);
+        const span = el("span", { class: `tok${t === p ? " sel" : ""}`, title: `window ${w}, position ${t}: “${word}” (id ${window[t]})`, text: word });
+        if (word.startsWith("<") && word.endsWith(">")) span.classList.add("special");
+        spans.push(span);
+      }
+      if (hi < window.length - 1) spans.push(el("span", { class: "muted", text: " …" }));
+      return el("tr", {},
+        el("td", { class: "num", text: `#${i + 1}` }),
+        el("td", { class: "num", text: String(w) }),
+        el("td", { class: "num", text: String(p) }),
+        el("td", { class: "num", title: `code ${code}`, text: fmt(code) }),
+        names.map((name, j) => {
+          const v = data.variables[name][w];
+          const asToken = state.index.vocab && v >= 0 && v < state.index.vocab.length ? `; as a token, “${tokenText(v)}”` : "";
+          return el("td", { class: `num${j === 0 ? " vs" : ""}`, title: `${name} of window ${w}: ${v}${asToken}`, text: String(v) });
+        }),
+        el("td", { class: `ctx${names.length ? " vs" : ""}` }, spans));
+    });
+    const effectTable = (heading, pairs) => el("table", { class: "effect" },
+      el("thead", {}, el("tr", {}, el("th", { text: heading }), el("th", { class: "num", text: "logit" }))),
+      el("tbody", {}, pairs.map(([token, value]) => el("tr", {},
+        el("td", { title: `id ${token}`, text: tokenText(token) }),
+        el("td", { class: "num", title: String(value), text: signedLogit(value) })))));
+    return [
+      el("h3", { text: `Latent ${latent}` }),
+      el("div", { class: "note" }, "Frequency ", el("b", { title: String(data.frequency[latent]), text: fmtShare(data.frequency[latent]) }),
+        ": the share of held-out positions at which it is active."),
+      el("h3", { text: "Top contexts" }),
+      contexts.length
+        ? [el("div", { class: "note", text: `Its ${contexts.length} largest codes on the held-out windows, largest first, each shown from 8 tokens before its position to 1 after, the position outlined.${names.length ? " The variables are the window's own." : ""}` }),
+          el("div", { class: "scrollx" }, el("table", { class: "features" },
+            el("thead", {},
+              names.length ? el("tr", {}, el("th", { colspan: "4" }), el("th", { class: "group vs", colspan: String(names.length), text: "variables" }), el("th", { class: "vs" })) : null,
+              el("tr", {},
+                el("th", { class: "num", text: "" }), el("th", { class: "num", text: "window" }), el("th", { class: "num", text: "position" }),
+                el("th", { class: "num", text: "code" }),
+                names.map((name, j) => el("th", { class: `num${j === 0 ? " vs" : ""}`, text: name })),
+                el("th", { class: names.length ? "vs" : null, text: "context" }))),
+            el("tbody", {}, ctxRows)))]
+        : el("div", { class: "note", text: "It never fires on the held-out windows, so it has no contexts." }),
+      el("h3", { text: "Direct effect on the logits" }),
+      el("div", { class: "note effect-label", text: data.effect.label }),
+      el("div", { class: "effects" },
+        effectTable(`top ${data.effect.top[latent].length}`, data.effect.top[latent]),
+        effectTable(`bottom ${data.effect.bottom[latent].length}`, data.effect.bottom[latent])),
+    ];
+  }
+
   // ---------------------------------------------------------------- orchestration
 
   // A panel that throws says so in its meter rather than sitting on "loading".
@@ -2109,6 +2502,7 @@
     report(renderAttention(), "attn-meter");
     report(renderResidual(), "resid-meter");
     report(renderCompare(), "compare-meter");
+    report(renderFeatures(), "features-meter");
     if (state.layerStructure.size) renderLayerStructure();
   }
 
@@ -2139,6 +2533,7 @@
       report(renderJLens(), "jlens-meter");
       report(renderAttribution(), "attr-meter");
       report(renderCompare(), "compare-meter");
+      report(renderFeatures(), "features-meter");
     }
     if (seqChanged || posChanged || layerChanged || headChanged) report(renderAttention(), "attn-meter");
   }
@@ -2162,6 +2557,10 @@
     $("attn-head").value = String(state.head);
     $("attn-head").addEventListener("change", (event) => { state.head = Number(event.target.value); changed({ headChanged: true }); });
     $("attn-sqrt").addEventListener("change", () => changed({ headChanged: true }));
+    $("features-latent").addEventListener("change", (event) => {
+      const text = event.target.value.trim();
+      chooseLatent(text === "" ? null : /^\d+$/.test(text) ? Number(text) : text);
+    });
     let resizeTimer = null;
     window.addEventListener("resize", () => {
       clearTimeout(resizeTimer);
@@ -2189,6 +2588,8 @@
     state.layer = saved.layer !== null && saved.layer >= 0 && saved.layer < index.n_layers ? saved.layer : 0;
     state.head = saved.head !== null && saved.head >= 0 ? saved.head : 0;
     state.compare.chosen = saved.compare;
+    state.features.chosen = saved.features;
+    state.features.latent = saved.features ? saved.latent : null;
     return saved.step === null ? -1 : index.steps.indexOf(saved.step);
   }
 
@@ -2225,6 +2626,7 @@
     const next = index.next_token;
     state.nextToken = Array.isArray(next) && next.length === index.probe.length && next.every((id) => Number.isInteger(id)) ? next : null;
     $("jlens-panel").hidden = !hasJLens();
+    readFeatureIndex();
     try {
       indexEvents(eventsText);
     } catch (error) {
