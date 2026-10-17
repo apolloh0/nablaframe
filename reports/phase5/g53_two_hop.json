@@ -1,0 +1,1415 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G5.3",
+  "git_commit": "fefc7550281d4ed172c7d52a1b83f9637b364c02",
+  "git_dirty": false,
+  "measurements": {
+    "bars": {
+      "ablation_cost": 0.1,
+      "break_excess": 0.05,
+      "control_unchanged": 0.95,
+      "edge_ratio": 0.2,
+      "faithful_applies": 0.5,
+      "faithful_ratio": 0.9,
+      "fvu": 0.1,
+      "recovered": 0.9,
+      "selective_f1": 0.5,
+      "selective_twin_factor": 2.0
+    },
+    "best_swap_block": 2,
+    "control_unchanged_min": 0.99609375,
+    "faithful": {
+      "staircase": {
+        "0": {
+          "assigned": {
+            "24": 0,
+            "25": 0
+          },
+          "code": {
+            "control_unchanged": 1.0,
+            "swap": 0.06640625,
+            "transplant": 0.0
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 0.0
+          },
+          "residual": {
+            "control_unchanged": 1.0,
+            "swap": 0.08984375,
+            "transplant": 0.0
+          }
+        },
+        "1": {
+          "assigned": {
+            "24": 0,
+            "25": 25
+          },
+          "code": {
+            "control_unchanged": 1.0,
+            "swap": 0.828125,
+            "transplant": 0.1015625
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.015625,
+            "transplant": 0.0
+          },
+          "residual": {
+            "control_unchanged": 1.0,
+            "swap": 0.8359375,
+            "transplant": 0.1484375
+          }
+        },
+        "2": {
+          "assigned": {
+            "24": 0,
+            "25": 58
+          },
+          "code": {
+            "control_unchanged": 1.0,
+            "swap": 0.86328125,
+            "transplant": 0.09765625
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.09375,
+            "transplant": 0.00390625
+          },
+          "residual": {
+            "control_unchanged": 0.99609375,
+            "swap": 0.8515625,
+            "transplant": 0.140625
+          }
+        },
+        "3": {
+          "assigned": {
+            "24": 0,
+            "25": 4
+          },
+          "code": {
+            "control_unchanged": 0.99609375,
+            "swap": 0.0,
+            "transplant": 0.95703125
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 0.0
+          },
+          "residual": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 1.0
+          }
+        }
+      },
+      "topk": {
+        "0": {
+          "assigned": {
+            "24": 0,
+            "25": 0
+          },
+          "code": {
+            "control_unchanged": 1.0,
+            "swap": 0.07421875,
+            "transplant": 0.0
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 0.0
+          },
+          "residual": {
+            "control_unchanged": 1.0,
+            "swap": 0.08984375,
+            "transplant": 0.0
+          }
+        },
+        "1": {
+          "assigned": {
+            "24": 0,
+            "25": 38
+          },
+          "code": {
+            "control_unchanged": 0.99609375,
+            "swap": 0.84375,
+            "transplant": 0.12109375
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.0390625,
+            "transplant": 0.0
+          },
+          "residual": {
+            "control_unchanged": 1.0,
+            "swap": 0.8359375,
+            "transplant": 0.1484375
+          }
+        },
+        "2": {
+          "assigned": {
+            "24": 0,
+            "25": 65
+          },
+          "code": {
+            "control_unchanged": 1.0,
+            "swap": 0.90234375,
+            "transplant": 0.078125
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.23046875,
+            "transplant": 0.00390625
+          },
+          "residual": {
+            "control_unchanged": 0.99609375,
+            "swap": 0.8515625,
+            "transplant": 0.140625
+          }
+        },
+        "3": {
+          "assigned": {
+            "24": 0,
+            "25": 1
+          },
+          "code": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 1.0
+          },
+          "latents": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 0.0
+          },
+          "residual": {
+            "control_unchanged": 1.0,
+            "swap": 0.0,
+            "transplant": 1.0
+          }
+        }
+      }
+    },
+    "faithful_ratio_min": 0.95703125,
+    "fvu_max": 0.0323673527293085,
+    "held_out_sha256": "743cbf3eac8ded2e17c3cf414999237c0e4ad97bdf3915ca40e010136c3a4780",
+    "held_out_windows": 2048,
+    "meters": {
+      "staircase blocks.0.hook_resid_post": {
+        "ablated_loss": 3.872571956229059,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 3.8698321878832145,
+        "dead_share": 0.015625,
+        "fvu": 0.021965423528851016,
+        "recovered": 0.9923347010483666,
+        "spliced_loss": 0.03240318895862241,
+        "twin_dead_share": 0.0,
+        "twin_fvu": 0.12899158453982432
+      },
+      "staircase blocks.1.hook_resid_post": {
+        "ablated_loss": 5.983349171054055,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 5.98060940270821,
+        "dead_share": 0.017578125,
+        "fvu": 0.0323673527293085,
+        "recovered": 0.9963124095727125,
+        "spliced_loss": 0.024793806328616882,
+        "twin_dead_share": 0.00390625,
+        "twin_fvu": 0.1387865188457428
+      },
+      "staircase blocks.2.hook_resid_post": {
+        "ablated_loss": 5.4983080216530364,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 5.495568253307192,
+        "dead_share": 0.044270833333333336,
+        "fvu": 0.027385491918246626,
+        "recovered": 0.9956947700635274,
+        "spliced_loss": 0.026399453307912105,
+        "twin_dead_share": 0.015625,
+        "twin_fvu": 0.12488613221487194
+      },
+      "staircase blocks.3.hook_resid_post": {
+        "ablated_loss": 4.663049573547527,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 4.660309805201682,
+        "dead_share": 0.3154296875,
+        "fvu": 0.0038747731510143423,
+        "recovered": 0.994738217287332,
+        "spliced_loss": 0.02726130591453199,
+        "twin_dead_share": 0.0380859375,
+        "twin_fvu": 0.11038018424928651
+      },
+      "topk blocks.0.hook_resid_post": {
+        "ablated_loss": 3.872571956229059,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 3.8698321878832145,
+        "dead_share": 0.013671875,
+        "fvu": 0.01461923936294057,
+        "recovered": 0.9967529534284516,
+        "spliced_loss": 0.015305293683978137,
+        "twin_dead_share": 0.001953125,
+        "twin_fvu": 0.09400263231761839
+      },
+      "topk blocks.1.hook_resid_post": {
+        "ablated_loss": 5.983349171054055,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 5.98060940270821,
+        "dead_share": 0.00390625,
+        "fvu": 0.025118008310064287,
+        "recovered": 0.9985971326223132,
+        "spliced_loss": 0.011129770175591138,
+        "twin_dead_share": 0.0,
+        "twin_fvu": 0.10805159780099764
+      },
+      "topk blocks.2.hook_resid_post": {
+        "ablated_loss": 5.4983080216530364,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 5.495568253307192,
+        "dead_share": 0.005859375,
+        "fvu": 0.022403273695642274,
+        "recovered": 0.9990694424917216,
+        "spliced_loss": 0.007853710646216488,
+        "twin_dead_share": 0.0029296875,
+        "twin_fvu": 0.10266789293114177
+      },
+      "topk blocks.3.hook_resid_post": {
+        "ablated_loss": 4.663049573547527,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 4.660309805201682,
+        "dead_share": 0.2900390625,
+        "fvu": 0.0034096308948023887,
+        "recovered": 0.999665246030467,
+        "spliced_loss": 0.004299825552389539,
+        "twin_dead_share": 0.0009765625,
+        "twin_fvu": 0.0939843379735173
+      },
+      "transcoder blocks.0.hook_mlp_out": {
+        "ablated_loss": 4.211945653222633,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 4.209205884876789,
+        "dead_share": 0.2421875,
+        "fvu": 0.017305522769660932,
+        "recovered": 0.9962194629623613,
+        "spliced_loss": 0.018652827092668436,
+        "twin_dead_share": 0.0546875,
+        "twin_fvu": 0.11994351722406091
+      },
+      "transcoder blocks.1.hook_mlp_out": {
+        "ablated_loss": 0.007443112188373251,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 0.0047033438425288995,
+        "dead_share": 0.3486328125,
+        "fvu": 0.009200465122902677,
+        "recovered": null,
+        "spliced_loss": 0.0027896318101401276,
+        "twin_dead_share": 0.0556640625,
+        "twin_fvu": 0.13339596966102985
+      },
+      "transcoder blocks.2.hook_mlp_out": {
+        "ablated_loss": 0.0072362812942335306,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 0.004496512948389179,
+        "dead_share": 0.1650390625,
+        "fvu": 0.003046579497434903,
+        "recovered": null,
+        "spliced_loss": 0.003707859933320408,
+        "twin_dead_share": 0.0751953125,
+        "twin_fvu": 0.12092142019984357
+      },
+      "transcoder blocks.3.hook_mlp_out": {
+        "ablated_loss": 0.014256195263622595,
+        "clean_loss": 0.0027397683458443515,
+        "cost": 0.011516426917778244,
+        "dead_share": 0.28125,
+        "fvu": 0.0008435957528023405,
+        "recovered": null,
+        "spliced_loss": 0.016240135445920664,
+        "twin_dead_share": 0.0771484375,
+        "twin_fvu": 0.11222655811702105
+      }
+    },
+    "query_positions": [
+      24,
+      25
+    ],
+    "readout_positions": [
+      25
+    ],
+    "recovered_min": 0.9923347010483666,
+    "recovery": {
+      "staircase blocks.0.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.42789212650224323,
+              "probe_activation": 0.9990234375,
+              "probe_code": 0.7841796875
+            },
+            "twin": {
+              "mean_best_f1": 0.3774531544978638,
+              "probe_activation": 0.96484375,
+              "probe_code": 0.802734375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.1316338989622207,
+              "probe_activation": 0.138671875,
+              "probe_code": 0.1767578125
+            },
+            "twin": {
+              "mean_best_f1": 0.21160407082485863,
+              "probe_activation": 0.26171875,
+              "probe_code": 0.1904296875
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.08952700282309778,
+              "probe_activation": 0.0244140625,
+              "probe_code": 0.0244140625
+            },
+            "twin": {
+              "mean_best_f1": 0.10550557663991249,
+              "probe_activation": 0.0615234375,
+              "probe_code": 0.033203125
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.8206632488902593,
+              "probe_activation": 1.0,
+              "probe_code": 1.0
+            },
+            "twin": {
+              "mean_best_f1": 0.22682213714796964,
+              "probe_activation": 0.431640625,
+              "probe_code": 0.2998046875
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.10494632653169238,
+              "probe_activation": 0.51953125,
+              "probe_code": 0.123046875
+            },
+            "twin": {
+              "mean_best_f1": 0.22662289249397619,
+              "probe_activation": 0.345703125,
+              "probe_code": 0.2646484375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.08742173065227977,
+              "probe_activation": 0.076171875,
+              "probe_code": 0.0341796875
+            },
+            "twin": {
+              "mean_best_f1": 0.11079802348242751,
+              "probe_activation": 0.0703125,
+              "probe_code": 0.05078125
+            }
+          }
+        }
+      },
+      "staircase blocks.1.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.3406552039452764,
+              "probe_activation": 0.7548828125,
+              "probe_code": 0.427734375
+            },
+            "twin": {
+              "mean_best_f1": 0.4026785784893514,
+              "probe_activation": 0.904296875,
+              "probe_code": 0.6435546875
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.16276513341082868,
+              "probe_activation": 0.1142578125,
+              "probe_code": 0.09375
+            },
+            "twin": {
+              "mean_best_f1": 0.23923726464984604,
+              "probe_activation": 0.279296875,
+              "probe_code": 0.2119140625
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.20250496488852096,
+              "probe_activation": 0.2509765625,
+              "probe_code": 0.234375
+            },
+            "twin": {
+              "mean_best_f1": 0.1113982465787009,
+              "probe_activation": 0.0595703125,
+              "probe_code": 0.037109375
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.8254291392448083,
+              "probe_activation": 1.0,
+              "probe_code": 0.99609375
+            },
+            "twin": {
+              "mean_best_f1": 0.20938647797820387,
+              "probe_activation": 0.3623046875,
+              "probe_code": 0.1943359375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.5243398276192092,
+              "probe_activation": 0.9775390625,
+              "probe_code": 0.9765625
+            },
+            "twin": {
+              "mean_best_f1": 0.25149255052773795,
+              "probe_activation": 0.3203125,
+              "probe_code": 0.208984375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.12459899463817298,
+              "probe_activation": 0.0439453125,
+              "probe_code": 0.0283203125
+            },
+            "twin": {
+              "mean_best_f1": 0.11444200495914247,
+              "probe_activation": 0.0712890625,
+              "probe_code": 0.04296875
+            }
+          }
+        }
+      },
+      "staircase blocks.2.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.22495714143054002,
+              "probe_activation": 0.533203125,
+              "probe_code": 0.248046875
+            },
+            "twin": {
+              "mean_best_f1": 0.36930084985595507,
+              "probe_activation": 0.8623046875,
+              "probe_code": 0.5869140625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.1887706132553161,
+              "probe_activation": 0.1337890625,
+              "probe_code": 0.103515625
+            },
+            "twin": {
+              "mean_best_f1": 0.22719059749442552,
+              "probe_activation": 0.296875,
+              "probe_code": 0.1689453125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.16694520391429846,
+              "probe_activation": 0.197265625,
+              "probe_code": 0.19921875
+            },
+            "twin": {
+              "mean_best_f1": 0.11191801272625612,
+              "probe_activation": 0.0634765625,
+              "probe_code": 0.04296875
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.8603096034955614,
+              "probe_activation": 1.0,
+              "probe_code": 0.9384765625
+            },
+            "twin": {
+              "mean_best_f1": 0.193779830928414,
+              "probe_activation": 0.3291015625,
+              "probe_code": 0.15234375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.7547022338166519,
+              "probe_activation": 0.9931640625,
+              "probe_code": 0.9912109375
+            },
+            "twin": {
+              "mean_best_f1": 0.23902523294032893,
+              "probe_activation": 0.318359375,
+              "probe_code": 0.2177734375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.11024843145480821,
+              "probe_activation": 0.04296875,
+              "probe_code": 0.0400390625
+            },
+            "twin": {
+              "mean_best_f1": 0.11195633791067539,
+              "probe_activation": 0.0576171875,
+              "probe_code": 0.029296875
+            }
+          }
+        }
+      },
+      "staircase blocks.3.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.11618655663112155,
+              "probe_activation": 0.365234375,
+              "probe_code": 0.0498046875
+            },
+            "twin": {
+              "mean_best_f1": 0.3463934582280704,
+              "probe_activation": 0.8369140625,
+              "probe_code": 0.4990234375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.15384047102018386,
+              "probe_activation": 0.130859375,
+              "probe_code": 0.076171875
+            },
+            "twin": {
+              "mean_best_f1": 0.2249555436830805,
+              "probe_activation": 0.2705078125,
+              "probe_code": 0.1552734375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.15520871498622568,
+              "probe_activation": 0.1474609375,
+              "probe_code": 0.08203125
+            },
+            "twin": {
+              "mean_best_f1": 0.11050769232872952,
+              "probe_activation": 0.0595703125,
+              "probe_code": 0.029296875
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.21116156814562728,
+              "probe_activation": 0.9921875,
+              "probe_code": 0.2138671875
+            },
+            "twin": {
+              "mean_best_f1": 0.19466415499776943,
+              "probe_activation": 0.3193359375,
+              "probe_code": 0.1328125
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.2930554020102243,
+              "probe_activation": 0.9931640625,
+              "probe_code": 0.40625
+            },
+            "twin": {
+              "mean_best_f1": 0.24209961503935049,
+              "probe_activation": 0.310546875,
+              "probe_code": 0.189453125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.8339609013681549,
+              "probe_activation": 1.0,
+              "probe_code": 0.986328125
+            },
+            "twin": {
+              "mean_best_f1": 0.11539452679226737,
+              "probe_activation": 0.0595703125,
+              "probe_code": 0.0419921875
+            }
+          }
+        }
+      },
+      "topk blocks.0.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.3867943303026462,
+              "probe_activation": 0.9990234375,
+              "probe_code": 0.9013671875
+            },
+            "twin": {
+              "mean_best_f1": 0.5496524188251699,
+              "probe_activation": 0.96484375,
+              "probe_code": 0.9189453125
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.17361981560678733,
+              "probe_activation": 0.138671875,
+              "probe_code": 0.1455078125
+            },
+            "twin": {
+              "mean_best_f1": 0.22899463813044543,
+              "probe_activation": 0.26171875,
+              "probe_code": 0.1337890625
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.1021374239301892,
+              "probe_activation": 0.0244140625,
+              "probe_code": 0.0244140625
+            },
+            "twin": {
+              "mean_best_f1": 0.11990419785855845,
+              "probe_activation": 0.0615234375,
+              "probe_code": 0.0224609375
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.9689801315368701,
+              "probe_activation": 1.0,
+              "probe_code": 1.0
+            },
+            "twin": {
+              "mean_best_f1": 0.26696510697632775,
+              "probe_activation": 0.431640625,
+              "probe_code": 0.255859375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.1528383961817176,
+              "probe_activation": 0.51953125,
+              "probe_code": 0.16015625
+            },
+            "twin": {
+              "mean_best_f1": 0.25132683882354323,
+              "probe_activation": 0.345703125,
+              "probe_code": 0.201171875
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.09430788674262447,
+              "probe_activation": 0.076171875,
+              "probe_code": 0.0439453125
+            },
+            "twin": {
+              "mean_best_f1": 0.11964471831042771,
+              "probe_activation": 0.0703125,
+              "probe_code": 0.0341796875
+            }
+          }
+        }
+      },
+      "topk blocks.1.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.3299112109889459,
+              "probe_activation": 0.7548828125,
+              "probe_code": 0.4580078125
+            },
+            "twin": {
+              "mean_best_f1": 0.48370614778368104,
+              "probe_activation": 0.904296875,
+              "probe_code": 0.7021484375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.1890929008602864,
+              "probe_activation": 0.1142578125,
+              "probe_code": 0.1142578125
+            },
+            "twin": {
+              "mean_best_f1": 0.2427620332517942,
+              "probe_activation": 0.279296875,
+              "probe_code": 0.1533203125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.22079376075250826,
+              "probe_activation": 0.2509765625,
+              "probe_code": 0.2255859375
+            },
+            "twin": {
+              "mean_best_f1": 0.11765953090450616,
+              "probe_activation": 0.0595703125,
+              "probe_code": 0.02734375
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.8738537445100495,
+              "probe_activation": 1.0,
+              "probe_code": 0.9990234375
+            },
+            "twin": {
+              "mean_best_f1": 0.2168165236675964,
+              "probe_activation": 0.3623046875,
+              "probe_code": 0.1611328125
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.6311531617231156,
+              "probe_activation": 0.9775390625,
+              "probe_code": 0.974609375
+            },
+            "twin": {
+              "mean_best_f1": 0.2517425157940798,
+              "probe_activation": 0.3203125,
+              "probe_code": 0.19140625
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.12887665238129845,
+              "probe_activation": 0.0439453125,
+              "probe_code": 0.033203125
+            },
+            "twin": {
+              "mean_best_f1": 0.1226419400273634,
+              "probe_activation": 0.0712890625,
+              "probe_code": 0.029296875
+            }
+          }
+        }
+      },
+      "topk blocks.2.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.21370285526432334,
+              "probe_activation": 0.533203125,
+              "probe_code": 0.2041015625
+            },
+            "twin": {
+              "mean_best_f1": 0.4382326477591086,
+              "probe_activation": 0.8623046875,
+              "probe_code": 0.625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.18844273205946946,
+              "probe_activation": 0.1337890625,
+              "probe_code": 0.0947265625
+            },
+            "twin": {
+              "mean_best_f1": 0.2356969228419119,
+              "probe_activation": 0.296875,
+              "probe_code": 0.126953125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.16589313708562528,
+              "probe_activation": 0.197265625,
+              "probe_code": 0.193359375
+            },
+            "twin": {
+              "mean_best_f1": 0.12048318243189876,
+              "probe_activation": 0.0634765625,
+              "probe_code": 0.0302734375
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.8456384599667963,
+              "probe_activation": 1.0,
+              "probe_code": 0.984375
+            },
+            "twin": {
+              "mean_best_f1": 0.20208108854984305,
+              "probe_activation": 0.3291015625,
+              "probe_code": 0.1181640625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.7949299265645586,
+              "probe_activation": 0.9931640625,
+              "probe_code": 0.9931640625
+            },
+            "twin": {
+              "mean_best_f1": 0.24778551634686408,
+              "probe_activation": 0.318359375,
+              "probe_code": 0.1669921875
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.10970890560083557,
+              "probe_activation": 0.04296875,
+              "probe_code": 0.0380859375
+            },
+            "twin": {
+              "mean_best_f1": 0.12441450840183765,
+              "probe_activation": 0.0576171875,
+              "probe_code": 0.0302734375
+            }
+          }
+        }
+      },
+      "topk blocks.3.hook_resid_post": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.0999142854962279,
+              "probe_activation": 0.365234375,
+              "probe_code": 0.060546875
+            },
+            "twin": {
+              "mean_best_f1": 0.400181602519746,
+              "probe_activation": 0.8369140625,
+              "probe_code": 0.5654296875
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.15621691671125265,
+              "probe_activation": 0.130859375,
+              "probe_code": 0.078125
+            },
+            "twin": {
+              "mean_best_f1": 0.23227401936697212,
+              "probe_activation": 0.2705078125,
+              "probe_code": 0.1484375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.1641660513673293,
+              "probe_activation": 0.1474609375,
+              "probe_code": 0.080078125
+            },
+            "twin": {
+              "mean_best_f1": 0.11994473778743468,
+              "probe_activation": 0.0595703125,
+              "probe_code": 0.0283203125
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.21064157498360903,
+              "probe_activation": 0.9921875,
+              "probe_code": 0.203125
+            },
+            "twin": {
+              "mean_best_f1": 0.19879681847268624,
+              "probe_activation": 0.3193359375,
+              "probe_code": 0.103515625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.20292868111248852,
+              "probe_activation": 0.9931640625,
+              "probe_code": 0.2998046875
+            },
+            "twin": {
+              "mean_best_f1": 0.24492344614070793,
+              "probe_activation": 0.310546875,
+              "probe_code": 0.1435546875
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.8659263298205704,
+              "probe_activation": 1.0,
+              "probe_code": 1.0
+            },
+            "twin": {
+              "mean_best_f1": 0.1232033285090841,
+              "probe_activation": 0.0595703125,
+              "probe_code": 0.0322265625
+            }
+          }
+        }
+      },
+      "transcoder blocks.0.hook_mlp_out": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.9000912389988388,
+              "probe_activation": 1.0,
+              "probe_code": 0.9072265625
+            },
+            "twin": {
+              "mean_best_f1": 0.6480190204007402,
+              "probe_activation": 0.9921875,
+              "probe_code": 0.9384765625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.22488818908760252,
+              "probe_activation": 0.2763671875,
+              "probe_code": 0.1474609375
+            },
+            "twin": {
+              "mean_best_f1": 0.239760050682735,
+              "probe_activation": 0.2880859375,
+              "probe_code": 0.158203125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.11145196005273061,
+              "probe_activation": 0.01953125,
+              "probe_code": 0.017578125
+            },
+            "twin": {
+              "mean_best_f1": 0.12855063402578645,
+              "probe_activation": 0.0625,
+              "probe_code": 0.0322265625
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.9975386855369107,
+              "probe_activation": 1.0,
+              "probe_code": 1.0
+            },
+            "twin": {
+              "mean_best_f1": 0.28734893847863235,
+              "probe_activation": 0.5302734375,
+              "probe_code": 0.271484375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.21054448857568628,
+              "probe_activation": 0.5625,
+              "probe_code": 0.2109375
+            },
+            "twin": {
+              "mean_best_f1": 0.27324978856133214,
+              "probe_activation": 0.396484375,
+              "probe_code": 0.2099609375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.09416017745640137,
+              "probe_activation": 0.08203125,
+              "probe_code": 0.0400390625
+            },
+            "twin": {
+              "mean_best_f1": 0.11892319304789921,
+              "probe_activation": 0.080078125,
+              "probe_code": 0.0341796875
+            }
+          }
+        }
+      },
+      "transcoder blocks.1.hook_mlp_out": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.1738869952682688,
+              "probe_activation": 0.787109375,
+              "probe_code": 0.267578125
+            },
+            "twin": {
+              "mean_best_f1": 0.4411285518132311,
+              "probe_activation": 0.9208984375,
+              "probe_code": 0.640625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.16069794010509944,
+              "probe_activation": 0.1513671875,
+              "probe_code": 0.0888671875
+            },
+            "twin": {
+              "mean_best_f1": 0.251322208436872,
+              "probe_activation": 0.294921875,
+              "probe_code": 0.1396484375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.19720647969914532,
+              "probe_activation": 0.24609375,
+              "probe_code": 0.1298828125
+            },
+            "twin": {
+              "mean_best_f1": 0.12415533090698778,
+              "probe_activation": 0.0615234375,
+              "probe_code": 0.03125
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.41668416229134175,
+              "probe_activation": 1.0,
+              "probe_code": 0.6923828125
+            },
+            "twin": {
+              "mean_best_f1": 0.1950543907703571,
+              "probe_activation": 0.3720703125,
+              "probe_code": 0.1025390625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.6425216091267932,
+              "probe_activation": 0.98828125,
+              "probe_code": 0.927734375
+            },
+            "twin": {
+              "mean_best_f1": 0.2646926635245101,
+              "probe_activation": 0.3330078125,
+              "probe_code": 0.177734375
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.091338161520849,
+              "probe_activation": 0.0458984375,
+              "probe_code": 0.0322265625
+            },
+            "twin": {
+              "mean_best_f1": 0.11624973559384773,
+              "probe_activation": 0.0751953125,
+              "probe_code": 0.0244140625
+            }
+          }
+        }
+      },
+      "transcoder blocks.2.hook_mlp_out": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.1865900288313903,
+              "probe_activation": 0.61328125,
+              "probe_code": 0.1640625
+            },
+            "twin": {
+              "mean_best_f1": 0.3760365105788816,
+              "probe_activation": 0.873046875,
+              "probe_code": 0.513671875
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.17490165103272592,
+              "probe_activation": 0.1611328125,
+              "probe_code": 0.0947265625
+            },
+            "twin": {
+              "mean_best_f1": 0.23988592399610478,
+              "probe_activation": 0.29296875,
+              "probe_code": 0.1181640625
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.19948412199402069,
+              "probe_activation": 0.2197265625,
+              "probe_code": 0.1181640625
+            },
+            "twin": {
+              "mean_best_f1": 0.12101721288075207,
+              "probe_activation": 0.0634765625,
+              "probe_code": 0.025390625
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.2198810842250133,
+              "probe_activation": 1.0,
+              "probe_code": 0.3232421875
+            },
+            "twin": {
+              "mean_best_f1": 0.19869924860987132,
+              "probe_activation": 0.345703125,
+              "probe_code": 0.095703125
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.7689324686445089,
+              "probe_activation": 0.98828125,
+              "probe_code": 0.962890625
+            },
+            "twin": {
+              "mean_best_f1": 0.25349613062390325,
+              "probe_activation": 0.328125,
+              "probe_code": 0.1455078125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.09039370290013027,
+              "probe_activation": 0.0478515625,
+              "probe_code": 0.01953125
+            },
+            "twin": {
+              "mean_best_f1": 0.1180916805553146,
+              "probe_activation": 0.0712890625,
+              "probe_code": 0.0302734375
+            }
+          }
+        }
+      },
+      "transcoder blocks.3.hook_mlp_out": {
+        "24": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.0925040824757624,
+              "probe_activation": 0.4375,
+              "probe_code": 0.0302734375
+            },
+            "twin": {
+              "mean_best_f1": 0.3230051404660632,
+              "probe_activation": 0.8408203125,
+              "probe_code": 0.412109375
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.10395791484019375,
+              "probe_activation": 0.173828125,
+              "probe_code": 0.0478515625
+            },
+            "twin": {
+              "mean_best_f1": 0.22238815772240647,
+              "probe_activation": 0.271484375,
+              "probe_code": 0.0947265625
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.12875821655706118,
+              "probe_activation": 0.1787109375,
+              "probe_code": 0.0830078125
+            },
+            "twin": {
+              "mean_best_f1": 0.11525797565641031,
+              "probe_activation": 0.0634765625,
+              "probe_code": 0.0361328125
+            }
+          }
+        },
+        "25": {
+          "a": {
+            "trained": {
+              "mean_best_f1": 0.11777777193827714,
+              "probe_activation": 0.99609375,
+              "probe_code": 0.1083984375
+            },
+            "twin": {
+              "mean_best_f1": 0.1794599420097974,
+              "probe_activation": 0.3359375,
+              "probe_code": 0.103515625
+            }
+          },
+          "b": {
+            "trained": {
+              "mean_best_f1": 0.4509522105546195,
+              "probe_activation": 0.9921875,
+              "probe_code": 0.6630859375
+            },
+            "twin": {
+              "mean_best_f1": 0.23705131705246538,
+              "probe_activation": 0.310546875,
+              "probe_code": 0.1376953125
+            }
+          },
+          "c": {
+            "trained": {
+              "mean_best_f1": 0.26865721694270134,
+              "probe_activation": 0.9990234375,
+              "probe_code": 0.390625
+            },
+            "twin": {
+              "mean_best_f1": 0.11824602371954178,
+              "probe_activation": 0.0615234375,
+              "probe_code": 0.025390625
+            }
+          }
+        }
+      }
+    },
+    "robustness": {
+      "1": {
+        "topk blocks.0.hook_resid_post": {
+          "fvu": 0.014157164711425752,
+          "mean_best_f1": {
+            "b": 0.16753334327591488,
+            "c": 0.09818801901926104
+          }
+        },
+        "topk blocks.1.hook_resid_post": {
+          "fvu": 0.024848249152817123,
+          "mean_best_f1": {
+            "b": 0.5130258583096445,
+            "c": 0.12710690096608232
+          }
+        },
+        "topk blocks.2.hook_resid_post": {
+          "fvu": 0.022358691235022755,
+          "mean_best_f1": {
+            "b": 0.756014237734654
+          }
+        },
+        "topk blocks.3.hook_resid_post": {
+          "fvu": 0.0038517558434523454,
+          "mean_best_f1": {
+            "c": 0.7301087754870849
+          }
+        }
+      },
+      "2": {
+        "topk blocks.0.hook_resid_post": {
+          "fvu": 0.014282349110781021,
+          "mean_best_f1": {
+            "b": 0.14578050335987516,
+            "c": 0.09497105587613275
+          }
+        },
+        "topk blocks.1.hook_resid_post": {
+          "fvu": 0.02491914803065148,
+          "mean_best_f1": {
+            "b": 0.5026842847031262,
+            "c": 0.13105271289755085
+          }
+        },
+        "topk blocks.2.hook_resid_post": {
+          "fvu": 0.02214900025487971,
+          "mean_best_f1": {
+            "b": 0.831591875857168
+          }
+        },
+        "topk blocks.3.hook_resid_post": {
+          "fvu": 0.003708066282892859,
+          "mean_best_f1": {
+            "c": 0.7761361283847755
+          }
+        }
+      }
+    },
+    "run_id": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97",
+    "selective_f1_min": 0.7547022338166519,
+    "selective_margin_min": 0.26194020739670243,
+    "selectivity": {
+      "staircase blocks.2.hook_resid_post b": {
+        "margin": 0.27665176793599405,
+        "trained": 0.7547022338166519,
+        "twin": 0.23902523294032893
+      },
+      "staircase blocks.3.hook_resid_post c": {
+        "margin": 0.6031718477836202,
+        "trained": 0.8339609013681549,
+        "twin": 0.11539452679226737
+      },
+      "topk blocks.2.hook_resid_post b": {
+        "margin": 0.2993588938708305,
+        "trained": 0.7949299265645586,
+        "twin": 0.24778551634686408
+      },
+      "topk blocks.3.hook_resid_post c": {
+        "margin": 0.6195196728024022,
+        "trained": 0.8659263298205704,
+        "twin": 0.1232033285090841
+      },
+      "transcoder blocks.2.hook_mlp_out b": {
+        "margin": 0.26194020739670243,
+        "trained": 0.7689324686445089,
+        "twin": 0.25349613062390325
+      }
+    },
+    "source_seed": 5,
+    "step": 20000,
+    "train_seconds": {
+      "seed 1 topk blocks.0.hook_resid_post": 134.87659033294767,
+      "seed 1 topk blocks.1.hook_resid_post": 135.16938675008714,
+      "seed 1 topk blocks.2.hook_resid_post": 134.45884637488052,
+      "seed 1 topk blocks.3.hook_resid_post": 150.75465954188257,
+      "seed 2 topk blocks.0.hook_resid_post": 134.03404104197398,
+      "seed 2 topk blocks.1.hook_resid_post": 134.32747970800847,
+      "seed 2 topk blocks.2.hook_resid_post": 134.1257014167495,
+      "seed 2 topk blocks.3.hook_resid_post": 169.09541104221717,
+      "trained staircase": 492.57453891728073,
+      "trained topk blocks.0.hook_resid_post": 130.8101152088493,
+      "trained topk blocks.1.hook_resid_post": 131.94669241597876,
+      "trained topk blocks.2.hook_resid_post": 132.00153804197907,
+      "trained topk blocks.3.hook_resid_post": 165.00966820819303,
+      "trained transcoder blocks.0.hook_mlp_out": 153.98783816676587,
+      "trained transcoder blocks.1.hook_mlp_out": 172.33787941699848,
+      "trained transcoder blocks.2.hook_mlp_out": 160.60292808292434,
+      "trained transcoder blocks.3.hook_mlp_out": 163.37577383313328,
+      "twin staircase": 451.57802124973387,
+      "twin topk blocks.0.hook_resid_post": 136.65593424998224,
+      "twin topk blocks.1.hook_resid_post": 136.269036707934,
+      "twin topk blocks.2.hook_resid_post": 135.07648783316836,
+      "twin topk blocks.3.hook_resid_post": 134.53247825009748,
+      "twin transcoder blocks.0.hook_mlp_out": 177.0230096662417,
+      "twin transcoder blocks.1.hook_mlp_out": 174.1899366248399,
+      "twin transcoder blocks.2.hook_mlp_out": 173.9520456250757,
+      "twin transcoder blocks.3.hook_mlp_out": 175.17378358310089
+    },
+    "twin_seed": 1,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-17T00:54:12Z",
+  "xla_flags": ""
+}
