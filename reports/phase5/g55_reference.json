@@ -1,0 +1,290 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G5.5",
+  "git_commit": "7d826e401ddadaac36738f5c36c26ea0158d2054",
+  "git_dirty": false,
+  "measurements": {
+    "edge_pairs": {
+      "reference mlp 1": {
+        "curve": [
+          [
+            1,
+            0.26815707739719885
+          ],
+          [
+            2,
+            0.2651185408844442
+          ],
+          [
+            6,
+            0.25773686039450106
+          ],
+          [
+            14,
+            0.25789206598071235
+          ],
+          [
+            35,
+            0.2544862749085889
+          ],
+          [
+            85,
+            0.27644198215975746
+          ],
+          [
+            207,
+            0.30193012457883284
+          ],
+          [
+            503,
+            0.30136116862909
+          ],
+          [
+            1224,
+            0.24698929379161316
+          ],
+          [
+            2978,
+            0.18669512845622216
+          ],
+          [
+            7243,
+            0.12679568974329528
+          ],
+          [
+            17616,
+            0.0791036942798295
+          ],
+          [
+            42845,
+            0.056695035440104014
+          ],
+          [
+            104206,
+            0.049770598128770945
+          ]
+        ],
+        "meter": 42845,
+        "pair_kl": 0.039830811322690715,
+        "scored_edges": 104206,
+        "share": 0.41115674721225265
+      },
+      "reference mlp 2": {
+        "curve": [
+          [
+            1,
+            0.38215545864457623
+          ],
+          [
+            2,
+            0.40664915375416577
+          ],
+          [
+            6,
+            0.41926755778027486
+          ],
+          [
+            15,
+            0.4399212516333728
+          ],
+          [
+            37,
+            0.4539448875112565
+          ],
+          [
+            91,
+            0.4859515607933168
+          ],
+          [
+            224,
+            0.505965857667076
+          ],
+          [
+            551,
+            0.48511807167756066
+          ],
+          [
+            1358,
+            0.4129482647712108
+          ],
+          [
+            3346,
+            0.3001917417381086
+          ],
+          [
+            8245,
+            0.19769153412971424
+          ],
+          [
+            20315,
+            0.13459946464943912
+          ],
+          [
+            50053,
+            0.09797712229431221
+          ],
+          [
+            123325,
+            0.08929492923407722
+          ]
+        ],
+        "meter": 50053,
+        "pair_kl": 0.08055547093522598,
+        "scored_edges": 123325,
+        "share": 0.4058625582809649
+      }
+    },
+    "held_out_sha256": "74cbb80fc7d9c758c7c350ea5d62fa779d4ee3bf2c2c082dfe2358c2cb0e8e93",
+    "held_out_windows": 64,
+    "meter_windows": 2,
+    "meters": {
+      "staircase blocks.0.hook_resid_post": {
+        "ablated_loss": 7.005876813394584,
+        "clean_loss": 1.7094025876519237,
+        "cost": 5.296474225742661,
+        "dead_share": 0.0,
+        "fvu": 0.11472255284319188,
+        "recovered": 0.9675402936707277,
+        "spliced_loss": 1.88132458560009
+      },
+      "staircase blocks.1.hook_resid_post": {
+        "ablated_loss": 6.7341672382644635,
+        "clean_loss": 1.7094025876519237,
+        "cost": 5.02476465061254,
+        "dead_share": 0.0087890625,
+        "fvu": 0.12034602119755788,
+        "recovered": 0.928639527658691,
+        "spliced_loss": 2.067972166523547
+      },
+      "staircase blocks.2.hook_resid_post": {
+        "ablated_loss": 7.243460693183545,
+        "clean_loss": 1.7094025876519237,
+        "cost": 5.534058105531622,
+        "dead_share": 0.01171875,
+        "fvu": 0.17721106467009695,
+        "recovered": 0.939975175693306,
+        "spliced_loss": 2.041583453139495
+      },
+      "staircase blocks.3.hook_resid_post": {
+        "ablated_loss": 11.444984745479067,
+        "clean_loss": 1.7094025876519237,
+        "cost": 9.735582157827142,
+        "dead_share": 0.02197265625,
+        "fvu": 0.21735519472462705,
+        "recovered": 0.952934104801715,
+        "spliced_loss": 2.16761647718651
+      },
+      "topk blocks.0.hook_resid_post": {
+        "ablated_loss": 7.005876813394584,
+        "clean_loss": 1.7094025876519237,
+        "cost": 5.296474225742661,
+        "dead_share": 0.02294921875,
+        "fvu": 0.06315191726386611,
+        "recovered": 0.9831538696639941,
+        "spliced_loss": 1.79862768278008
+      },
+      "topk blocks.1.hook_resid_post": {
+        "ablated_loss": 6.7341672382644635,
+        "clean_loss": 1.7094025876519237,
+        "cost": 5.02476465061254,
+        "dead_share": 0.03662109375,
+        "fvu": 0.08102323453019522,
+        "recovered": 0.9466010215441604,
+        "spliced_loss": 1.9777198869756472
+      },
+      "topk blocks.2.hook_resid_post": {
+        "ablated_loss": 7.243460693183545,
+        "clean_loss": 1.7094025876519237,
+        "cost": 5.534058105531622,
+        "dead_share": 0.00537109375,
+        "fvu": 0.14117126743181435,
+        "recovered": 0.9561316998561267,
+        "spliced_loss": 1.9521723096390189
+      },
+      "topk blocks.3.hook_resid_post": {
+        "ablated_loss": 11.444984745479067,
+        "clean_loss": 1.7094025876519237,
+        "cost": 9.735582157827142,
+        "dead_share": 0.0009765625,
+        "fvu": 0.19635682381398814,
+        "recovered": 0.9605783312190954,
+        "spliced_loss": 2.0931954828670705
+      },
+      "transcoder blocks.0.hook_mlp_out": {
+        "ablated_loss": 3.315635975827257,
+        "clean_loss": 1.7094025876519237,
+        "cost": 1.6062333881753335,
+        "dead_share": 0.05810546875,
+        "fvu": 0.07638654346628919,
+        "recovered": 0.9843453935991455,
+        "spliced_loss": 1.7345475391317193
+      },
+      "transcoder blocks.1.hook_mlp_out": {
+        "ablated_loss": 1.9810654869830797,
+        "clean_loss": 1.7094025876519237,
+        "cost": 0.27166289933115606,
+        "dead_share": 0.03173828125,
+        "fvu": 0.13595362040585587,
+        "recovered": 0.8991416470766689,
+        "spliced_loss": 1.7368020602288408
+      },
+      "transcoder blocks.2.hook_mlp_out": {
+        "ablated_loss": 2.090439365593955,
+        "clean_loss": 1.7094025876519237,
+        "cost": 0.3810367779420314,
+        "dead_share": 0.0419921875,
+        "fvu": 0.20222650127922098,
+        "recovered": 0.850036764280382,
+        "spliced_loss": 1.7665440958002883
+      },
+      "transcoder blocks.3.hook_mlp_out": {
+        "ablated_loss": 2.417515757911099,
+        "clean_loss": 1.7094025876519237,
+        "cost": 0.7081131702591754,
+        "dead_share": 0.06982421875,
+        "fvu": 0.16865642053651392,
+        "recovered": 0.8106499821743869,
+        "spliced_loss": 1.84348382906305
+      }
+    },
+    "pair_blocks": [
+      1,
+      2
+    ],
+    "readout_positions": [
+      0,
+      255
+    ],
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "step": 12208,
+    "train_seconds": {
+      "trained jsae blocks.1.hook_mlp_out lam 0": 202.17646079091355,
+      "trained jsae blocks.2.hook_mlp_out lam 0": 201.86315716663375,
+      "trained staircase": 372.3696943339892,
+      "trained topk blocks.0.hook_resid_post": 112.15150770917535,
+      "trained topk blocks.1.hook_resid_post": 112.32557250000536,
+      "trained topk blocks.2.hook_resid_post": 112.26653954200447,
+      "trained topk blocks.3.hook_resid_post": 111.67587674967945,
+      "trained transcoder blocks.0.hook_mlp_out": 125.49644475011155,
+      "trained transcoder blocks.1.hook_mlp_out": 127.53168841684237,
+      "trained transcoder blocks.2.hook_mlp_out": 132.71661670831963,
+      "trained transcoder blocks.3.hook_mlp_out": 135.20596279203892
+    },
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-17T02:48:03Z",
+  "xla_flags": ""
+}
