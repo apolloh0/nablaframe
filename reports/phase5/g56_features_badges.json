@@ -1,0 +1,3430 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G5.6",
+  "git_commit": "599abe703ff8e396f1efb9bab4afed19b954c268",
+  "git_dirty": false,
+  "measurements": {
+    "addresses": {
+      "induction": "http://localhost:8000/viewer/?views=../runs/phase5/views/induction/&trace=../runs/phase4/induction/store/&interventions=../runs/phase4/induction/interventions/&badges=../runs/phase5/badges.json#step=4000",
+      "reference": "http://localhost:8000/viewer/?views=../runs/phase5/views/reference/&trace=../runs/phase1/g16_trace/store/&badges=../runs/phase5/badges.json#step=12208",
+      "two_hop": "http://localhost:8000/viewer/?views=../runs/phase5/views/two_hop/&trace=../runs/phase4/two_hop/store/&interventions=../runs/phase4/two_hop/interventions/&badges=../runs/phase5/badges.json#step=20000&seq=0&pos=25&features=7e25eeb11d31c87de0da81e50a02edb490e1a22cc0979d47ade90b4d5526ab3d-0"
+    },
+    "badges": {
+      "add": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "attention_pattern": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "best head's attention to induction targets",
+            "path": [
+              "best_head_attention"
+            ],
+            "unit": "fraction",
+            "value": 0.985577030948416
+          },
+          {
+            "gate": "G4.2",
+            "label": "the random-weights twin's best head",
+            "path": [
+              "twin_best_attention"
+            ],
+            "unit": "fraction",
+            "value": 0.04757002226069708
+          },
+          {
+            "gate": "G4.2",
+            "label": "uniform baseline",
+            "path": [
+              "uniform_baseline"
+            ],
+            "unit": "fraction",
+            "value": 0.04583965457967783
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      },
+      "attribution": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "induction: mean contribution of blocks.1.hook_mlp_out, trained",
+            "path": [
+              "attribution",
+              "induction",
+              "trained",
+              "blocks.1.hook_mlp_out"
+            ],
+            "unit": "logit",
+            "value": 9.953374187374656
+          },
+          {
+            "gate": "G4.4",
+            "label": "induction: mean contribution of blocks.1.hook_attn_out, trained",
+            "path": [
+              "attribution",
+              "induction",
+              "trained",
+              "blocks.1.hook_attn_out"
+            ],
+            "unit": "logit",
+            "value": 3.3522505860769654
+          },
+          {
+            "gate": "G4.4",
+            "label": "two_hop: mean contribution of blocks.3.hook_attn_out, trained",
+            "path": [
+              "attribution",
+              "two_hop",
+              "trained",
+              "blocks.3.hook_attn_out"
+            ],
+            "unit": "logit",
+            "value": 11.131236079312075
+          },
+          {
+            "gate": "G4.4",
+            "label": "two_hop: mean contribution of blocks.3.hook_mlp_out, trained",
+            "path": [
+              "attribution",
+              "two_hop",
+              "trained",
+              "blocks.3.hook_mlp_out"
+            ],
+            "unit": "logit",
+            "value": 2.61186261564989
+          },
+          {
+            "gate": "G4.2",
+            "label": "induction: accuracy above chance removed by zeroing the induction heads together",
+            "path": [
+              "ablation_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 1.0005120327700974
+          }
+        ],
+        "notes": [
+          "Attribution measures each part's direct contribution to the logit, not whether the model needs that part."
+        ],
+        "sources": [
+          "G4.2",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "dpatch": {
+        "facts": [
+          {
+            "gate": "G5.1",
+            "label": "identities reproduced bit for bit",
+            "path": [
+              "identities_exact"
+            ],
+            "unit": "count",
+            "value": 36
+          },
+          {
+            "gate": "G5.1",
+            "label": "identities checked",
+            "path": [
+              "identities_checked"
+            ],
+            "unit": "count",
+            "value": 36
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.95703125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "The identities show dpatch changes nothing where it should change nothing. The rates judge a patch through a dictionary's code against the residual patch, so they judge the operation and the dictionaries together."
+        ],
+        "sources": [
+          "G5.1",
+          "G5.2",
+          "G5.3"
+        ],
+        "status": "judged: pass"
+      },
+      "jlens": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 24 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 26.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 24 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "jlens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 27.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 25 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 50.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 25 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "jlens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 29.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the answer at position 25 after block 3, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "25",
+              "3",
+              "answer"
+            ],
+            "unit": "rank",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "patch: share of answers swapped at query, after block 2",
+            "path": [
+              "swap_by_site",
+              "query",
+              2
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G4.1",
+            "label": "vocabulary of the two-hop model",
+            "path": [
+              "models",
+              "two_hop",
+              "model_config",
+              "vocab"
+            ],
+            "unit": "tokens",
+            "value": 51
+          },
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers swapped, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.0234375
+          },
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers unchanged, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "unchanged"
+            ],
+            "unit": "fraction",
+            "value": 0.62890625
+          }
+        ],
+        "notes": [
+          "J is fitted over D17's valid positions, 16 to 24, which leave out \u21d2, the position the answer is read from."
+        ],
+        "sources": [
+          "G4.1",
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "jswap": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers swapped, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.0234375
+          },
+          {
+            "gate": "G4.3",
+            "label": "aligned patch: share of answers swapped at the best site and block",
+            "path": [
+              "best_swap",
+              "rate"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "layer_structure": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "logit_lens": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 24 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 27.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 24 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "logit_lens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 26.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 25 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 50.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 25 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "logit_lens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 28.5
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the answer at position 25 after block 3, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "25",
+              "3",
+              "answer"
+            ],
+            "unit": "rank",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "patch: share of answers swapped at query, after block 2",
+            "path": [
+              "swap_by_site",
+              "query",
+              2
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G4.1",
+            "label": "vocabulary of the two-hop model",
+            "path": [
+              "models",
+              "two_hop",
+              "model_config",
+              "vocab"
+            ],
+            "unit": "tokens",
+            "value": 51
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.1",
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "mean": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "patch": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "copy target followed after a patch at block 0, least",
+            "path": [
+              "patch_after_block0_min"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G4.2",
+            "label": "copy target followed after a patch at block 1, most",
+            "path": [
+              "patch_after_block1_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "distractor-only control: answer unchanged, least",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          },
+          {
+            "gate": "G4.3",
+            "label": "aligned patch: share of answers swapped at the best site and block",
+            "path": [
+              "best_swap",
+              "rate"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2",
+          "G4.3"
+        ],
+        "status": "judged: pass"
+      },
+      "per_token_loss": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "resample": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "residual_norm": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "staircase": {
+        "facts": [
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0",
+            "path": [
+              "selectivity",
+              "staircase blocks.0.hook_resid_post cur",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.6834742541584418
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.0.hook_resid_post cur",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.14986057750399168
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1",
+            "path": [
+              "selectivity",
+              "staircase blocks.1.hook_resid_post next",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.847749116726127
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.1.hook_resid_post next",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.0492449366763328
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2",
+            "path": [
+              "selectivity",
+              "staircase blocks.2.hook_resid_post b",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7547022338166519
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.2.hook_resid_post b",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.23902523294032893
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3",
+            "path": [
+              "selectivity",
+              "staircase blocks.3.hook_resid_post c",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.8339609013681549
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.3.hook_resid_post c",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.11539452679226737
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch at the query after block 2 swaps the answer",
+            "path": [
+              "faithful",
+              "staircase",
+              "2",
+              "code",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.86328125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the residual patch there swaps it",
+            "path": [
+              "faithful",
+              "staircase",
+              "2",
+              "residual",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: moving only the intermediate's latents swaps it (recorded)",
+            "path": [
+              "faithful",
+              "staircase",
+              "2",
+              "latents",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.09375
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.95703125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "Each twin figure is a dictionary trained the same way on the model's random-weights twin, which has nothing to find."
+        ],
+        "sources": [
+          "G5.2",
+          "G5.3"
+        ],
+        "status": "judged: pass"
+      },
+      "swap": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "checkpoint step the block-1 attention is swapped from",
+            "path": [
+              "swap_step"
+            ],
+            "unit": "step",
+            "value": 50
+          },
+          {
+            "gate": "G4.2",
+            "label": "accuracy above chance removed by the swap",
+            "path": [
+              "swap_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 0.9286994367639528
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      },
+      "topk": {
+        "facts": [
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0",
+            "path": [
+              "selectivity",
+              "topk blocks.0.hook_resid_post cur",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.8897900636127322
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.0.hook_resid_post cur",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.17134600607138678
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1",
+            "path": [
+              "selectivity",
+              "topk blocks.1.hook_resid_post next",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7900398260552235
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.1.hook_resid_post next",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.047703797610490505
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2",
+            "path": [
+              "selectivity",
+              "topk blocks.2.hook_resid_post b",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7949299265645586
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.2.hook_resid_post b",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.24778551634686408
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3",
+            "path": [
+              "selectivity",
+              "topk blocks.3.hook_resid_post c",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.8659263298205704
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.3.hook_resid_post c",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.1232033285090841
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch at the query after block 2 swaps the answer",
+            "path": [
+              "faithful",
+              "topk",
+              "2",
+              "code",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.90234375
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the residual patch there swaps it",
+            "path": [
+              "faithful",
+              "topk",
+              "2",
+              "residual",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: moving only the intermediate's latents swaps it (recorded)",
+            "path": [
+              "faithful",
+              "topk",
+              "2",
+              "latents",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.23046875
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.95703125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 0: edges the meter needs",
+            "path": [
+              "edge_pairs",
+              "induction mlp 0",
+              "trained",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 602
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 0: edges the meter needs, twin",
+            "path": [
+              "edge_pairs",
+              "induction mlp 0",
+              "twin",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 56632
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 1: edges the meter needs",
+            "path": [
+              "edge_pairs",
+              "induction mlp 1",
+              "trained",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 122
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 1: edges the meter needs, twin",
+            "path": [
+              "edge_pairs",
+              "induction mlp 1",
+              "twin",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 22506
+          },
+          {
+            "gate": "G5.4",
+            "label": "two_hop mlp 0: edges the meter needs",
+            "path": [
+              "edge_pairs",
+              "two_hop mlp 0",
+              "trained",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 269
+          },
+          {
+            "gate": "G5.4",
+            "label": "two_hop mlp 0: edges the meter needs, twin",
+            "path": [
+              "edge_pairs",
+              "two_hop mlp 0",
+              "twin",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 3981
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "Each twin figure is a dictionary trained the same way on the model's random-weights twin, which has nothing to find.",
+          "The edge meter is judged across the MLPs whose mean ablation costs at least 0.1 nats. Across a block it is recorded, not judged: masking a latent also moves attention (D42)."
+        ],
+        "sources": [
+          "G5.2",
+          "G5.3",
+          "G5.4"
+        ],
+        "status": "judged: pass"
+      },
+      "transcoder": {
+        "facts": [
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token, from block 0's MLP input",
+            "path": [
+              "selectivity",
+              "transcoder blocks.0.hook_mlp_out cur",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7694584570851777
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token, from block 0's MLP input, twin",
+            "path": [
+              "selectivity",
+              "transcoder blocks.0.hook_mlp_out cur",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.23504780051254295
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token, from block 1's MLP input",
+            "path": [
+              "selectivity",
+              "transcoder blocks.1.hook_mlp_out next",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.6239664165332157
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token, from block 1's MLP input, twin",
+            "path": [
+              "selectivity",
+              "transcoder blocks.1.hook_mlp_out next",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.05145490262342766
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2, from block 2's MLP input",
+            "path": [
+              "selectivity",
+              "transcoder blocks.2.hook_mlp_out b",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7689324686445089
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2, from block 2's MLP input, twin",
+            "path": [
+              "selectivity",
+              "transcoder blocks.2.hook_mlp_out b",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.25349613062390325
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "Each twin figure is a dictionary trained the same way on the model's random-weights twin, which has nothing to find.",
+          "Two-hop's MLP outputs carry no planted variable at the query, so a transcoder's code is patched on the induction model only."
+        ],
+        "sources": [
+          "G5.2",
+          "G5.3"
+        ],
+        "status": "judged: pass"
+      },
+      "zero": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "accuracy above chance removed by zeroing the induction heads together",
+            "path": [
+              "ablation_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 1.0005120327700974
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      }
+    },
+    "badges_file": "runs/phase5/badges.json",
+    "badges_sha256": "2ed045d299d22203cfe0ea4940faba7c4bff270a373848cf39673b82eed14cab",
+    "builds": {
+      "badges": {
+        "files_compared": 1,
+        "files_differing": [],
+        "identical": true
+      },
+      "induction": {
+        "files_compared": 171,
+        "files_differing": [],
+        "files_written": 171,
+        "identical": true,
+        "second_build_dir": "runs/phase5/scratch/views/induction",
+        "views_dir": "runs/phase5/views/induction"
+      },
+      "reference": {
+        "files_compared": 153,
+        "files_differing": [],
+        "files_written": 153,
+        "identical": true,
+        "second_build_dir": "runs/phase5/scratch/views/reference",
+        "views_dir": "runs/phase5/views/reference"
+      },
+      "two_hop": {
+        "files_compared": 97,
+        "files_differing": [],
+        "files_written": 97,
+        "identical": true,
+        "second_build_dir": "runs/phase5/scratch/views/two_hop",
+        "views_dir": "runs/phase5/views/two_hop"
+      }
+    },
+    "builds_identical": true,
+    "dictionaries": {
+      "induction": [
+        {
+          "content_hash": "210adba637c3d8fc0f8448b04553cbc2ab51fd1994f9e8722f9b030eec3c2f67",
+          "files": [
+            "features-210adba637c3d8fc0f8448b04553cbc2ab51fd1994f9e8722f9b030eec3c2f67-site-0.json"
+          ],
+          "key": "9c3d8c892f16b9fee315e57ddbbbe4333e02ec7aa93f7998da2e1881c4eb858c",
+          "kind": "topk",
+          "meters_gate": "G5.2",
+          "sites": [
+            [
+              "blocks.0.hook_resid_post",
+              "blocks.0.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "b4556636b76b680d8f9616b96f13fb88f1414a970aa32ffb8d96d302a4f2d21d",
+          "files": [
+            "features-b4556636b76b680d8f9616b96f13fb88f1414a970aa32ffb8d96d302a4f2d21d-site-0.json"
+          ],
+          "key": "2feb1aba938bfa0834d8da0ddd7b828caa574ab9e47104a56e205fcb8409706e",
+          "kind": "topk",
+          "meters_gate": "G5.2",
+          "sites": [
+            [
+              "blocks.1.hook_resid_post",
+              "blocks.1.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "6099bb7bbad0dbb62b543db83ff3a72f270892fecd2bbb35760f523154985e75",
+          "files": [
+            "features-6099bb7bbad0dbb62b543db83ff3a72f270892fecd2bbb35760f523154985e75-site-0.json",
+            "features-6099bb7bbad0dbb62b543db83ff3a72f270892fecd2bbb35760f523154985e75-site-1.json"
+          ],
+          "key": "ffee4693c2bf7c811361e683b4ea85ab8907b2d2492f12b5cc7c3f48c1efaf45",
+          "kind": "staircase",
+          "meters_gate": "G5.2",
+          "sites": [
+            [
+              "blocks.0.hook_resid_post",
+              "blocks.0.hook_resid_post"
+            ],
+            [
+              "blocks.1.hook_resid_post",
+              "blocks.1.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "cfc4bbdeb438cd1c0399b3d9b45888a53c115a89263ab1bcdb40d1f3b5c51c36",
+          "files": [
+            "features-cfc4bbdeb438cd1c0399b3d9b45888a53c115a89263ab1bcdb40d1f3b5c51c36-site-0.json"
+          ],
+          "key": "11ece57c309bf638077d4dec67d255cf3eb40a0066b34bb5292c448b4ca6ea97",
+          "kind": "transcoder",
+          "meters_gate": "G5.2",
+          "sites": [
+            [
+              "blocks.0.ln2.hook_normalized",
+              "blocks.0.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "5ff004b2f1aaefc49915f42ab446ac2a2ac7becc81badf71efa444efe2d6db1a",
+          "files": [
+            "features-5ff004b2f1aaefc49915f42ab446ac2a2ac7becc81badf71efa444efe2d6db1a-site-0.json"
+          ],
+          "key": "ba7b3430cf85024b562fc8d5620468003c59b20e1111c85ef20c90e17fb3e9ad",
+          "kind": "transcoder",
+          "meters_gate": "G5.2",
+          "sites": [
+            [
+              "blocks.1.ln2.hook_normalized",
+              "blocks.1.hook_mlp_out"
+            ]
+          ]
+        }
+      ],
+      "reference": [
+        {
+          "content_hash": "d3aabf6c720cb50994db7fbdc0a50932df8915a17f612d7807bc500b6f0639ca",
+          "files": [
+            "features-d3aabf6c720cb50994db7fbdc0a50932df8915a17f612d7807bc500b6f0639ca-site-0.json"
+          ],
+          "key": "796b49fe41b19061cb227f3e959c2c88b57a87ae5f3dd18d9d9323ac330869e9",
+          "kind": "topk",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.0.hook_resid_post",
+              "blocks.0.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "eff6c5d2bccbd4e6fcd9c4d50062f472e6b01ea06cb20860f9f7cdae282e2f78",
+          "files": [
+            "features-eff6c5d2bccbd4e6fcd9c4d50062f472e6b01ea06cb20860f9f7cdae282e2f78-site-0.json"
+          ],
+          "key": "0b981e9934d78847bf4b2afd059ebdf3f10cd4b097e638874999dc92c6f48e37",
+          "kind": "topk",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.1.hook_resid_post",
+              "blocks.1.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "9914c986b4d171d26416389a433d0448e71cb1fb31951158a6bcff4161ca7097",
+          "files": [
+            "features-9914c986b4d171d26416389a433d0448e71cb1fb31951158a6bcff4161ca7097-site-0.json"
+          ],
+          "key": "58c1735b21b722fab28949acd8819a6f07ba6baa7d10690ed154912e9dc09877",
+          "kind": "topk",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.2.hook_resid_post",
+              "blocks.2.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "b46712f4583360a0686a0698eeaa506f509f78f56967a6ee0784267ff6241676",
+          "files": [
+            "features-b46712f4583360a0686a0698eeaa506f509f78f56967a6ee0784267ff6241676-site-0.json"
+          ],
+          "key": "97c005727ec8489b74070033f48b712e8f40d3fcf11738d17e113ee6961c39c2",
+          "kind": "topk",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.3.hook_resid_post",
+              "blocks.3.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "fef8ef7837bac98b7b90eee0d6820decf8571be984dad79ae6b3976019f8c2ec",
+          "files": [
+            "features-fef8ef7837bac98b7b90eee0d6820decf8571be984dad79ae6b3976019f8c2ec-site-0.json",
+            "features-fef8ef7837bac98b7b90eee0d6820decf8571be984dad79ae6b3976019f8c2ec-site-1.json",
+            "features-fef8ef7837bac98b7b90eee0d6820decf8571be984dad79ae6b3976019f8c2ec-site-2.json",
+            "features-fef8ef7837bac98b7b90eee0d6820decf8571be984dad79ae6b3976019f8c2ec-site-3.json"
+          ],
+          "key": "5c5881bba00249b728cec0da78cdc13a6a0e2e4f0e96f6aa027771263b7213bd",
+          "kind": "staircase",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.0.hook_resid_post",
+              "blocks.0.hook_resid_post"
+            ],
+            [
+              "blocks.1.hook_resid_post",
+              "blocks.1.hook_resid_post"
+            ],
+            [
+              "blocks.2.hook_resid_post",
+              "blocks.2.hook_resid_post"
+            ],
+            [
+              "blocks.3.hook_resid_post",
+              "blocks.3.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "f427ff8e508c3c6e9e73657b2b427771cf00f71e16023861d70d59d5ae960193",
+          "files": [
+            "features-f427ff8e508c3c6e9e73657b2b427771cf00f71e16023861d70d59d5ae960193-site-0.json"
+          ],
+          "key": "29563d6f495f64d8620ad9dcc4bf4ee15110cae0142a3d8ddf7f2568bea8347a",
+          "kind": "transcoder",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.0.ln2.hook_normalized",
+              "blocks.0.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "fd945656720ed0924e79fab18bed4130a854802b55e446519c3d95761347fdc9",
+          "files": [
+            "features-fd945656720ed0924e79fab18bed4130a854802b55e446519c3d95761347fdc9-site-0.json"
+          ],
+          "key": "b4ae938681d696a1141f9d8914aa440495c98f8ffa4679746b2c7f5843254425",
+          "kind": "transcoder",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.1.ln2.hook_normalized",
+              "blocks.1.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "45a8bd3ed9e7b12af1b6701a84244decdc03f079cd73b8da495e923d0c9b1f57",
+          "files": [
+            "features-45a8bd3ed9e7b12af1b6701a84244decdc03f079cd73b8da495e923d0c9b1f57-site-0.json"
+          ],
+          "key": "f6d289d8c44fa12bd2d2c3c80c67a2947b9b7aad4166da2b067c303a3006fe4e",
+          "kind": "transcoder",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.2.ln2.hook_normalized",
+              "blocks.2.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "d619a6bd0912c21d16ccc32cbc5ef139b572acc86164b450e8f7c5a770a23999",
+          "files": [
+            "features-d619a6bd0912c21d16ccc32cbc5ef139b572acc86164b450e8f7c5a770a23999-site-0.json"
+          ],
+          "key": "9f50ea47b046a2ccecbee5313d5607da6bc8a8f171f21bda325753f2abe5fc6a",
+          "kind": "transcoder",
+          "meters_gate": "G5.5",
+          "sites": [
+            [
+              "blocks.3.ln2.hook_normalized",
+              "blocks.3.hook_mlp_out"
+            ]
+          ]
+        }
+      ],
+      "two_hop": [
+        {
+          "content_hash": "4dfd9fe1c1b6005e4456dc64e1e4ca23749013a1dbf06a9fade1cc6c1944607d",
+          "files": [
+            "features-4dfd9fe1c1b6005e4456dc64e1e4ca23749013a1dbf06a9fade1cc6c1944607d-site-0.json"
+          ],
+          "key": "fff027308cddd7e1e41fc13e9e10e816fcc6b98e334d591d1ce12965182095c6",
+          "kind": "topk",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.0.hook_resid_post",
+              "blocks.0.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "81aaa2de40648b7fe7c88ff227131ad7a9836ef0702b7ecad2ee78cfff3a15cf",
+          "files": [
+            "features-81aaa2de40648b7fe7c88ff227131ad7a9836ef0702b7ecad2ee78cfff3a15cf-site-0.json"
+          ],
+          "key": "877699b3464016e3546c471f0b59383cccb8c7c249e1ed568360142f0893700c",
+          "kind": "topk",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.1.hook_resid_post",
+              "blocks.1.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "7e25eeb11d31c87de0da81e50a02edb490e1a22cc0979d47ade90b4d5526ab3d",
+          "files": [
+            "features-7e25eeb11d31c87de0da81e50a02edb490e1a22cc0979d47ade90b4d5526ab3d-site-0.json"
+          ],
+          "key": "ef82790100a7359e825c7a9e5de3adbc632fa99fcc8e1fbe8ef6982237d06c10",
+          "kind": "topk",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.2.hook_resid_post",
+              "blocks.2.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "b7751524c1a5d74f3dc968017b2ad6226e830c5847aedab33f5ad41833661282",
+          "files": [
+            "features-b7751524c1a5d74f3dc968017b2ad6226e830c5847aedab33f5ad41833661282-site-0.json"
+          ],
+          "key": "ffa9b41c2a9ac65035648d97088662e540869c06e793b6e235563e4c96294796",
+          "kind": "topk",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.3.hook_resid_post",
+              "blocks.3.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "f77fdb2bb1e4f1a07effff06fcbe8e065c2ea26135281ba8e6b16c1dfa77ec5a",
+          "files": [
+            "features-f77fdb2bb1e4f1a07effff06fcbe8e065c2ea26135281ba8e6b16c1dfa77ec5a-site-0.json",
+            "features-f77fdb2bb1e4f1a07effff06fcbe8e065c2ea26135281ba8e6b16c1dfa77ec5a-site-1.json",
+            "features-f77fdb2bb1e4f1a07effff06fcbe8e065c2ea26135281ba8e6b16c1dfa77ec5a-site-2.json",
+            "features-f77fdb2bb1e4f1a07effff06fcbe8e065c2ea26135281ba8e6b16c1dfa77ec5a-site-3.json"
+          ],
+          "key": "c284e6ab70f53e1e3086e7b7a950eb20c9ec8712c41e37343243cf711af303f8",
+          "kind": "staircase",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.0.hook_resid_post",
+              "blocks.0.hook_resid_post"
+            ],
+            [
+              "blocks.1.hook_resid_post",
+              "blocks.1.hook_resid_post"
+            ],
+            [
+              "blocks.2.hook_resid_post",
+              "blocks.2.hook_resid_post"
+            ],
+            [
+              "blocks.3.hook_resid_post",
+              "blocks.3.hook_resid_post"
+            ]
+          ]
+        },
+        {
+          "content_hash": "5a3ddd1306c0653ee6492849bee7a029d2a5f8f4d449a6eaf0e115886d813e81",
+          "files": [
+            "features-5a3ddd1306c0653ee6492849bee7a029d2a5f8f4d449a6eaf0e115886d813e81-site-0.json"
+          ],
+          "key": "be8f01dc890a3d94b986033a831794a15c591331b690e6fb75f622bfa8ead5bf",
+          "kind": "transcoder",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.0.ln2.hook_normalized",
+              "blocks.0.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "2d0a1d9110fb679eddd683e695e00129afbd8255bd2a2421590e0ab16ae43fa1",
+          "files": [
+            "features-2d0a1d9110fb679eddd683e695e00129afbd8255bd2a2421590e0ab16ae43fa1-site-0.json"
+          ],
+          "key": "91c06705b9cc2a670a78f863235e551489a44a82a1b3590b551db8a597cf4a2e",
+          "kind": "transcoder",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.1.ln2.hook_normalized",
+              "blocks.1.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "06d3f8b647628a22b6bf045085bad99410dbc8ab1167fbf74070b24daea30202",
+          "files": [
+            "features-06d3f8b647628a22b6bf045085bad99410dbc8ab1167fbf74070b24daea30202-site-0.json"
+          ],
+          "key": "5d9199730e596bb14eff7f3a26fd55f30fe6a088a5b848d2f19a2792b1baaf8b",
+          "kind": "transcoder",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.2.ln2.hook_normalized",
+              "blocks.2.hook_mlp_out"
+            ]
+          ]
+        },
+        {
+          "content_hash": "d7f6be40356500eebbe1cfcb829afdeaef052574f6b7d7fe7f6f2f611defcae4",
+          "files": [
+            "features-d7f6be40356500eebbe1cfcb829afdeaef052574f6b7d7fe7f6f2f611defcae4-site-0.json"
+          ],
+          "key": "b83df931926158e6b2070a68d379a53c4c1e6b8af23111501dccb0381cf719e5",
+          "kind": "transcoder",
+          "meters_gate": "G5.3",
+          "sites": [
+            [
+              "blocks.3.ln2.hook_normalized",
+              "blocks.3.hook_mlp_out"
+            ]
+          ]
+        }
+      ]
+    },
+    "dictionaries_missing": 0,
+    "dictionaries_without_badge": [],
+    "external_url_matches": [],
+    "external_urls": 0,
+    "features": {
+      "induction": 6,
+      "reference": 12,
+      "two_hop": 12
+    },
+    "query_latents": {
+      "block": 2,
+      "file": "features-7e25eeb11d31c87de0da81e50a02edb490e1a22cc0979d47ade90b4d5526ab3d-site-0.json",
+      "position": 25,
+      "windows": [
+        {
+          "b": 40,
+          "latents": [
+            {
+              "code": 3.2347865104675293,
+              "context_b": [
+                10,
+                21,
+                24,
+                40,
+                25,
+                40,
+                35,
+                40
+              ],
+              "latent": 867
+            },
+            {
+              "code": 1.738606333732605,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.091887354850769,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 1.0542716979980469,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.8203693628311157,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.796435534954071,
+              "context_b": [
+                32,
+                1,
+                21,
+                46,
+                0,
+                39,
+                7,
+                18
+              ],
+              "latent": 91
+            },
+            {
+              "code": 0.6590957641601562,
+              "context_b": [
+                7,
+                23,
+                7,
+                3,
+                28,
+                4,
+                20,
+                46
+              ],
+              "latent": 89
+            },
+            {
+              "code": 0.6489083766937256,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.22466713190078735,
+              "context_b": [
+                23,
+                22,
+                40,
+                31,
+                1,
+                36,
+                26,
+                3
+              ],
+              "latent": 172
+            },
+            {
+              "code": 0.2151402086019516,
+              "context_b": [
+                25,
+                4,
+                12,
+                35,
+                35,
+                29,
+                35,
+                33
+              ],
+              "latent": 387
+            },
+            {
+              "code": 0.20525451004505157,
+              "context_b": [
+                12,
+                17,
+                31,
+                21,
+                15,
+                30,
+                17,
+                2
+              ],
+              "latent": 1016
+            },
+            {
+              "code": 0.19532336294651031,
+              "context_b": [
+                0,
+                21,
+                30,
+                18,
+                3,
+                26,
+                31,
+                1
+              ],
+              "latent": 570
+            },
+            {
+              "code": 0.19349795579910278,
+              "context_b": [
+                21,
+                41,
+                37,
+                37,
+                23,
+                37,
+                44,
+                41
+              ],
+              "latent": 921
+            },
+            {
+              "code": 0.17887163162231445,
+              "context_b": [
+                42,
+                10,
+                40,
+                43,
+                27,
+                10,
+                42,
+                35
+              ],
+              "latent": 212
+            },
+            {
+              "code": 0.16642838716506958,
+              "context_b": [
+                45,
+                31,
+                19,
+                1,
+                0,
+                8,
+                20,
+                17
+              ],
+              "latent": 767
+            },
+            {
+              "code": 0.15701580047607422,
+              "context_b": [
+                45,
+                16,
+                45,
+                23,
+                20,
+                45,
+                37,
+                12
+              ],
+              "latent": 953
+            }
+          ],
+          "window": 0
+        },
+        {
+          "b": 37,
+          "latents": [
+            {
+              "code": 1.961412787437439,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.442511796951294,
+              "context_b": [
+                17,
+                19,
+                45,
+                39,
+                6,
+                37,
+                37,
+                42
+              ],
+              "latent": 559
+            },
+            {
+              "code": 1.2660356760025024,
+              "context_b": [
+                11,
+                17,
+                30,
+                18,
+                4,
+                15,
+                26,
+                21
+              ],
+              "latent": 798
+            },
+            {
+              "code": 1.0923826694488525,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 0.8664065599441528,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.7651947736740112,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.7290657758712769,
+              "context_b": [
+                6,
+                21,
+                39,
+                47,
+                2,
+                11,
+                42,
+                34
+              ],
+              "latent": 841
+            },
+            {
+              "code": 0.713719367980957,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.19039738178253174,
+              "context_b": [
+                30,
+                37,
+                25,
+                7,
+                26,
+                41,
+                37,
+                27
+              ],
+              "latent": 1017
+            },
+            {
+              "code": 0.17008160054683685,
+              "context_b": [
+                32,
+                18,
+                4,
+                4,
+                32,
+                18,
+                18,
+                18
+              ],
+              "latent": 989
+            },
+            {
+              "code": 0.14451269805431366,
+              "context_b": [
+                44,
+                20,
+                44,
+                44,
+                44,
+                44,
+                44,
+                44
+              ],
+              "latent": 781
+            },
+            {
+              "code": 0.13577653467655182,
+              "context_b": [
+                45,
+                9,
+                19,
+                18,
+                11,
+                43,
+                2,
+                41
+              ],
+              "latent": 58
+            },
+            {
+              "code": 0.09317708015441895,
+              "context_b": [
+                31,
+                33,
+                17,
+                42,
+                8,
+                16,
+                44,
+                18
+              ],
+              "latent": 541
+            },
+            {
+              "code": 0.08245449513196945,
+              "context_b": [
+                36,
+                40,
+                14,
+                26,
+                15,
+                40,
+                45,
+                46
+              ],
+              "latent": 49
+            },
+            {
+              "code": 0.08241981267929077,
+              "context_b": [
+                25,
+                35,
+                22,
+                35,
+                35,
+                35,
+                31,
+                39
+              ],
+              "latent": 518
+            },
+            {
+              "code": 0.07885564863681793,
+              "context_b": [
+                12,
+                17,
+                31,
+                21,
+                15,
+                30,
+                17,
+                2
+              ],
+              "latent": 1016
+            }
+          ],
+          "window": 1
+        },
+        {
+          "b": 10,
+          "latents": [
+            {
+              "code": 2.8678579330444336,
+              "context_b": [
+                21,
+                10,
+                34,
+                10,
+                10,
+                8,
+                10,
+                47
+              ],
+              "latent": 368
+            },
+            {
+              "code": 1.9469935894012451,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.0478259325027466,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 0.9466526508331299,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.9270008206367493,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.8766084909439087,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.7217121124267578,
+              "context_b": [
+                14,
+                41,
+                19,
+                37,
+                29,
+                33,
+                44,
+                23
+              ],
+              "latent": 76
+            },
+            {
+              "code": 0.49516934156417847,
+              "context_b": [
+                14,
+                28,
+                27,
+                32,
+                32,
+                32,
+                41,
+                25
+              ],
+              "latent": 82
+            },
+            {
+              "code": 0.2590235471725464,
+              "context_b": [
+                10,
+                33,
+                31,
+                10,
+                9,
+                6,
+                43,
+                21
+              ],
+              "latent": 693
+            },
+            {
+              "code": 0.16805905103683472,
+              "context_b": [
+                17,
+                19,
+                45,
+                39,
+                6,
+                37,
+                37,
+                42
+              ],
+              "latent": 559
+            },
+            {
+              "code": 0.14536833763122559,
+              "context_b": [
+                11,
+                2,
+                33,
+                13,
+                10,
+                40,
+                31,
+                40
+              ],
+              "latent": 649
+            },
+            {
+              "code": 0.1382126808166504,
+              "context_b": [
+                25,
+                4,
+                12,
+                35,
+                35,
+                29,
+                35,
+                33
+              ],
+              "latent": 387
+            },
+            {
+              "code": 0.13686183094978333,
+              "context_b": [
+                5,
+                17,
+                17,
+                17,
+                17,
+                44,
+                2,
+                5
+              ],
+              "latent": 834
+            },
+            {
+              "code": 0.11818201839923859,
+              "context_b": [
+                44,
+                20,
+                44,
+                44,
+                44,
+                44,
+                44,
+                44
+              ],
+              "latent": 781
+            },
+            {
+              "code": 0.11671387404203415,
+              "context_b": [
+                30,
+                37,
+                25,
+                7,
+                26,
+                41,
+                37,
+                27
+              ],
+              "latent": 1017
+            },
+            {
+              "code": 0.11496371030807495,
+              "context_b": [
+                38,
+                15,
+                12,
+                28,
+                33,
+                19,
+                3,
+                14
+              ],
+              "latent": 438
+            }
+          ],
+          "window": 2
+        },
+        {
+          "b": 12,
+          "latents": [
+            {
+              "code": 3.243713617324829,
+              "context_b": [
+                8,
+                5,
+                20,
+                24,
+                30,
+                23,
+                16,
+                6
+              ],
+              "latent": 879
+            },
+            {
+              "code": 1.7330915927886963,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.041693091392517,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 0.8735235333442688,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.7905532121658325,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.756788969039917,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.7379695177078247,
+              "context_b": [
+                11,
+                24,
+                11,
+                23,
+                22,
+                47,
+                12,
+                20
+              ],
+              "latent": 367
+            },
+            {
+              "code": 0.5187149047851562,
+              "context_b": [
+                31,
+                20,
+                6,
+                6,
+                20,
+                9,
+                25,
+                24
+              ],
+              "latent": 274
+            },
+            {
+              "code": 0.2717033624649048,
+              "context_b": [
+                20,
+                11,
+                47,
+                41,
+                23,
+                17,
+                16,
+                23
+              ],
+              "latent": 199
+            },
+            {
+              "code": 0.2633211314678192,
+              "context_b": [
+                17,
+                25,
+                25,
+                11,
+                47,
+                26,
+                35,
+                3
+              ],
+              "latent": 399
+            },
+            {
+              "code": 0.2506655752658844,
+              "context_b": [
+                25,
+                35,
+                22,
+                35,
+                35,
+                35,
+                31,
+                39
+              ],
+              "latent": 518
+            },
+            {
+              "code": 0.13450497388839722,
+              "context_b": [
+                47,
+                17,
+                47,
+                3,
+                17,
+                28,
+                22,
+                1
+              ],
+              "latent": 736
+            },
+            {
+              "code": 0.12245617806911469,
+              "context_b": [
+                39,
+                45,
+                37,
+                45,
+                19,
+                19,
+                3,
+                18
+              ],
+              "latent": 887
+            },
+            {
+              "code": 0.11135165393352509,
+              "context_b": [
+                5,
+                31,
+                43,
+                27,
+                25,
+                37,
+                28,
+                47
+              ],
+              "latent": 442
+            },
+            {
+              "code": 0.10183995962142944,
+              "context_b": [
+                32,
+                18,
+                4,
+                4,
+                32,
+                18,
+                18,
+                18
+              ],
+              "latent": 989
+            },
+            {
+              "code": 0.09212404489517212,
+              "context_b": [
+                43,
+                47,
+                37,
+                37,
+                21,
+                0,
+                38,
+                34
+              ],
+              "latent": 119
+            }
+          ],
+          "window": 3
+        },
+        {
+          "b": 25,
+          "latents": [
+            {
+              "code": 2.29463267326355,
+              "context_b": [
+                44,
+                25,
+                25,
+                47,
+                25,
+                37,
+                43,
+                33
+              ],
+              "latent": 614
+            },
+            {
+              "code": 1.9391911029815674,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.17428457736969,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 0.9916960000991821,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.9634217023849487,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.8023965954780579,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.6249158382415771,
+              "context_b": [
+                31,
+                20,
+                6,
+                6,
+                20,
+                9,
+                25,
+                24
+              ],
+              "latent": 274
+            },
+            {
+              "code": 0.29028475284576416,
+              "context_b": [
+                5,
+                4,
+                24,
+                41,
+                28,
+                15,
+                38,
+                25
+              ],
+              "latent": 221
+            },
+            {
+              "code": 0.17930728197097778,
+              "context_b": [
+                23,
+                22,
+                40,
+                31,
+                1,
+                36,
+                26,
+                3
+              ],
+              "latent": 172
+            },
+            {
+              "code": 0.14794471859931946,
+              "context_b": [
+                16,
+                38,
+                33,
+                39,
+                15,
+                18,
+                38,
+                16
+              ],
+              "latent": 826
+            },
+            {
+              "code": 0.14772997796535492,
+              "context_b": [
+                5,
+                31,
+                43,
+                27,
+                25,
+                37,
+                28,
+                47
+              ],
+              "latent": 442
+            },
+            {
+              "code": 0.13495558500289917,
+              "context_b": [
+                14,
+                14,
+                6,
+                41,
+                14,
+                47,
+                14,
+                14
+              ],
+              "latent": 729
+            },
+            {
+              "code": 0.12421602010726929,
+              "context_b": [
+                43,
+                40,
+                23,
+                14,
+                14,
+                39,
+                4,
+                33
+              ],
+              "latent": 695
+            },
+            {
+              "code": 0.12237034738063812,
+              "context_b": [
+                22,
+                20,
+                19,
+                43,
+                29,
+                20,
+                25,
+                41
+              ],
+              "latent": 732
+            },
+            {
+              "code": 0.12005506455898285,
+              "context_b": [
+                39,
+                45,
+                37,
+                45,
+                19,
+                19,
+                3,
+                18
+              ],
+              "latent": 887
+            },
+            {
+              "code": 0.11078450083732605,
+              "context_b": [
+                8,
+                8,
+                5,
+                27,
+                25,
+                12,
+                25,
+                22
+              ],
+              "latent": 825
+            }
+          ],
+          "window": 4
+        },
+        {
+          "b": 2,
+          "latents": [
+            {
+              "code": 3.32120680809021,
+              "context_b": [
+                2,
+                2,
+                19,
+                8,
+                6,
+                30,
+                2,
+                5
+              ],
+              "latent": 860
+            },
+            {
+              "code": 1.9264024496078491,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.0929259061813354,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 0.8673213720321655,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.8094360828399658,
+              "context_b": [
+                2,
+                13,
+                28,
+                2,
+                3,
+                2,
+                25,
+                14
+              ],
+              "latent": 301
+            },
+            {
+              "code": 0.8051421642303467,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.5399664640426636,
+              "context_b": [
+                27,
+                47,
+                38,
+                21,
+                11,
+                29,
+                1,
+                47
+              ],
+              "latent": 714
+            },
+            {
+              "code": 0.49047473073005676,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.2900785207748413,
+              "context_b": [
+                23,
+                22,
+                40,
+                31,
+                1,
+                36,
+                26,
+                3
+              ],
+              "latent": 172
+            },
+            {
+              "code": 0.2421189844608307,
+              "context_b": [
+                3,
+                25,
+                20,
+                8,
+                35,
+                27,
+                37,
+                31
+              ],
+              "latent": 235
+            },
+            {
+              "code": 0.20723260939121246,
+              "context_b": [
+                5,
+                31,
+                43,
+                27,
+                25,
+                37,
+                28,
+                47
+              ],
+              "latent": 442
+            },
+            {
+              "code": 0.17860959470272064,
+              "context_b": [
+                32,
+                30,
+                14,
+                38,
+                12,
+                34,
+                2,
+                40
+              ],
+              "latent": 952
+            },
+            {
+              "code": 0.14845439791679382,
+              "context_b": [
+                17,
+                19,
+                45,
+                39,
+                6,
+                37,
+                37,
+                42
+              ],
+              "latent": 559
+            },
+            {
+              "code": 0.14637303352355957,
+              "context_b": [
+                22,
+                20,
+                19,
+                43,
+                29,
+                20,
+                25,
+                41
+              ],
+              "latent": 732
+            },
+            {
+              "code": 0.1428617238998413,
+              "context_b": [
+                14,
+                14,
+                6,
+                41,
+                14,
+                47,
+                14,
+                14
+              ],
+              "latent": 729
+            },
+            {
+              "code": 0.1338082253932953,
+              "context_b": [
+                29,
+                10,
+                1,
+                39,
+                46,
+                30,
+                1,
+                23
+              ],
+              "latent": 864
+            }
+          ],
+          "window": 5
+        },
+        {
+          "b": 10,
+          "latents": [
+            {
+              "code": 2.6433544158935547,
+              "context_b": [
+                21,
+                10,
+                34,
+                10,
+                10,
+                8,
+                10,
+                47
+              ],
+              "latent": 368
+            },
+            {
+              "code": 1.7084310054779053,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.0995633602142334,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 0.8020877838134766,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.8003215193748474,
+              "context_b": [
+                40,
+                16,
+                27,
+                8,
+                44,
+                7,
+                5,
+                28
+              ],
+              "latent": 675
+            },
+            {
+              "code": 0.7817802429199219,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.7737519145011902,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.38300618529319763,
+              "context_b": [
+                19,
+                19,
+                42,
+                17,
+                12,
+                41,
+                21,
+                5
+              ],
+              "latent": 288
+            },
+            {
+              "code": 0.274032860994339,
+              "context_b": [
+                10,
+                33,
+                31,
+                10,
+                9,
+                6,
+                43,
+                21
+              ],
+              "latent": 693
+            },
+            {
+              "code": 0.18272463977336884,
+              "context_b": [
+                4,
+                4,
+                2,
+                19,
+                31,
+                45,
+                35,
+                27
+              ],
+              "latent": 857
+            },
+            {
+              "code": 0.1583617627620697,
+              "context_b": [
+                47,
+                17,
+                47,
+                3,
+                17,
+                28,
+                22,
+                1
+              ],
+              "latent": 736
+            },
+            {
+              "code": 0.15611331164836884,
+              "context_b": [
+                44,
+                20,
+                44,
+                44,
+                44,
+                44,
+                44,
+                44
+              ],
+              "latent": 781
+            },
+            {
+              "code": 0.155572772026062,
+              "context_b": [
+                23,
+                38,
+                26,
+                33,
+                47,
+                7,
+                41,
+                25
+              ],
+              "latent": 784
+            },
+            {
+              "code": 0.1483473777770996,
+              "context_b": [
+                31,
+                17,
+                19,
+                29,
+                17,
+                31,
+                30,
+                15
+              ],
+              "latent": 424
+            },
+            {
+              "code": 0.14536185562610626,
+              "context_b": [
+                5,
+                31,
+                43,
+                27,
+                25,
+                37,
+                28,
+                47
+              ],
+              "latent": 442
+            },
+            {
+              "code": 0.1246618926525116,
+              "context_b": [
+                25,
+                35,
+                22,
+                35,
+                35,
+                35,
+                31,
+                39
+              ],
+              "latent": 518
+            }
+          ],
+          "window": 6
+        },
+        {
+          "b": 25,
+          "latents": [
+            {
+              "code": 2.6929097175598145,
+              "context_b": [
+                44,
+                25,
+                25,
+                47,
+                25,
+                37,
+                43,
+                33
+              ],
+              "latent": 614
+            },
+            {
+              "code": 1.7568185329437256,
+              "context_b": [
+                15,
+                19,
+                36,
+                12,
+                19,
+                28,
+                28,
+                14
+              ],
+              "latent": 50
+            },
+            {
+              "code": 1.2437129020690918,
+              "context_b": [
+                20,
+                6,
+                14,
+                46,
+                6,
+                6,
+                20,
+                20
+              ],
+              "latent": 90
+            },
+            {
+              "code": 1.0014092922210693,
+              "context_b": [
+                5,
+                29,
+                29,
+                35,
+                9,
+                15,
+                12,
+                8
+              ],
+              "latent": 48
+            },
+            {
+              "code": 0.8150045871734619,
+              "context_b": [
+                46,
+                1,
+                33,
+                46,
+                42,
+                36,
+                5,
+                41
+              ],
+              "latent": 64
+            },
+            {
+              "code": 0.7436960935592651,
+              "context_b": [
+                46,
+                17,
+                20,
+                14,
+                44,
+                46,
+                20,
+                40
+              ],
+              "latent": 984
+            },
+            {
+              "code": 0.6339619159698486,
+              "context_b": [
+                14,
+                42,
+                20,
+                15,
+                41,
+                28,
+                3,
+                21
+              ],
+              "latent": 411
+            },
+            {
+              "code": 0.3230137228965759,
+              "context_b": [
+                5,
+                4,
+                24,
+                41,
+                28,
+                15,
+                38,
+                25
+              ],
+              "latent": 221
+            },
+            {
+              "code": 0.23390308022499084,
+              "context_b": [
+                41,
+                44,
+                43,
+                43,
+                1,
+                41,
+                11,
+                7
+              ],
+              "latent": 754
+            },
+            {
+              "code": 0.22224535048007965,
+              "context_b": [
+                22,
+                34,
+                34,
+                36,
+                8,
+                16,
+                11,
+                24
+              ],
+              "latent": 110
+            },
+            {
+              "code": 0.21813061833381653,
+              "context_b": [
+                15,
+                34,
+                25,
+                13,
+                36,
+                25,
+                5,
+                8
+              ],
+              "latent": 188
+            },
+            {
+              "code": 0.20568695664405823,
+              "context_b": [
+                36,
+                9,
+                0,
+                26,
+                21,
+                27,
+                32,
+                32
+              ],
+              "latent": 983
+            },
+            {
+              "code": 0.17616814374923706,
+              "context_b": [
+                8,
+                8,
+                5,
+                27,
+                25,
+                12,
+                25,
+                22
+              ],
+              "latent": 825
+            },
+            {
+              "code": 0.16461002826690674,
+              "context_b": [
+                25,
+                37,
+                25,
+                13,
+                3,
+                13,
+                23,
+                21
+              ],
+              "latent": 505
+            },
+            {
+              "code": 0.15996095538139343,
+              "context_b": [
+                17,
+                25,
+                25,
+                11,
+                47,
+                26,
+                35,
+                3
+              ],
+              "latent": 399
+            },
+            {
+              "code": 0.15902824699878693,
+              "context_b": [
+                45,
+                31,
+                19,
+                1,
+                0,
+                8,
+                20,
+                17
+              ],
+              "latent": 767
+            }
+          ],
+          "window": 7
+        }
+      ]
+    },
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "reference": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "steps": {
+      "induction": 4000,
+      "reference": 12208,
+      "two_hop": 20000
+    },
+    "subjects_missing": 0,
+    "subjects_without_badge": [],
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    },
+    "viewer_files": [
+      "app.js",
+      "index.html"
+    ],
+    "views_dirs": {
+      "induction": "runs/phase5/views/induction",
+      "reference": "runs/phase5/views/reference",
+      "two_hop": "runs/phase5/views/two_hop"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-17T03:03:56Z",
+  "xla_flags": ""
+}
