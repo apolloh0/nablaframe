@@ -1,6 +1,6 @@
 # Phase 5 spec: dictionaries and their edge-sparsity meter
 
-Status: ready for stubs and tests once D40 to D45 are committed. Charter: [../charter.md](../charter.md). Decisions: [../decisions.md](../decisions.md).
+Status: complete. Ruled at human gate H5 on 2026-10-19: see D46 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
