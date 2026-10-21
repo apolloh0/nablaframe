@@ -23,6 +23,14 @@ Spec: docs/specs/phase-3.md, D22.
 * ``OPERATIONS`` gains ``dpatch`` (D45), taking ``dictionary`` and ``source`` (content hashes) and,
   in its other form, ``latents`` as well: a list of distinct non-negative ints, possibly empty,
   stored sorted, so two specs that list the same latents in another order hash equal.
+* ``OPERATIONS`` gains ``dsteer`` (D48), taking ``dictionary``, ``remove``, ``add`` and
+  ``amounts``, each a content hash: the dictionary's ``content_hash``, and each array's
+  ``array_hash``.
+* ``array_hash(array)``: the SHA-256 of the canonical JSON of ``{"dtype", "shape", "bytes"}``:
+  the array's numpy dtype name (``"int32"``, ``"float32"``), its shape as a list, and its
+  ``tensor_sha256``. Arrays equal in dtype, shape and values hash equal, whatever their byte
+  order. Unlike the byte hash alone, it tells apart arrays whose bytes agree, such as an empty
+  ``remove`` and an empty ``amounts``. ValueError for an array that isn't of integers or floats.
 """
 
 from __future__ import annotations

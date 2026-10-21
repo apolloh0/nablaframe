@@ -49,6 +49,23 @@ module imports without it.
     shaped (batch, pos, the dictionary's width there) raises ValueError. Where the change is zero
     at every selected position, as with a source equal to the target or an empty ``latents``, it
     adds no operation at all, so it reproduces the unintervened pass bit for bit (D25).
+  - ``dsteer`` (D48) applies at one of its dictionary's output taps, which picks the site, as
+    ``dpatch``'s does, and ``resolve`` returns its ``dictionary`` as for ``dpatch``. ``resolve``
+    returns its three arrays too, each checked with ``array_hash``: ``remove`` and ``add``, int32
+    arrays shaped (n, 3) whose rows are ``[sequence, position, latent]``, and ``amounts``, float32
+    shaped (len(add),). Each of these raises ValueError before anything runs, beside ``dpatch``'s
+    refusals of the tap and the dictionary: an array of another dtype or shape; a row whose
+    sequence isn't in ``range(batch)``, whose position isn't one the edit selects, or whose latent
+    isn't in ``range(active_width(site))``; a row repeated within ``remove`` or within ``add``; an
+    amount that isn't finite. The codes ``f`` are ``encode`` of the target batch's values at the
+    site's input tap, read as ``dpatch`` reads ``f_target``, and a tap whose values aren't shaped
+    (batch, pos, the dictionary's width there) raises ValueError. The change starts at zero for
+    every sequence, position and latent; each ``remove`` row subtracts ``f`` there, and each
+    ``add`` row adds its amount there, so a latent both removed and added ends at its amount. At
+    the selected positions it adds ``decode_delta`` of the change, so the target's error term is
+    kept. Where the change is zero at every selected position, as with empty ``remove`` and
+    ``add``, removing only latents whose code is zero, or adding only zero amounts, it adds no
+    operation at all, so it reproduces the unintervened pass bit for bit (D25).
 * ``code_identity()``: this module's git blob hash (D18, D24).
 """
 
