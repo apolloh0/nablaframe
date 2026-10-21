@@ -54,20 +54,133 @@ from typing import Any
 
 import numpy as np
 
-from ..gestures.declare import Declaration
+from ..gestures.declare import (DESCRIPTIONS, Declaration, Place, Planted, Relation, check_prediction_args,
+                                check_window)
+
+
+def _is_int(x: Any) -> bool:
+    return isinstance(x, (int, np.integer)) and not isinstance(x, (bool, np.bool_))
+
+
+def _check_value(v: Any) -> int:
+    if not _is_int(v):
+        raise ValueError(f"a value must be an int, got {v!r}")
+    return int(v)
+
+
+def _check_relation(name: Any, known: tuple[str, ...], run: str) -> None:
+    if name not in known:
+        raise ValueError(f"run {run!r} has no relation {name!r}")
 
 
 def period(window: Any) -> int:
-    raise NotImplementedError
+    arr = np.asarray(window)
+    if arr.ndim != 1 or arr.shape[0] == 0 or not np.issubdtype(arr.dtype, np.integer):
+        raise ValueError(f"window must be a non-empty one-dimensional integer array, got {arr.dtype} {arr.shape}")
+    repeats = np.flatnonzero(arr[1:] == arr[0])
+    if not repeats.size:
+        raise ValueError("the window doesn't repeat its first token")
+    return int(repeats[0]) + 1
 
 
 def sole_targets(task: Any, window: Any) -> np.ndarray:
-    raise NotImplementedError
+    arr = np.asarray(window)
+    if arr.ndim != 1 or arr.shape[0] != task.window:
+        raise ValueError(f"window must be a one-dimensional array of {task.window} tokens, got shape {arr.shape}")
+    P = period(arr)
+    s = np.arange(1, P + 1, dtype=np.int64)
+    return s[np.isin(s + P - 1, np.asarray(task.mechanism_positions))]
+
+
+def _parse(task: Any, window: np.ndarray) -> Any:
+    try:
+        return task.parse(window)
+    except (KeyError, IndexError) as err:
+        raise ValueError(f"not a two-hop window: {err!r}") from err
 
 
 def two_hop(task: Any) -> Declaration:
-    raise NotImplementedError
+    seq, facts = int(task.seq), int(task.facts)
+    q = seq - 1
+    known = (*DESCRIPTIONS, "b")
+    names = ("hop", "carry", "two back")
+    subjects = tuple(4 * i for i in range(facts))
+    objects = tuple(4 * i + 2 for i in range(facts))
+
+    def describe_variables(windows: np.ndarray) -> dict[str, np.ndarray]:
+        b = np.full((len(windows), seq), -1, dtype=np.int64)
+        for i, window in enumerate(windows):
+            b[i, q - 1 : q + 1] = _parse(task, window).b
+        return {"b": b}
+
+    def predict(description: str, window: np.ndarray, position: int, w: int) -> tuple[int, int] | None:
+        window = check_prediction_args(description, known, window, position, w, seq)
+        if position != q:
+            return None
+        if description == "token(p+1)":
+            return (q, int(w))
+        if description == "b":
+            parsed = _parse(task, window)
+            if w in parsed.facts and w not in (parsed.a, parsed.b):
+                return (q, parsed.facts[int(w)])
+        return None
+
+    def pairs(relation: str, window: np.ndarray) -> tuple[tuple[int, int], ...]:
+        _check_relation(relation, names, "two_hop")
+        check_window(window, seq)
+        if relation == "two back":
+            return tuple((p, p + 2) for p in objects if p + 2 in subjects)
+        return ((q, q),)
+
+    def value_map(relation: str, window: np.ndarray, v: int) -> int | None:
+        _check_relation(relation, names, "two_hop")
+        window = check_window(window, seq)
+        v = _check_value(v)
+        if relation == "hop":
+            return _parse(task, window).facts.get(v)
+        return v
+
+    return Declaration(
+        run="two_hop", seq=seq,
+        classes={"query": (q,), "subjects": subjects, "objects": objects, "every": range(seq)},
+        variables=("b",),
+        planted=(Planted(Place("b", 2, "query"), True), Planted(Place("token(p+1)", 3, "query"), True),
+                 Planted(Place("b", 1, "query"), False)),
+        relations=(Relation("hop", Place("b", 2, "query"), Place("token(p+1)", 3, "query"), True),
+                   Relation("carry", Place("b", 1, "query"), Place("b", 2, "query"), False),
+                   Relation("two back", Place("token(p)", 0, "objects"), Place("token(p-2)", 2, "subjects"), False)),
+        describe_variables=describe_variables, predict=predict, pairs=pairs, value_map=value_map)
 
 
 def induction(task: Any) -> Declaration:
-    raise NotImplementedError
+    seq = int(task.seq)
+    mechanism = {int(p) for p in task.mechanism_positions}
+
+    def describe_variables(windows: np.ndarray) -> dict[str, np.ndarray]:
+        return {}
+
+    def predict(description: str, window: np.ndarray, position: int, w: int) -> tuple[int, int] | None:
+        window = check_prediction_args(description, DESCRIPTIONS, window, position, w, seq)
+        if description == "token(p+1)" and position in mechanism:
+            return (int(position), int(w))
+        if description == "token(p)":
+            if position in sole_targets(task, window):
+                return (int(position) + period(window) - 1, int(w))
+        return None
+
+    def pairs(relation: str, window: np.ndarray) -> tuple[tuple[int, int], ...]:
+        _check_relation(relation, ("copy",), "induction")
+        window = check_window(window, seq)
+        P = period(window)
+        return tuple((int(s), int(s) + P - 1) for s in sole_targets(task, window))
+
+    def value_map(relation: str, window: np.ndarray, v: int) -> int | None:
+        _check_relation(relation, ("copy",), "induction")
+        check_window(window, seq)
+        return _check_value(v)
+
+    return Declaration(
+        run="induction", seq=seq, classes={"mechanism": sorted(mechanism), "every": range(seq)}, variables=(),
+        planted=(Planted(Place("token(p)", 0, "every"), True), Planted(Place("token(p+1)", 1, "mechanism"), True)),
+        relations=(Relation("copy", Place("token(p)", 0, "every"), Place("token(p+1)", 1, "mechanism"), True),),
+        describe_variables=describe_variables, predict=predict, pairs=pairs, value_map=value_map)
