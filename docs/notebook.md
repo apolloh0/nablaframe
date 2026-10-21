@@ -4,7 +4,7 @@ Status: working notes, started by apolloh0 at H5 on 2026-10-18 and updated as ph
 
 ## Where things stand
 
-Phase 5 is closed: H5 passed (D46, commit `8bef5da`). C10 split what comes next: Phase 6 builds four gestures on dictionary features (name-this-direction, assert-this-edge, open-this-up and generalize-this), Phase 7 crystallization, Phase 8 the ledger. Two feasibility rounds for the gestures ran on 2026-10-19; their findings are under "Phase 6 feasibility". This notebook keeps what the zoo has shown, what it hasn't, and what to try next.
+Phase 5 is closed: H5 passed (D46, commit `8bef5da`). C10 split what comes next: Phase 6 builds four gestures on dictionary features (name-this-direction, assert-this-edge, open-this-up and generalize-this), Phase 7 crystallization, Phase 8 the ledger. Three feasibility rounds for the gestures ran on 2026-10-19 and 2026-10-20, and the Phase 6 spec (D47 to D52) took its bars from them. Their findings are under "Phase 6 feasibility". This notebook keeps what the zoo has shown, what it hasn't, and what to try next.
 
 The zoo's two-hop model has 4 layers and 51 tokens: entities `e0` to `e47`, then `→`, `;` and `⇒`. A window lists six facts `s → o ;` at positions 0 to 23, then `a ⇒ c`, with `⇒` at position 25. To answer, the model finds `b` in `a → b`, then `c` in `b → c`.
 
@@ -88,9 +88,9 @@ The zoo's judged MLPs need 0.4% to 1.8% of their scored edges; the reference run
 - **Training time:** reference dictionaries took 112 to 372 seconds, not D44's 22 to 25 minutes.
 - **Jacobian SAE:** at `λ` 4 its share of entries above 0.01 falls from 0.74–0.92 to 0.02–0.24, but 90% of the mass still takes 86 to 143 of 256 entries, and its output FVU rises up to sixfold (D43).
 
-## Phase 6 feasibility (2026-10-19)
+## Phase 6 feasibility (2026-10-19 and 2026-10-20)
 
-Two rounds on the Mac measured what each gesture needs, at G4.1's checkpoints with the Phase 5 TopK SAEs. Everything here is tagged feasibility. A value's **set** is its top 4 latents by F1 at the variable's site and position. A **null** swaps 4 random active latents for 4 random others at the set's amounts. Both rounds first reproduced the gates: `b`'s mean best F1 at `⇒` after block 2 is 0.795 (twin 0.248), induction's current and next token 0.890 and 0.790, the code patch at `⇒` swaps 90.2%.
+Three rounds on the Mac measured what each gesture needs, at G4.1's checkpoints with the Phase 5 TopK SAEs. Everything here is tagged feasibility. A value's **set** is its top 4 latents by F1 at the variable's site and position. A **null** swaps 4 random active latents for 4 random others at the set's amounts. Both rounds first reproduced the gates: `b`'s mean best F1 at `⇒` after block 2 is 0.795 (twin 0.248), induction's current and next token 0.890 and 0.790, the code patch at `⇒` swaps 90.2%.
 
 ### 9. A name needs about four latents
 
@@ -194,20 +194,65 @@ The share of each `b`-latent's activation mass, over every position of the held-
 - **Self-loops (H3):** a mean code of 1.32 over 141 self-loop instances, against 0.75 over 10,099 others.
 - **Position 16 (H4):** it holds 3.3% of the mass, beside 3.4% at positions 12 and 20.
 
+### 17. Names come up empty on the twins, and weak names still steer
+
+Round 3 ran name-this-direction as the spec defines it (D49), 512 instances per name. Pointed at each value's best latent by F1:
+
+| Name | Named as planted | Follows | Null | Twin: named at all | Twin: follows |
+| --- | --- | --- | --- | --- | --- |
+| Two-hop `b` at `⇒` after block 2 | 0.812 | 0.939 | 0.008 | 0 | 0.014 |
+| Two-hop `b` at `⇒` after block 1 | 0.625 | 0.912 | 0.000 | 0 | 0.021 |
+| Two-hop answer at `⇒` after block 3 | 1.000 | 1.000 | 0.000 | 0 | 0.012 |
+| Induction current token after block 0 | 0.969 | 1.000 | 0.000 | 0 | 0.018 |
+| Induction next token after block 1 | 1.000 | 0.951 | 0.000 | 0 | 0.010 |
+
+- **Weak names:** a value's largest-code latent, the one the features view lists first, is in its set for at least 93.8% of values on every name. But at `b` after block 2 it reaches F1 0.5 for only 39.6% of values. So the spec names such a latent weakly and still steers its set.
+- **The sign again:** `b`'s set ranks `b` last for every value after block 1 as well as block 2. The answer's and the next token's sets rank their token first. Induction's current-token set ranks its own token at 46 of 64 on average, counting from 0 at the top.
+
+### 18. The residual stream makes a carry look like an edge
+
+Swapping `b`'s set after block 1 at `⇒`, block 2's set follows 98.8% of the time, and still 91.8% with block 2's attention and MLP frozen at `⇒`: block 2 only carries `b` there. On the twin the same swap is followed 51.5% of the time (null 20.8%), and 48.0% through the residual alone. The hop is different: swapping `b`'s set after block 2, the answer's set after block 3 follows 93.9% (null 2.9%), and only 2.5% with block 3 frozen. Induction's copy, across positions, follows 100% (null 0.8%); the twin's sets don't beat their nulls.
+
+### 19. Two-hop copies the entity two back in two blocks
+
+Swapping the token's set two places back after block 1 barely moves the entity's set after block 2: 6.8% with the set chosen at object positions, 0% with it chosen at every position. Removing that set leaves about half the entity's set mass (50.6%, 51.4%). Changing the token itself moves the entity's set every time (100%). Block 1's two-back heads have already copied the token from after block 0 by the time block 2's read it after block 1, which fits finding 14: zeroing either block's heads leaves part of the code. H8 is refuted for this edge.
+
+### 20. Open-this-up on the twins
+
+On induction's twin, the next token's set reaches a 0.1 error within 128 parts for only half the instances, and the planted current-token set ranks 352 (median), never in the top 8 (trained: 24 parts, rank 4, 79.7% in the top 8). On two-hop's twin, the same position's set one block earlier still ranks first (in the top 8 for 86.7%), because the residual stream carries it. A planted part at the same position doesn't separate trained from twin; one across positions does.
+
+### 21. Envelopes with sets
+
+Through the final dictionaries, the name holds (F1 and follows both at least 0.5) from step 6,000 on two-hop and from step 700 on induction, unbroken to the end. At step 6,000 the set follows 86.5% where the probe first reads `b` at 0.981. Induction's envelope starts one checkpoint before its probe reaches 0.9 (0.927 at step 750). Two-hop's follows reaches 25% at steps 1,000 and 2,000, but so does its null (20% to 21%): an untrained model's answers land on the window's objects. Across dictionary seeds, the same names follow 92.0% to 99.6%, with sets whose decoders match seed 0's at a cosine of 0.45 to 0.53.
+
+### 22. The reference run
+
+TopK SAEs at G1.4's final checkpoint, 256 latents sampled per block:
+
+| Block | Named | Mostly as | `token(p + 1)` names | Their sets follow | Open-this-up within 128 parts |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 30.1% | `token(p)` 93.5% | 8 | 3.2% | not measured |
+| 1 | 27.0% | `token(p)` 92.8% | 8 | 6.3% | 25% of instances |
+| 2 | 18.4% | `token(p)` 85.1% | 11 | 8.0% | 45% |
+| 3 | 8.6% | `token(p)` 59.1%, `token(p − 1)` 18.2% | 11 | 22.7% | 91% |
+
+A named latent's median coverage is 0.72 to 0.84. Token offsets name fewer latents with depth, and the next-token sets steer weakly until the last block. The whole section took 15 seconds.
+
 ## Hypotheses to test
 
-Readings of the results above. Feasibility tested H1, H3 and H4, and added H6 to H8. Phase 6's gestures can test most of the rest. Status is one of Open, Testing, Supported or Refuted; a status set by feasibility says so.
+Readings of the results above. Feasibility tested H1, H3, H4 and H8, and added H6 to H9. Phase 6's gestures can test most of the rest. Status is one of Open, Testing, Supported or Refuted; a status set by feasibility says so.
 
 | # | Hypothesis | Evidence so far | Test | Status |
 | --- | --- | --- | --- | --- |
 | H1 | Entity latents copy the entity two tokens back, probably through an attention head that looks two positions back | 16 of 16 contexts for 867 and 879; both pinned contexts for 559 (Observation 4). Changing the token two back makes the entity's set follow in 99.8%, and the old latent halves in 99% (findings 12, 16). No single head carries it: seven heads look two back, zeroing any one leaves 96% of the code, and zeroing block 1's or block 2's heads leaves 55% or 70% (finding 14) | Done in feasibility. Still open: which heads write the code, by patching each head's output from a window with a different token two back | Supported (feasibility); the copy is spread over several heads |
-| H2 | The model stores `b` upside down to keep from predicting it, since `b` is the most tempting wrong answer | The lens ranks `b` 3rd after block 0, last after blocks 1 and 2; each `b`-latent's smallest effect is `b` (Observations 2, 3). The whole code ranks `b` last for all 48 values (finding 10). The flip appears at step 6,000, at the checkpoint where `b` appears at `⇒` (finding 11). Induction's next-token latents, whose token is the answer, write it upward (finding 10) | Rank `b` in the final logits against the window's other entities; steer along `b`'s set at `⇒` and check whether `b`'s final logit falls. Rerun both at steps 5,000 and 6,000 | Open, stronger |
+| H2 | The model stores `b` upside down to keep from predicting it, since `b` is the most tempting wrong answer | The lens ranks `b` 3rd after block 0, last after blocks 1 and 2; each `b`-latent's smallest effect is `b` (Observations 2, 3). The whole code ranks `b` last for all 48 values (finding 10). The flip appears at step 6,000, at the checkpoint where `b` appears at `⇒` (finding 11). Induction's next-token latents, whose token is the answer, write it upward (finding 10). `b`'s set is upside down after block 1 too; induction's current-token set ranks its own token low, at 46 of 64, and in these windows the next token is never the current one (finding 17) | Rank `b` in the final logits against the window's other entities; steer along `b`'s set at `⇒` and check whether `b`'s final logit falls. Rerun both at steps 5,000 and 6,000 | Open, stronger |
 | H3 | A latent adds up its entity's nearby occurrences | Self-loop facts give three of the top contexts (Observation 4). Over the held-out windows, a self-loop's mean code is 1.32, against 0.75 elsewhere (finding 16) | Done in feasibility | Supported (feasibility) |
 | H4 | Something at position 16 keeps these latents quiet | 0 of 40 subject contexts at position 16 (Observation 4). Over the held-out windows, position 16 holds 3.3% of the mass, as positions 12 and 20 hold 3.4% (finding 16) | Done in feasibility: chance in a top-8 list | Refuted (feasibility) |
 | H5 | The five shared latents (48, 50, 64, 90, 984) carry the format, not a variable | Active in all 8 windows whatever `b` is, and at 4% to 36% of all positions; largest effects `⇒`, `;`, `→`. The same five are active at `⇒` in at least 90% of 2,048 held-out windows, and leaving them out doesn't change the sign (finding 10) | Patch only those latents between windows and check the answer doesn't move | Open |
 | H6 | Before step 6,000, two-hop answers by an earlier route that never holds `b` at `⇒` | 74% accuracy at step 5,000 with no probe, patch or lens sign for `b` at `⇒`, while `c` is already readable after block 2 (0.36), which fades as the composing route appears (finding 11). A second run, not bit-identical, learned in the same order (finding 11). Zeroing block 1's heads at step 20,000 leaves 24.6% accuracy, well above chance (finding 14), so the earlier route may survive as a backup | At step 5,000: patch each fact position from G4.3's aligned sources and see which moves the answer; train a dictionary there. At step 20,000: compare what block 1's heads zeroed leaves right with what step 5,000 got right | Open |
 | H7 | Head 1.0, which looks one back from fact tokens, carries `b` to `⇒` | Zeroing it alone leaves 51% of `b`'s set mass at `⇒` and 71.6% accuracy, while no two-back head matters alone (finding 14) | Its attention from `⇒`; patch its output at `⇒` from aligned sources and check that the answer swaps | Open |
-| H8 | A set chosen over every position misses what a position class carries | The token two back's set, chosen over every position, moves the entity's set in 0.6% of swaps, while changing the token moves it in 99.8%, and open-this-up ranks that set first (findings 12, 13) | Choose the token's set at object positions only, and rerun the edge | Open |
+| H8 | A set chosen over every position misses what a position class carries | The token two back's set, chosen over every position, moves the entity's set in 0.6% of swaps, while changing the token moves it in 99.8%, and open-this-up ranks that set first (findings 12, 13). Chosen at object positions, it moves it in 6.8% (finding 19) | Done in feasibility: the edge fails for another reason, H9 | Refuted (feasibility) |
+| H9 | The entity two back is copied twice: by block 1's heads from after block 0, and by block 2's heads from after block 1 | Swapping the token's set after block 1 moves the entity's set in at most 6.8%, while removing it leaves half its mass (finding 19); zeroing block 1's or block 2's heads leaves 55% or 70% of the code (finding 14) | Swap the token's set two back after block 0, which reaches both copies; G6.3 records that edge | Open |
 
 ## Ideas to explore
 
@@ -219,6 +264,7 @@ Things worth building or trying, roughly in order of payoff.
 | Which batches taught the composing route | Everything changed between steps 5,000 and 6,000. Leave-a-batch-out replay over those 1,000 steps could find what taught it | Phase 8, the ledger (D35) |
 | Dictionaries at earlier checkpoints | The final dictionaries read `b` at F1 0.506 at step 6,000, where a probe reads 0.981, and can't see the earlier route at all (finding 11) | Phase 6 reads checkpoints through the final dictionaries, with a probe beside them; dictionaries per checkpoint stay later (D44) |
 | A blind prediction on the reference run | State a latent or edge the views suggest for a TinyStories behavior (a repeated name, he/she agreement) before any intervention, then confirm it by patch. That is the step from calibration to explanation | After Phase 6's gestures |
+| Descriptions for TinyStories | Token offsets name only 8.6% to 30.1% of the reference run's latents (finding 22). Declared descriptions such as inside a quote, the sentence's subject, or he/she agreement would be names a meter can check | After Phase 6, with the blind prediction |
 | Name latents from both ends of the effect | Top contexts and largest effects misname the `b`-latents (D46). Read the effect from the set, weighted by its codes: it ranks `b` last for every value, where the F1-best latent alone does for 25% (finding 10) | Phase 6, name-this-direction |
 | Contexts by position class | Global top contexts never showed the role at `⇒`; split them into at `⇒`, at fact subjects and at objects. A `b`-latent spends 3.6% of its mass at `⇒` (finding 16) | Phase 6 viewer |
 | Both ends in the active-latents table | Its largest-effect column shows e42, e17, e47 for the e40 latent | Phase 6 viewer |
@@ -232,7 +278,8 @@ So far this is calibration on models whose answers are known, not discovery in a
 
 - **Toy scale:** both zoo models have 4 layers, and two-hop has 51 tokens. Passing here is necessary before trusting the tools elsewhere, not sufficient.
 - **Nothing judged on real text:** the reference run's dictionaries leave 6% to 22% of the variance unexplained, and none of its results can be judged (D44). Its meters travel with every view for that reason.
-- **Feasibility isn't a gate:** findings 9 to 16 come from experiments outside the gates, on one dictionary seed per site, and the gestures' twin controls haven't run yet.
+- **Feasibility isn't a gate:** findings 9 to 22 come from experiments outside the gates, on one dictionary seed per site. Phase 6's gates measure them again.
+- **Few declared names on real text:** token offsets name 8.6% to 30.1% of the reference run's latents, most of them as the current token (finding 22).
 - **No one-to-one concepts:** a single latent moves 9% to 23% of what its variable's whole code moves. A set of four moves nearly all of it, but a `b`-latent spends most of its activity on other roles (findings 9, 16).
 - **Known methods:** dictionaries, lenses and patching are established. What is distinctive is the discipline around them: twin controls, determinism, replayable training, and a meter on every view.
 
@@ -248,6 +295,8 @@ The biggest lesson: a latent's identity showed up in its effect, not in its cont
 - **The most selective latent isn't the strongest:** a value's F1-best latent is its largest-code latent for only 8.3% of values, and its effect gives `b` mixed signs. Read a value's effect from its set or its whole code (finding 10).
 - **Order parts by absolute attribution:** ordered by signed attribution, `b`'s set never got within 0.1 of its pre-activation, because positive parts overshoot (finding 13).
 - **Check a null's own role:** the head picked as a null for H1, the least two-back head, was a previous-token head, and the one head whose zeroing hurt (finding 14). Whole blocks zeroed made the comparison.
+- **A carry looks like an edge:** the residual stream passes a swapped set on, even on random weights (finding 18). Freeze the blocks between before calling it an edge.
+- **A copy made twice hides from a single swap:** swapping one copy's source leaves the other copy in place (finding 19). A failed swap isn't a missing edge until every route is covered.
 - **Match across dictionary seeds by name, never by id:** names come back at F1 0.75 to 0.83, in latents whose decoders have a cosine of only about 0.4 with seed 0's (finding 15).
 
 ## Where the evidence lives
@@ -257,7 +306,7 @@ Everything above can be rebuilt from the repo; the views live only on the Mac.
 - **Rulings:** `docs/decisions.md`, especially D39 (the lens finding) and D41 to D46.
 - **Reports:** `reports/phase4/` and `reports/phase5/`, with `reports/phase5/summary.md` as the overview.
 - **Features payloads:** `runs/phase5/views/<run>/features-<dictionary>-site-<n>.json`. `runs/` isn't in git; G5.6 rebuilds it byte-identically.
-- **Phase 6 feasibility:** `runs/feasibility/gestures-round1-20261019-230631/` and `runs/feasibility/gestures-round2-20261019-232218/` on the Mac, each with a `SUMMARY.txt` and one JSON per model. The scripts are in `~/nf-feasibility/`, not in the repo.
+- **Phase 6 feasibility:** `runs/feasibility/gestures-round1-20261019-230631/`, `runs/feasibility/gestures-round2-20261019-232218/` and `runs/feasibility/gestures-round3-20261020-171131/` on the Mac, each with a `SUMMARY.txt` and one JSON per model. The scripts are in `~/nf-feasibility/`, not in the repo.
 
 To open a latent in the viewer, serve the repo root with `python3 -m http.server`, then change `seq` (window) and `latent` in this address:
 
@@ -286,5 +335,6 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-20 | Phase 6 feasibility, round 3: findings 17 to 22; H8 refuted, H9 added, H2 evidence added; lessons and the reference run's names |
 | 2026-10-20 | Phase 6 feasibility, rounds 1 and 2: findings 9 to 16; H1 and H3 supported, H4 refuted, H2 stronger; H6 to H8 added; ideas and lessons updated |
 | 2026-10-18 | Started after H5 (D46), from the Phase 5 reports and apolloh0's viewer session on windows 0 and 3 |

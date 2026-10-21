@@ -50,7 +50,7 @@ Carried over from Glasshouse.
 | 3 | Manipulation: ablate, patch, steer, swap | [specs/phase-3.md](specs/phase-3.md), done at H3 on 2026-10-05 (D28) |
 | 4 | Ground-truth zoo and discrimination tests | [specs/phase-4.md](specs/phase-4.md), done at H4 on 2026-10-10 (D39) |
 | 5 | Dictionaries and their edge-sparsity meter | [specs/phase-5.md](specs/phase-5.md), done at H5 on 2026-10-19 (D46) |
-| 6 | Gestures on dictionary features: name-this-direction, assert-this-edge, open-this-up, generalize-this | Not yet written |
+| 6 | Gestures on dictionary features: name-this-direction, assert-this-edge, open-this-up, generalize-this | [specs/phase-6.md](specs/phase-6.md) |
 | 7 | Crystallization: crystallize-this, with modular addition in the zoo | Not yet written |
 | 8 | Self-learning ledger | Not yet written |
 
