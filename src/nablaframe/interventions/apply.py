@@ -84,7 +84,7 @@ from ..data.corpus import batch_hash
 from ..dictionaries.core import Dictionary, content_hash, decode_delta, encode
 from ..trace.registry import tap_names
 from ..trace.schema import tensor_sha256
-from .spec import InterventionSpec, position_index, spec_from_json, spec_json
+from .spec import InterventionSpec, array_hash, position_index, spec_from_json, spec_json
 
 _COMPONENT = re.compile(r"embeddings|ln_final|blocks\.(0|[1-9][0-9]*)(\.attn|\.mlp)?")
 _TOKEN_ARGS = {"patch": "source", "mean": "reference", "resample": "reference"}
@@ -160,7 +160,7 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             selected.append(position_index(e.positions, seq))
     resolved: dict[str, np.ndarray] = {}
     dictionaries: dict[str, Dictionary] = {}
-    for e in edits:
+    for e, index in zip(edits, selected):
         if e.op in _TOKEN_ARGS:
             digest = e.args[_TOKEN_ARGS[e.op]]
             other = resolved.setdefault(digest, _resolved(resolve, digest, batch_hash))
@@ -189,22 +189,37 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             if latents and latents[-1] >= d.active_width(site):  # stored sorted, so the last is the largest
                 raise ValueError(f"dpatch at {e.tap}: latent {latents[-1]} is at or beyond the site's active width"
                                  f" {d.active_width(site)}")
+        elif e.op == "dsteer":
+            d = dictionaries.setdefault(e.args["dictionary"], _dictionary(resolve, e.args["dictionary"]))
+            site = _dpatch_site(d, e.tap, "dsteer")
+            arrays = {name: resolved.setdefault(e.args[name], _resolved(resolve, e.args[name], array_hash))
+                      for name in ("remove", "add", "amounts")}
+            _check_dsteer(e.tap, arrays, batch, index, d.active_width(site))
     heads = sorted({e.tap for e in edits if "head" in e.args})
-    if heads:
+    steered = [(e.tap, dictionaries[e.args["dictionary"]]) for e in edits if e.op == "dsteer"]
+    if heads or steered:
         import jax
 
-        shapes = jax.eval_shape(lambda p, t: model.instrumented(p, t, heads)[1], params, tokens)
+        shaped = heads + [name for tap, d in steered for name in (d.sites[_dpatch_site(d, tap)][0], tap)]
+        shapes = jax.eval_shape(lambda p, t: model.instrumented(p, t, list(dict.fromkeys(shaped)))[1], params, tokens)
         for e in (e for e in edits if "head" in e.args):
             count = getattr(shapes[e.tap], "array", shapes[e.tap]).shape[2]  # (Batch, Pos, Head, HeadDim)
             if e.args["head"] >= count:
                 raise ValueError(f"zero at {e.tap}: head {e.args['head']} is at or beyond the tap's {count} heads")
+        for tap, d in steered:
+            reads = d.sites[_dpatch_site(d, tap)][0]
+            for name, width in ((reads, d.d_in), (tap, d.d_out)):
+                shape = tuple(getattr(shapes[name], "array", shapes[name]).shape)
+                if shape != (batch, seq, width):
+                    raise ValueError(f"dsteer at {tap}: {name}'s values are shaped {shape}, not (batch, pos, the"
+                                     f" dictionary's width there) = {(batch, seq, width)}")
 
     for e in edits:
         if e.op == "swap":
             params = swap_component(params, params_at(e.args["step"]), e.tap)
 
     # Each edit's operand: zeros, the scaled vector, the source or reference values at its tap, per
-    # sequence, jswap's coefficient and direction differences, or dpatch's change in the output.
+    # sequence, jswap's coefficient and direction differences, or dpatch's and dsteer's change in the output.
     operations: list[tuple[str, str, np.ndarray, int | None, Any]] = []
     for e, index in zip(edits, selected):
         if e.op == "swap" or (e.op == "jswap" and e.args["a"] == e.args["b"]):
@@ -223,6 +238,14 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
                                       dictionaries[e.args["dictionary"]], e.tap, e.args.get("latents"))
             if not np.any(operand[:, index]):
                 continue  # no change at any selected position adds no operation at all (D25)
+        elif e.op == "dsteer":
+            d = dictionaries[e.args["dictionary"]]
+            change = _dsteer_change(model, params, tokens, d, e.tap, resolved[e.args["remove"]],
+                                    resolved[e.args["add"]], resolved[e.args["amounts"]])
+            if not np.any(change[:, index]):
+                continue  # no change at any selected position adds no operation at all (D25)
+            site = _dpatch_site(d, e.tap)
+            operand = decode_delta(d, site, change.reshape(-1, d.settings.width)).reshape(batch, seq, d.d_out)
         elif e.op == "patch":
             operand = _tap_value(model, params, resolved[e.args["source"]], e.tap)
         else:
@@ -275,12 +298,12 @@ def _dictionary(resolve: Callable[[str], Any], digest: str) -> Dictionary:
     return value
 
 
-def _dpatch_site(dictionary: Dictionary, tap: str) -> int:
+def _dpatch_site(dictionary: Dictionary, tap: str, op: str = "dpatch") -> int:
     """The site whose output tap is ``tap``, or ValueError."""
     for site, (_, output) in enumerate(dictionary.sites):
         if output == tap:
             return site
-    raise ValueError(f"dpatch applies at its dictionary's output taps "
+    raise ValueError(f"{op} applies at its dictionary's output taps "
                      f"({', '.join(output for _, output in dictionary.sites)}), not {tap!r}")
 
 
@@ -309,6 +332,49 @@ def _dpatch_operand(model: Any, params: Any, tokens: np.ndarray, source: np.ndar
     return decode_delta(dictionary, site, change).reshape(batch, seq, dictionary.d_out)
 
 
+def _check_dsteer(tap: str, arrays: dict[str, np.ndarray], batch: int, index: np.ndarray, width: int) -> None:
+    """ValueError unless ``remove`` and ``add`` are int32 (n, 3) rows inside the batch, the selected positions and
+    the site's active width, none repeated, and ``amounts`` is float32 (len(add),) and finite."""
+    for name in ("remove", "add"):
+        array = arrays[name]
+        if array.dtype.name != "int32" or array.ndim != 2 or array.shape[1] != 3:
+            raise ValueError(f"dsteer at {tap}: {name} must be int32 rows [sequence, position, latent] shaped (n, 3),"
+                             f" not {array.dtype.name}{list(array.shape)}")
+        rows = array.astype(np.int64)
+        for column, what, inside in ((0, "sequence", (rows[:, 0] >= 0) & (rows[:, 0] < batch)),
+                                     (1, "position", np.isin(rows[:, 1], index)),
+                                     (2, "latent", (rows[:, 2] >= 0) & (rows[:, 2] < width))):
+            if not np.all(inside):
+                bad = rows[np.argmin(inside)]
+                allowed = {"sequence": f"range({batch})", "position": "the positions the edit selects",
+                           "latent": f"range({width}), the site's active width"}[what]
+                raise ValueError(f"dsteer at {tap}: {name} row {bad.tolist()} has a {what} outside {allowed}")
+        if len(np.unique(rows, axis=0)) != len(rows):
+            raise ValueError(f"dsteer at {tap}: {name} repeats a row")
+    amounts, add = arrays["amounts"], arrays["add"]
+    if amounts.dtype.name != "float32" or amounts.shape != (len(add),):
+        raise ValueError(f"dsteer at {tap}: amounts must be float32 shaped (len(add),) = ({len(add)},), not"
+                         f" {amounts.dtype.name}{list(amounts.shape)}")
+    if not np.all(np.isfinite(amounts)):
+        raise ValueError(f"dsteer at {tap}: every amount must be finite")
+
+
+def _dsteer_change(model: Any, params: Any, tokens: np.ndarray, dictionary: Dictionary, tap: str, remove: np.ndarray,
+                   add: np.ndarray, amounts: np.ndarray) -> np.ndarray:
+    """The change in the code, (batch, pos, width), float32: zero, minus ``f`` at each ``remove`` row, then plus its
+    amount at each ``add`` row, with ``f`` read at the site's input tap with no other edits, as ``dpatch`` reads it."""
+    site = _dpatch_site(dictionary, tap)
+    batch, seq = np.shape(tokens)
+    x = _tap_value(model, params, tokens, dictionary.sites[site][0])
+    f = encode(dictionary, site, x.reshape(-1, dictionary.d_in)).reshape(batch, seq, dictionary.settings.width)
+    change = np.zeros_like(f)
+    s, p, l = remove.astype(np.int64).T  # no row repeats, so each index is written once
+    change[s, p, l] -= f[s, p, l]
+    s, p, l = add.astype(np.int64).T
+    change[s, p, l] += amounts.astype(np.float32)
+    return change
+
+
 def _hook(jnp: Any, op: str, mask: np.ndarray, head: int | None, operand: Any) -> Callable[[Any], Any]:
     """The edit as a pure function of the tap's value, whose axes are (Batch, Pos, ...)."""
 
@@ -323,7 +389,7 @@ def _hook(jnp: Any, op: str, mask: np.ndarray, head: int | None, operand: Any) -
         if tuple(operand.shape) != tuple(expected) or operand.dtype != value.dtype:
             raise ValueError(f"{op}: operand is {operand.dtype}{list(operand.shape)}, the tap needs"
                              f" {value.dtype}{list(expected)}")
-        if op in ("add", "dpatch"):
+        if op in ("add", "dpatch", "dsteer"):
             return jnp.where(where, value + operand, value)
         if op == "jswap":
             q, d = operand[0], operand[1]

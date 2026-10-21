@@ -43,9 +43,9 @@ from typing import Any
 
 import numpy as np
 
-from ..trace.schema import canonical_json, sha256_hex
+from ..trace.schema import canonical_json, sha256_hex, tensor_sha256
 
-OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap", "dpatch")
+OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap", "dpatch", "dsteer")
 
 # Each operation's arguments: name -> kind. Exactly these keys, no others.
 _ARGS: dict[str, dict[str, str]] = {
@@ -57,6 +57,7 @@ _ARGS: dict[str, dict[str, str]] = {
     "swap": {"step": "int"},
     "jswap": {"J": "hash", "a": "int", "b": "int"},
     "dpatch": {"dictionary": "hash", "source": "hash"},
+    "dsteer": {"dictionary": "hash", "remove": "hash", "add": "hash", "amounts": "hash"},
 }
 # The other form an operation's arguments may take: ``zero`` of one head, ``dpatch`` of some latents.
 _ALTERNATIVE: dict[str, dict[str, str]] = {
@@ -181,6 +182,14 @@ def spec_from_json(data: Mapping[str, Any]) -> InterventionSpec:
             raise ValueError("each edit's JSON form has exactly tap, positions, op and args")
         edits.append(_edit(item["tap"], item["positions"], item["op"], item["args"]))
     return InterventionSpec(tuple(edits))
+
+
+def array_hash(array: Any) -> str:
+    array = np.asarray(array)
+    if array.dtype.kind not in "iuf":
+        raise ValueError(f"array_hash takes an array of integers or floats, not {array.dtype}")
+    return sha256_hex(canonical_json({"dtype": array.dtype.name, "shape": list(array.shape),
+                                      "bytes": tensor_sha256(array)}).encode("ascii"))
 
 
 def spec_hash(spec: InterventionSpec) -> str:
