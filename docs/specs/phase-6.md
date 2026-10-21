@@ -256,7 +256,7 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | --- | --- | --- | --- |
 | 1 | `dsteer`, with its identities (D48) | `interventions/spec.py`, `interventions/apply.py` | None |
 | 2 | Requests, records and their cache; descriptions, classes, predictions and relations per run (D47) | `gestures/records.py`, `gestures/declare.py`, `zoo/` | None |
-| 3 | name-this-direction and assert-this-edge (D49, D50) | `gestures/name.py`, `gestures/edge.py` | 1, 2 |
+| 3 | name-this-direction and assert-this-edge (D49, D50) | `gestures/sets.py`, `gestures/name.py`, `gestures/edge.py` | 1, 2 |
 | 4 | open-this-up and generalize-this (D51, D52) | `gestures/open.py`, `gestures/generalize.py` | 1 to 3 |
 | 5 | The command line, the Phase 6 gates and their report rules | `gestures/cli.py`, `gates/phase6/`, `reports.py` | 1 to 4 |
 | 6 | The gestures panel, the features view's links and the badges | `views/`, `viewer/`, `gates/phase6/` | 5 |
