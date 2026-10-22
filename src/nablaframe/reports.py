@@ -1,6 +1,6 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes"; docs/deltas/phase-6-delta-5.md, "Contract changes".
 
 Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/``, ``reports/phase5/`` or ``reports/phase6/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
@@ -34,7 +34,7 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE5_GATE_IDS = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5")`. The validator accepts them, and a Phase 5 report must use schema version 2. `PHASE5_GATE_IDS` gains G5.6.
 
-`PHASE6_GATE_IDS = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")`. The validator accepts them, and a Phase 6 report must use schema version 2.
+`PHASE6_GATE_IDS = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")`. The validator accepts them, and a Phase 6 report must use schema version 2. `PHASE6_GATE_IDS` gains G6.7.
 
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
@@ -153,6 +153,7 @@ Status rules for Phase 6:
   * `one_final_run` true
   * `start_offset_max <= 2`
 * G6.6's status is always `pass`: it records, not judges (D44).
+* G6.7 pass requires `builds_identical` true, `external_urls == 0`, `subjects_missing == 0` and `reports_match` true.
 
 Measurements:
 
@@ -214,6 +215,7 @@ Required measurements for Phase 6:
 * G6.4: `targets`, `reading_ratio_max`, `within_min`, `planted_top_min`, `random_within_max`, `twin_planted_top_max`
 * G6.5: `names`, `slice_f1_min`, `slice_follows_min`, `seed_f1_min`, `seed_follows_min`, `step0_outside`, `one_final_run`, `start_offset_max`
 * G6.6: `blocks`, `seconds`
+* G6.7: `badges`, `subjects_missing`, `records`, `builds_identical`, `external_urls`, `reports_match`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """

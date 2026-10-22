@@ -78,6 +78,47 @@
 //   The panel computes nothing: every number is the payload's. A payload whose step isn't the
 //   timeline's says so, as the compare panel does, and offers to move there. A payload without a
 //   meter isn't drawn. The chosen payload and latent live in the address's #fragment.
+// * Phase 6 badges: the badges file may also hold `name`, `edge`, `open`, `generalize` and `dsteer`,
+//   which G6.7 writes beside Phase 4's and Phase 5's subjects into `runs/phase6/badges.json`. Their
+//   units add to the badges': parts as an integer, or to one decimal where a median falls between
+//   two; a span, a `[first, last]` pair of steps, as "first to last"; a flag as yes or no; a label
+//   as the file holds it; and a null in any of them as "none". The compare panel shows `dsteer`'s
+//   badge for a spec with a dsteer edit, and a dsteer edit reads as moving dictionary <hash>'s
+//   latents at its tap and positions, removing rows <hash> and adding rows <hash> at amounts <hash>,
+//   each hash shortened with the full hash on hover.
+// * Gestures: `?gestures=<dir>` names a run's records folder, where src/nablaframe/gestures/records.py
+//   keeps the records and src/nablaframe/views/gestures.py writes `panel.json`. Without it the
+//   gestures panel is hidden. The panel reads `panel.json`, whose shape is in views/gestures.py, and
+//   lists its records by kind, in the order name, edge, open, generalize, each entry reading its
+//   request in words with its meter first, and a filter narrows the list by any word of an entry.
+//   Choosing one fetches its file, hashes it with crypto.subtle.digest("SHA-256"), and draws it only
+//   when the hash is its entry's and the file's key and request are its entry's; a mismatch is
+//   shown, never hidden. Above it sits its kind's badge, placed and drawn as every model-level badge
+//   is. Then, every number being the record's:
+//   - a name: its label, named or weak, and its name, a token value decoded with the index's vocab;
+//     steering's follows beside the null's, with unchanged and ablated beside them, or, where no
+//     causal test applies, the KL beside the null's, with the record's note; the name's F1 and its
+//     set's; coverage at every description; the set, each latent with its F1, and where the pointed
+//     latent ranks; the set's effect, its top and bottom tokens, with the value's rank from each
+//     end, and the pointed latent's own effect beside it, labelled as that latent's; and the top
+//     candidates. A latent with no name says it fires on no row of its class.
+//   - an edge: follows beside its null and kept beside its null, then the label, beside follows
+//     through the residual alone and the unfrozen swap; the output's follows beside its null; the
+//     single latents beside the sets; and its two places, its pairs and its instances
+//   - open-this-up: its target; the error curve, the median error at each number of parts for the
+//     absolute, signed and random orders, on a log-scaled axis of parts with the 0.1 line marked; the
+//     reading and the share within 128 parts; and, one measured instance at a time, its window and
+//     position and its top parts, each with its position, latent, attribution and name
+//   - generalize-this: the slices and the seeds as tables, each seed with its cosine; and its
+//     checkpoints on the timeline. While the record is chosen, the timeline gains rows for its F1,
+//     follows, the null's follows, the probe and the accuracy, with its envelope's runs shaded and
+//     its gap's checkpoints marked, on the timeline's step axis; a step the views' index doesn't
+//     have is drawn all the same. An edge's rows are follows, kept and their nulls.
+//   The panel computes nothing. The fragment gains gesture=<key>.
+// * Features link to names: in the features panel, an active latent with entries in the gestures
+//   panel's `names`, under the payload's `<dictionary>-<site>`, shows its name records' names and
+//   labels, and so does the chosen latent; choosing one opens it in the gestures panel. A chosen
+//   latent with none says so.
 //
 // How this page meets it:
 //

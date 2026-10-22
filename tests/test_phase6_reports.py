@@ -32,7 +32,7 @@ def _g(gate_id: str, status: str = "pass", **measurements) -> dict:
 
 
 def test_phase6_gate_ids():
-    assert reports.PHASE6_GATE_IDS == ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")
+    assert reports.PHASE6_GATE_IDS == ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6", "G6.7")
     old = _g("G6.2")
     old["schema_version"] = 1
     del old["git_commit"], old["git_dirty"]

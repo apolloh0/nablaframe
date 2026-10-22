@@ -248,7 +248,7 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | G6.4 Open-this-up | Every judged target, trained and twin | Every bar met | Diagnose the gesture |
 | G6.5 Generalize-this | Both judged names across slices, seeds and every checkpoint | Every bar met | Diagnose the gesture |
 | G6.6 Reference run | The requests above | Recorded, not judged | Not applicable |
-| G6.7 Records, panel and badges | Every record above built twice; badges from the reports | Byte-identical, no external URL, every gesture has a badge | Diagnose the build |
+| G6.7 Records, panel and badges | Every record above built twice; badges from the reports | Byte-identical, no external URL, every gesture has a badge, and the edge, generalize and reference records are the ones G6.3, G6.5 and G6.6 measured | Diagnose the build |
 
 ## Work packages
 
