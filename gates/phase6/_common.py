@@ -166,6 +166,7 @@ Measurements several gates share:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -173,6 +174,13 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from nablaframe.dictionaries import core, measure
+from nablaframe.gestures import cli, records, sets
+from nablaframe.gestures import name as naming
+from nablaframe.gestures import open as opening
+from nablaframe.interventions.apply import run_intervened
+from nablaframe.interventions.spec import InterventionSpec, array_hash, edit
 
 INSTANCES = {"name": 512, "edge": 512, "open": 128}
 SEEDS = {"name": 31, "edge": 32, "open": 35, "generalize": 40, "reference": 70}
@@ -216,32 +224,65 @@ ticking = p5.ticking
 # ---------------------------------------------------------------------------
 
 
+def _is_int(value: Any) -> bool:
+    return isinstance(value, (int, np.integer)) and not isinstance(value, (bool, np.bool_))
+
+
 def least(values: Sequence[Any]) -> float | None:
-    raise NotImplementedError
+    values = list(values)
+    if not values or any(v is None for v in values):
+        return None
+    return float(min(values))
 
 
 def greatest(values: Sequence[Any]) -> float | None:
-    raise NotImplementedError
+    values = list(values)
+    if not values or any(v is None for v in values):
+        return None
+    return float(max(values))
 
 
 def ratio(reading: Any, bar: float) -> float | None:
-    raise NotImplementedError
+    return None if reading is None else float(reading) / float(bar)
 
 
 def twin_excess(follows: Any, null_follows: Any) -> float | None:
-    raise NotImplementedError
+    if follows is None or null_follows is None:
+        return None
+    return float(follows) - float(null_follows)
+
+
+_SHARES = ("follows", "unchanged", "ablated_changed", "null_follows", "null_unchanged")
 
 
 def pool(steerings: Sequence[Mapping[str, Any] | None]) -> dict[str, Any]:
-    raise NotImplementedError
+    causal = [s for s in steerings if s is not None and s.get("causal") is True]
+    counts = [int(s["instances"]) for s in causal]
+    total = sum(counts)
+    pooled: dict[str, Any] = {"values": len(causal), "instances": total}
+    for share in _SHARES:
+        pooled[share] = float(sum(float(s[share]) * n for s, n in zip(causal, counts)) / total) if total else None
+    return pooled
 
 
 def planted_rank(order: Any, position: int, latents: Sequence[int], width: int) -> int:
-    raise NotImplementedError
+    order = np.asarray(order, dtype=np.int64)
+    at = (order // int(width) == int(position)) & np.isin(order % int(width), [int(i) for i in latents])
+    hits = np.flatnonzero(at)
+    if not len(hits):
+        raise ValueError(f"no part at position {position} with a latent in {list(latents)!r} is in the order")
+    return int(hits[0])
 
 
 def envelope_checks(envelope: Mapping[str, Any], steps: Sequence[int]) -> dict[str, Any]:
-    raise NotImplementedError
+    steps = [int(s) for s in steps]
+    held = [int(s) for s in envelope["steps"]]
+    runs, final, probe = envelope["runs"], envelope["final"], envelope["probe_reads_from"]
+    one = final is not None and len(runs) == 1 and [int(s) for s in runs[0]] == [int(s) for s in final]
+    offset = None
+    if final is not None and probe is not None:
+        offset = abs(steps.index(int(final[0])) - steps.index(int(probe)))
+    return {"step0_outside": 0 in steps and 0 not in held, "one_final_run": bool(one), "start_offset": offset}
 
 
 # ---------------------------------------------------------------------------
@@ -249,12 +290,68 @@ def envelope_checks(envelope: Mapping[str, Any], steps: Sequence[int]) -> dict[s
 # ---------------------------------------------------------------------------
 
 
+def _pointed(table: Any, d: str, v: int, latent: int) -> dict[str, Any]:
+    """A value pointed at one latent: its top candidate, whether that names it as planted, and whether it's in the
+    value's set."""
+    found = table.candidates(latent)
+    name = None if not found else {"description": found[0][0], "value": int(found[0][1]), "f1": float(found[0][2])}
+    named = name is not None and name["f1"] >= sets.FLOOR
+    return {"latent": int(latent), "name": name, "named": bool(named),
+            "as_planted": bool(named and name["description"] == d and name["value"] == int(v)),
+            "in_set": int(latent) in table.set_for(d, v)}
+
+
 def recovery(table: Any, d: str, v: int) -> dict[str, Any]:
-    raise NotImplementedError
+    if not table.has(d, v):
+        raise ValueError(f"{d!r} = {v!r} isn't a value of a description that counts at this class")
+    means = table.mean_codes(d, v).astype(np.float64)
+    outside = np.setdiff1d(np.arange(len(means)), np.asarray(table.shared, dtype=np.int64))
+    if not len(outside):
+        raise ValueError("every latent is shared, so no latent has a largest code outside the shared ones")
+    largest = int(outside[np.argmax(means[outside])])  # the first of equal maxima: the lower latent
+    return {"best_f1": _pointed(table, d, v, int(table.ranked(d, v)[0])),
+            "largest_code": _pointed(table, d, v, largest)}
+
+
+def _share(flags: Sequence[Any]) -> float:
+    return float(np.mean([bool(f) for f in flags]))
 
 
 def planted_name(reading: Any, cls: str, d: str, *, instances: int, seed: int) -> dict[str, Any]:
-    raise NotImplementedError
+    table = reading.table(cls)  # ValueError for a class the run doesn't declare
+    if d not in table.descriptions:
+        raise ValueError(f"{d!r} doesn't count at class {cls!r}; {list(table.descriptions)} do")
+    by_value = []
+    for v in (int(u) for u in table.values(d)):
+        chosen = list(table.set_for(d, v))
+        effects = naming.latent_effects(reading.dictionary, reading.site, reading.params, chosen)
+        ends = naming.ends(table.mean_codes(d, v)[chosen].astype(np.float64) @ effects, v)
+        by_value.append({"value": v, **recovery(table, d, v),
+                         "steering": naming.steer(reading, cls, d, v, instances=instances,
+                                                  rng=np.random.default_rng(seed)),
+                         "effect": {"rank_from_top": ends["rank_from_top"],
+                                    "rank_from_bottom": ends["rank_from_bottom"]}})
+    shares: dict[str, list[float]] = {name: [] for name in reading.described}
+    for entry in by_value:
+        for name, share in naming.coverage(reading, table.set_for(d, entry["value"]), entry["value"]).items():
+            if share is not None:
+                shares[name].append(share)
+    largest = [e["largest_code"] for e in by_value]
+    ranks = [e["effect"] for e in by_value]
+    return {"description": d, "class": cls, "block": reading.block, "tap": reading.output_tap,
+            "values": len(by_value),
+            "named": _share([e["best_f1"]["named"] for e in by_value]),
+            "named_as_planted": _share([e["best_f1"]["as_planted"] for e in by_value]),
+            "largest_code": {"named": _share([x["named"] for x in largest]),
+                             "named_as_planted": _share([x["as_planted"] for x in largest]),
+                             "in_set": _share([x["in_set"] for x in largest])},
+            "steering": pool([e["steering"] for e in by_value]),
+            "effect": {"last": _share([r["rank_from_bottom"] == 0 for r in ranks]),
+                       "first": _share([r["rank_from_top"] == 0 for r in ranks]),
+                       "mean_rank_from_top": float(np.mean([r["rank_from_top"] for r in ranks])),
+                       "vocabulary": int(np.shape(reading.params.wte)[0])},
+            "coverage": {name: float(np.mean(found)) if found else None for name, found in shares.items()},
+            "by_value": by_value}
 
 
 @dataclass(frozen=True)
@@ -266,35 +363,212 @@ class OpenCandidate:
     planted_latents: tuple[int, ...] | None
 
 
+def _same_source(up: Any, down: Any) -> None:
+    if up.model is not down.model or up.params is not down.params or up.declaration is not down.declaration:
+        raise ValueError("both readings must share their model, params and declaration, as the same objects")
+    if up.windows.shape != down.windows.shape or not np.array_equal(up.windows, down.windows):
+        raise ValueError("both readings must read equal windows")
+
+
 def relation_candidates(up: Any, down: Any, relation: str) -> list[OpenCandidate]:
-    raise NotImplementedError
+    _same_source(up, down)
+    declaration = up.declaration
+    R = declaration.relation(relation)  # ValueError for a relation the run doesn't declare
+    for reading, place, which in ((up, R.up, "upstream"), (down, R.down, "downstream")):
+        if reading.block != place.block:
+            raise ValueError(f"relation {relation!r} reads its {which} place after block {place.block}, but the "
+                             f"{which} reading is after block {reading.block}")
+    du, dd = R.up.description, R.down.description
+    Tu, Td = up.table(R.up.cls), down.table(R.down.cls)
+    for d, table, cls in ((du, Tu, R.up.cls), (dd, Td, R.down.cls)):
+        if d not in table.descriptions:
+            raise ValueError(f"{d!r} doesn't count at class {cls!r}")
+    up_sets: dict[int, tuple[int, ...]] = {}
+    down_sets: dict[int, tuple[int, ...]] = {}
+    held_up, held_down = up.described[du], down.described[dd]
+    found = []
+    for i in range(len(up.windows)):
+        for pu, pd in declaration.pairs(relation, up.windows[i]):
+            pu, pd = int(pu), int(pd)
+            v, u = int(held_up[i, pu]), int(held_down[i, pd])
+            if not Tu.has(du, v) or not Td.has(dd, u):
+                continue
+            if u not in down_sets:
+                down_sets[u] = Td.set_for(dd, u)
+            latents = down_sets[u]
+            if not down.codes[i, pd, list(latents)].astype(np.float64).sum() > 0:
+                continue
+            if v not in up_sets:
+                up_sets[v] = Tu.set_for(du, v)
+            found.append(OpenCandidate(int(i), pd, latents, pu, up_sets[v]))
+    return found
+
+
+def _empty_orders() -> dict[str, Any]:
+    return {kind: {"error_median": None, "readings": [], "reading_median": None, "within": None}
+            for kind in opening.ORDERS}
+
+
+def _reading_median(readings: Sequence[int | None]) -> float | None:
+    """The median reading, a reading of None counting as larger than any ``k``, and None where it is one."""
+    median = float(np.median([np.inf if r is None else r for r in readings]))
+    return None if np.isinf(median) else median
 
 
 def open_targets(up: Any, down: Any, candidates: Sequence[OpenCandidate], *, instances: int, seed: int,
                  chunk: int | None = None) -> dict[str, Any]:
-    raise NotImplementedError
+    if not _is_int(instances) or instances < 1:
+        raise ValueError(f"instances must be a positive int, got {instances!r}")
+    if not _is_int(seed) or seed < 0:
+        raise ValueError(f"seed must be a non-negative int, got {seed!r}")
+    chunk = cli.OPEN_CHUNK if chunk is None else chunk
+    candidates = list(candidates)
+    holds = {(x.planted_position is not None, x.planted_latents is not None) for x in candidates}
+    if holds - {(True, True), (False, False)} or len(holds) > 1:
+        raise ValueError("either every candidate holds a planted set, its position and latents, or none does")
+    planted = holds == {(True, True)}
+
+    rng = np.random.default_rng(int(seed))
+    chosen = candidates
+    if len(candidates) > instances:
+        chosen = [candidates[k] for k in sorted(rng.choice(len(candidates), size=int(instances), replace=False))]
+    shuffles = [opening.order(up.codes[x.window, :x.position + 1], up.codes[x.window, :x.position + 1], "random", rng)
+                for x in chosen]
+    results: dict[str, Any] = {"candidates": len(candidates), "instances": len(chosen), "no_span": 0, "measured": 0,
+                               "windows": [], "orders": _empty_orders(),
+                               "planted": {"ranks": [], "rank_median": None, "top": None} if planted else None}
+    if not chosen:
+        return results
+
+    targets = [opening.Target(x.window, x.position, tuple(x.latents)) for x in chosen]
+    A = opening.attribute(up, down, targets, chunk=chunk)
+    span = np.abs(A.full - A.none)
+    measured = [k for k in range(len(chosen)) if not span[k] < opening.NO_SPAN]
+    results["no_span"] = len(chosen) - len(measured)
+    results["measured"] = len(measured)
+    if not measured:
+        return results
+    results["windows"] = [[chosen[k].window, chosen[k].position] for k in measured]
+
+    ranked = {k: [opening.order(A.attributions[k, :chosen[k].position + 1], A.codes[k, :chosen[k].position + 1], kind)
+                  if kind != "random" else shuffles[k] for kind in opening.ORDERS] for k in measured}
+    # Every kept-parts reading in one evaluate call: each measured instance, then each order, then each k.
+    rows = [(k, o, size) for k in measured for o in range(len(opening.ORDERS)) for size in opening.PARTS]
+    kept = np.zeros((len(rows),) + A.codes.shape[1:], dtype=np.float32)
+    for r, (k, o, size) in enumerate(rows):
+        parts = ranked[k][o][:size]
+        kept[r].reshape(-1)[parts] = A.codes[k].reshape(-1)[parts]
+    pre = opening.evaluate(up, down, [targets[k] for k, _, _ in rows], kept, chunk=chunk)
+    full = np.array([A.full[k] for k, _, _ in rows])
+    errors = (np.abs(pre - full) / np.array([span[k] for k, _, _ in rows])).reshape(
+        len(measured), len(opening.ORDERS), len(opening.PARTS))
+    for o, kind in enumerate(opening.ORDERS):
+        readings = [next((size for size, e in zip(opening.PARTS, errors[m, o]) if e <= opening.ERROR), None)
+                    for m in range(len(measured))]
+        results["orders"][kind] = {
+            "error_median": [float(np.median(errors[:, o, s])) for s in range(len(opening.PARTS))],
+            "readings": readings, "reading_median": _reading_median(readings),
+            "within": float(np.mean([r is not None for r in readings]))}
+    if planted:
+        ranks = [planted_rank(ranked[k][0], chosen[k].planted_position, chosen[k].planted_latents, up.width)
+                 for k in measured]
+        results["planted"] = {"ranks": ranks, "rank_median": float(np.median(ranks)),
+                              "top": float(np.mean([r < opening.TOP_PARTS for r in ranks]))}
+    return results
+
+
+def _cut(found: list[int], n: int, rng: np.random.Generator) -> list[int]:
+    if len(found) <= n:
+        return found
+    return sorted(int(x) for x in rng.choice(np.asarray(found, dtype=np.int64), size=n, replace=False))
 
 
 def reference_sample(table: Any, n: int, rng: np.random.Generator) -> list[int]:
-    raise NotImplementedError
+    return _cut([int(i) for i in np.flatnonzero(np.asarray(table.active) > 0)], int(n), rng)
 
 
 def reference_values(table: Any, d: str, n: int, rng: np.random.Generator) -> list[int]:
-    raise NotImplementedError
+    if d not in table.descriptions:
+        raise ValueError(f"{d!r} doesn't count at this table; {list(table.descriptions)} do")
+    best = table.f1(d).max(axis=0)
+    return _cut([int(v) for v, f in zip(table.values(d), best) if f >= sets.FLOOR], int(n), rng)
+
+
+def _edit_rows(rows: list[list[int]]) -> np.ndarray:
+    return np.array(rows, dtype=np.int32).reshape(-1, 3)
 
 
 def identity_edits(codes: Any) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
-    raise NotImplementedError
+    codes = np.asarray(codes)
+    if codes.ndim != 3:
+        raise ValueError(f"codes must be shaped (B, seq, width), got {codes.shape}")
+    none = _edit_rows([])
+    zero_codes, largest = [], []
+    for k in range(codes.shape[0]):
+        for p in range(codes.shape[1]):
+            zeros = np.flatnonzero(codes[k, p] == 0)
+            if len(zeros):
+                zero_codes.append([k, p, int(zeros[0])])
+            largest.append([k, p, int(np.argmax(codes[k, p]))])  # the first of equal maxima: the lower latent
+    return {"empty": (none, none.copy(), np.zeros(0, dtype=np.float32)),
+            "zero codes": (_edit_rows(zero_codes), none.copy(), np.zeros(0, dtype=np.float32)),
+            "zero amounts": (none.copy(), _edit_rows(largest), np.zeros(len(largest), dtype=np.float32))}
 
 
 def dsteer_identities(model: Any, params: Any, *, n_layers: int, dictionary: Any, tokens: Any,
                       site: int = 0) -> list[bool]:
-    raise NotImplementedError
+    site = dictionary._site(site)
+    input_tap, output_tap = dictionary.sites[site]
+    tokens = np.ascontiguousarray(tokens, dtype=np.int32)
+    batch, seq = tokens.shape
+    width = dictionary.active_width(site)
+    x = measure.activations(model, params, tokens, [input_tap])[input_tap]
+    codes = core.encode(dictionary, site, x.reshape(batch * seq, -1))[:, :width].reshape(batch, seq, width)
+
+    def logits(spec: Any, store: dict[str, Any]) -> np.ndarray:
+        out, _ = run_intervened(model, params, tokens, spec, n_layers=n_layers, resolve=store.__getitem__)
+        return np.asarray(getattr(out, "array", out))
+
+    plain = logits(InterventionSpec(()), {})
+    exact = []
+    for remove, add, amounts in identity_edits(codes).values():
+        arrays = {"remove": remove, "add": add, "amounts": amounts}
+        hashes = {name: array_hash(value) for name, value in arrays.items()}
+        store: dict[str, Any] = {core.content_hash(dictionary): dictionary}
+        store.update({hashes[name]: value for name, value in arrays.items()})
+        spec = InterventionSpec((edit(output_tap, "all", "dsteer", dictionary=core.content_hash(dictionary),
+                                      **hashes),))
+        got = logits(spec, store)
+        exact.append(bool(got.dtype == plain.dtype and got.shape == plain.shape and np.array_equal(got, plain)))
+    return exact
 
 
 def requests(run: str, steps: Sequence[int], dictionaries: Sequence[str]) -> list[Any]:
-    raise NotImplementedError
+    a, b = dictionaries
+    if a == b:
+        raise ValueError("requests needs two distinct dictionaries")
+    edge = {"relation": "hop", "up": a, "up_site": 0, "down": b, "down_site": 0}
+    opened = {"dictionary": b, "site": 0, "class": "query", "upstream": a, "upstream_site": 0}
+    bases = [("name", {"dictionary": a, "site": 0, "class": "query", "latent": 0}),
+             ("name", {"dictionary": b, "site": 0, "class": "query", "latent": 0}),
+             ("edge", edge),
+             ("open", {**opened, "latent": 0}),
+             ("open", {**opened, "description": "b", "value": 0}),
+             ("generalize", {"dictionary": a, "site": 0, "class": "query", "description": "b"}),
+             ("generalize", {"dictionary": b, "site": 0, "class": "query", "description": "b"}),
+             ("generalize", dict(edge))]
+    steps = list(steps)
+    return [records.GestureRequest(kind, run, step, dict(args), instances, seed)
+            for kind, args in bases for step in (steps[0], steps[-1]) for instances in (32, 512) for seed in (0, 1)]
 
 
 def request_hashes(reqs: Sequence[Any]) -> dict[str, Any]:
-    raise NotImplementedError
+    reqs = list(reqs)
+    hashes = [records.request_hash(r) for r in reqs]
+    stable = True
+    for r, h in zip(reqs, hashes):
+        read_back = records.request_from_json(json.loads(json.dumps(records.request_json(r))))
+        reversed_args = records.GestureRequest(r.kind, r.run, r.step, dict(reversed(list(r.args.items()))),
+                                               r.instances, r.seed)
+        stable = stable and records.request_hash(read_back) == h and records.request_hash(reversed_args) == h
+    return {"checked": len(reqs), "distinct": len(set(hashes)) == len(hashes), "stable": bool(stable)}
