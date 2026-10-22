@@ -90,6 +90,11 @@ the functions that need it, so this module imports without it.
 
 from __future__ import annotations
 
+import argparse
+import importlib
+import json
+import re
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -97,7 +102,10 @@ from typing import Any
 
 import numpy as np
 
-from . import declare, records
+from ..data.corpus import batch_hash
+from ..zoo import declarations
+from . import declare, edge, generalize, name, records, sets
+from . import open as opening
 
 READ_CHUNK = 256
 OPEN_CHUNK = 32
@@ -111,6 +119,10 @@ MODULES = {
     "open": _COMMON + ("nablaframe.gestures.name", "nablaframe.gestures.open"),
     "generalize": _COMMON + ("nablaframe.gestures.name", "nablaframe.gestures.edge", "nablaframe.gestures.generalize"),
 }
+
+_HASH = re.compile(r"[0-9a-f]{64}")
+_CHECKPOINT = re.compile(r"step-(0|[1-9][0-9]*)\.safetensors")
+_SEED = re.compile(r"[1-9][0-9]*")
 
 
 @dataclass(frozen=True)
@@ -128,31 +140,267 @@ class Context:
 
 
 def declaration_for(run: str, config: Any) -> declare.Declaration:
-    raise NotImplementedError
+    from ..zoo.tasks import InductionTask, TwoHopTask
+
+    if run == "two_hop":
+        declaration = declarations.two_hop(TwoHopTask())
+    elif run == "induction":
+        declaration = declarations.induction(InductionTask())
+    elif run == "reference":
+        declaration = declare.reference(config.seq)
+    else:
+        raise ValueError(f"run must be one of {RUNS}, got {run!r}")
+    if declaration.seq != config.seq:
+        raise ValueError(f"the {run} run reads {declaration.seq} tokens, but the config's seq is {config.seq}")
+    return declaration
 
 
 def code(kind: str) -> dict[str, str]:
-    raise NotImplementedError
+    if kind not in MODULES:
+        raise ValueError(f"kind must be one of {tuple(MODULES)}, got {kind!r}")
+    return records.code_identity(*(importlib.import_module(module) for module in MODULES[kind]))
+
+
+def _named(request: records.GestureRequest) -> list[tuple[str, int]]:
+    """The (dictionary, site) pairs the request reads, in the order its gesture takes them."""
+    args = request.args
+    if "relation" in args:
+        return [(args["up"], args["up_site"]), (args["down"], args["down_site"])]
+    if request.kind == "open":
+        return [(args["upstream"], args["upstream_site"]), (args["dictionary"], args["site"])]
+    return [(args["dictionary"], args["site"])]
+
+
+def _check(request: records.GestureRequest, context: Context) -> None:
+    """Every refusal, before anything runs: ValueError for anything the request names that the context lacks."""
+    if not isinstance(request, records.GestureRequest):
+        raise ValueError(f"request must be a GestureRequest, got {type(request).__name__}")
+    if request.run != context.run:
+        raise ValueError(f"the request is for run {request.run}, but the context holds run {context.run}")
+    if request.step not in context.steps:
+        raise ValueError(f"step {request.step} isn't one of the run's checkpoints {list(context.steps)}")
+    windows = np.asarray(context.windows)
+    seq = context.declaration.seq
+    if (windows.ndim != 2 or windows.shape[0] < 1 or windows.shape[1] != seq + 1
+            or not np.issubdtype(windows.dtype, np.integer)):
+        raise ValueError(f"the windows must be an integer array (B, {seq + 1}) with B at least 1, got "
+                         f"{windows.dtype} {windows.shape}")
+    args, declaration = request.args, context.declaration
+    for digest, site in _named(request):
+        dictionary = context.dictionary(digest)  # ValueError for one the context doesn't hold
+        if not 0 <= site < len(dictionary.sites):
+            raise ValueError(f"dictionary {digest} has no site {site}; it has {len(dictionary.sites)}")
+    if "relation" in args:
+        declaration.relation(args["relation"])  # ValueError for a relation the run doesn't declare
+    elif args["class"] not in declaration.classes:
+        raise ValueError(f"run {declaration.run!r} declares no class {args['class']!r}; it declares "
+                         f"{list(declaration.classes)}")
+    if "latent" in args:
+        digest, site = _named(request)[-1]
+        width = context.dictionary(digest).active_width(site)
+        if args["latent"] >= width:
+            raise ValueError(f"latent {args['latent']} is beyond site {site}'s active width {width}")
+    if "description" in args:
+        known = declare.DESCRIPTIONS + tuple(declaration.variables)
+        if args["description"] not in known:
+            raise ValueError(f"run {declaration.run!r} has no description {args['description']!r}; it has "
+                             f"{list(known)}")
+    if request.kind == "generalize":
+        for s in sorted(context.seeds):
+            for digest, _ in _named(request):
+                if digest not in context.seeds[s]:
+                    raise ValueError(f"dictionary seed {s} has no counterpart of dictionary {digest}")
+                context.dictionary(context.seeds[s][digest])
 
 
 def inputs(request: records.GestureRequest, context: Context) -> dict[str, Any]:
-    raise NotImplementedError
+    _check(request, context)
+    steps = context.steps if request.kind == "generalize" else (request.step,)
+    named = {digest for digest, _ in _named(request)}
+    if request.kind == "generalize":
+        named |= {context.seeds[s][digest] for s in context.seeds for digest, _ in _named(request)}
+    return {"states": {str(step): context.state_at(step) for step in steps}, "dictionaries": sorted(named),
+            "windows": [batch_hash(context.windows)]}
 
 
 def results(request: records.GestureRequest, context: Context) -> dict[str, Any]:
-    raise NotImplementedError
+    _check(request, context)
+    params = context.params_at(request.step)  # taken once, so that every reading shares it
+
+    def read(digest: str, site: int) -> Any:
+        return sets.read_site(context.model, params, n_layers=context.n_layers, declaration=context.declaration,
+                              dictionary=context.dictionary(digest), site=site, windows=context.windows,
+                              chunk=READ_CHUNK)
+
+    args, counts = request.args, {"instances": request.instances, "seed": request.seed}
+    places = _named(request)
+    if request.kind == "name":
+        return name.name(read(*places[0]), args["class"], args["latent"], **counts)
+    if request.kind == "edge":
+        return edge.edge(read(*places[0]), read(*places[1]), args["relation"], **counts)
+    if request.kind == "open":
+        up, down = read(*places[0]), read(*places[1])
+        target = ({"latent": args["latent"]} if "latent" in args
+                  else {"description": args["description"], "value": args["value"]})
+        return opening.open_up(up, down, args["class"], **counts, **target, chunk=OPEN_CHUNK)
+    over = {"steps": context.steps, "params_at": context.params_at}
+    if "relation" in args:
+        (up, up_site), (down, down_site) = places
+        seed_readings = {s: (read(context.seeds[s][up], up_site), read(context.seeds[s][down], down_site))
+                         for s in sorted(context.seeds)}
+        return generalize.generalize_edge(read(up, up_site), read(down, down_site), args["relation"], **counts,
+                                          **over, seed_readings=seed_readings)
+    digest, site = places[0]
+    seed_readings = {s: read(context.seeds[s][digest], site) for s in sorted(context.seeds)}
+    return generalize.generalize_name(read(digest, site), args["class"], args["description"], **counts, **over,
+                                      seed_readings=seed_readings)
 
 
 def build(request: records.GestureRequest, context: Context) -> records.GestureRecord:
-    raise NotImplementedError
+    held = inputs(request, context)
+    return records.GestureRecord(request, held, code(request.kind), results(request, context))
 
 
 def record(folder: str | Path, request: records.GestureRequest, context: Context) -> records.GestureRecord:
-    raise NotImplementedError
+    held = inputs(request, context)
+    return records.cached_record(folder, request, held, code(request.kind), lambda: results(request, context))
+
+
+class _Parser(argparse.ArgumentParser):
+    """Raises on a bad command line, so ``main`` reports it in one line and returns 1."""
+
+    def error(self, message: str) -> Any:
+        raise ValueError(message)
+
+
+def _arguments(argv: list[str] | None) -> argparse.Namespace:
+    parser = _Parser(prog="python -m nablaframe.gestures.cli",
+                     description="Run a gesture request on a run's checkpoint and write its record.")
+    parser.add_argument("--run", required=True, choices=RUNS, help="the run, which picks its declaration")
+    parser.add_argument("--config", type=Path, required=True, help="a JSON of GPT2Config's fields")
+    parser.add_argument("--checkpoints", type=Path, required=True,
+                        help="a folder of step-<n>.safetensors checkpoints with their sidecars")
+    parser.add_argument("--windows", type=Path, required=True, help="an integer .npy, the held-out windows")
+    parser.add_argument("--dictionaries", type=Path, required=True,
+                        help="a folder searched at every depth for <content hash>.safetensors")
+    parser.add_argument("--request", type=Path, required=True, help="the request's JSON")
+    parser.add_argument("--out", type=Path, required=True, help="the folder of the run's records")
+    parser.add_argument("--seeds", type=Path, help='a JSON {"<seed>": {"<content hash>": "<content hash>"}}')
+    return parser.parse_args(argv)
+
+
+def _json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _sidecars(folder: Path, run: str) -> dict[int, str]:
+    """Each checkpoint's step and state hash; ValueError unless every sidecar names ``run``."""
+    if not folder.is_dir():
+        raise ValueError(f"{folder} is not a folder")
+    states = {}
+    for path in sorted(folder.iterdir()):
+        match = _CHECKPOINT.fullmatch(path.name)
+        if match is None or not path.is_file():
+            continue
+        step, sidecar = int(match.group(1)), path.with_suffix(".json")
+        if not sidecar.is_file():
+            raise ValueError(f"{path} has no sidecar {sidecar.name}")
+        data = _json(sidecar)
+        if not isinstance(data, dict) or data.get("step") != step:
+            raise ValueError(f"{sidecar} doesn't name step {step}")
+        if data.get("run_id") != run:
+            raise ValueError(f"{sidecar} names run {data.get('run_id')!r}, not the request's run {run}")
+        state = data.get("state_sha256")
+        if not isinstance(state, str) or _HASH.fullmatch(state) is None:
+            raise ValueError(f"{sidecar} holds no state_sha256")
+        states[step] = state
+    if not states:
+        raise ValueError(f"{folder} holds no step-<n>.safetensors checkpoints")
+    return dict(sorted(states.items()))
+
+
+def _dictionaries(folder: Path) -> Callable[[str], Any]:
+    """The context's ``dictionary``: each one loaded when first named, from the one file of its name."""
+    from ..dictionaries.core import load_dictionary
+
+    if not folder.is_dir():
+        raise ValueError(f"{folder} is not a folder")
+    found: dict[str, list[Path]] = {}
+    for path in sorted(folder.rglob("*.safetensors")):
+        if _HASH.fullmatch(path.stem) and path.is_file():
+            found.setdefault(path.stem, []).append(path)
+    loaded: dict[str, Any] = {}
+
+    def dictionary(digest: str) -> Any:
+        if digest not in loaded:
+            paths = found.get(digest, [])
+            if not paths:
+                raise ValueError(f"{folder} holds no dictionary {digest}.safetensors")
+            if len(paths) > 1:
+                raise ValueError(f"{folder} holds {len(paths)} files named {digest}.safetensors: "
+                                 f"{', '.join(str(p) for p in paths)}")
+            loaded[digest] = load_dictionary(paths[0])
+        return loaded[digest]
+
+    return dictionary
+
+
+def _seeds(path: Path | None) -> dict[int, dict[str, str]]:
+    if path is None:
+        return {}
+    data = _json(path)
+    if not isinstance(data, dict):
+        raise ValueError(f"{path} must hold a JSON object of seeds")
+    seeds = {}
+    for seed, counterparts in data.items():
+        if _SEED.fullmatch(seed) is None:
+            raise ValueError(f"{path}: a seed beside seed 0 is a positive decimal int, got {seed!r}")
+        if not isinstance(counterparts, dict) or not all(
+                isinstance(v, str) and _HASH.fullmatch(k) and _HASH.fullmatch(v) for k, v in counterparts.items()):
+            raise ValueError(f"{path}: seed {seed} must map content hashes to content hashes")
+        seeds[int(seed)] = dict(counterparts)
+    return dict(sorted(seeds.items()))
+
+
+def _run(args: argparse.Namespace) -> str:
+    """Resolves the context, then writes the record; a failure before the write writes nothing."""
+    from ..model.gpt2 import GPT2Config, GPT2Model, init_params
+    from ..train.checkpoint import load_params
+
+    config = GPT2Config(**_json(args.config))
+    declaration = declaration_for(args.run, config)
+    request = records.request_from_json(_json(args.request))
+    states = _sidecars(args.checkpoints, request.run)
+    windows = np.load(args.windows, allow_pickle=False)
+    if args.out.exists() and not args.out.is_dir():
+        raise ValueError(f"{args.out} is not a folder")
+    template = init_params(config, seed=0)
+
+    def params_at(step: int) -> Any:
+        if step not in states:
+            raise ValueError(f"step {step} isn't one of the run's checkpoints {list(states)}")
+        return load_params(args.checkpoints / f"step-{step}.safetensors", like=template)
+
+    def state_at(step: int) -> str:
+        if step not in states:
+            raise ValueError(f"step {step} isn't one of the run's checkpoints {list(states)}")
+        return states[step]
+
+    context = Context(run=request.run, declaration=declaration, model=GPT2Model(config), n_layers=config.n_layers,
+                      steps=tuple(states), params_at=params_at, state_at=state_at, windows=windows,
+                      dictionary=_dictionaries(args.dictionaries), seeds=_seeds(args.seeds))
+    return record(args.out, request, context).key
 
 
 def main(argv: list[str] | None = None) -> int:
-    raise NotImplementedError
+    try:
+        key = _run(_arguments(argv))
+    except Exception as exc:  # noqa: BLE001 - every error is one line and exit code 1
+        message = " ".join(str(exc).split()) or type(exc).__name__
+        print(f"error: {message}", file=sys.stderr)
+        return 1
+    print(key)
+    return 0
 
 
 if __name__ == "__main__":
