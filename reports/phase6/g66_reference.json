@@ -1,0 +1,1533 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G6.6",
+  "git_commit": "8b22049c40074c497e0c87b8c6769f8d29894009",
+  "git_dirty": false,
+  "measurements": {
+    "blocks": {
+      "0": {
+        "names": {
+          "active": 2001,
+          "by_description": {
+            "token(p)": 0.28125,
+            "token(p+1)": 0.0,
+            "token(p-1)": 0.01171875,
+            "token(p-2)": 0.0078125,
+            "token(p-3)": 0.0
+          },
+          "coverage_median": 0.7169905953985718,
+          "named": 0.30078125,
+          "sampled": 256,
+          "seconds": 0.9526449157856405,
+          "width": 2048
+        },
+        "open": null,
+        "steering": {
+          "by_value": [
+            {
+              "steering": {
+                "ablated_changed": 0.25,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.75
+              },
+              "value": 16
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 42
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.25,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.75,
+                "unchanged": 0.75
+              },
+              "value": 44
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 50
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 53
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.375,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.75,
+                "unchanged": 0.5
+              },
+              "value": 121
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 203
+            },
+            {
+              "steering": {
+                "ablated_changed": 1.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 7,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.0
+              },
+              "value": 248
+            }
+          ],
+          "pooled": {
+            "ablated_changed": 0.2222222222222222,
+            "follows": 0.0,
+            "instances": 63,
+            "null_follows": 0.0,
+            "null_unchanged": 0.9365079365079365,
+            "unchanged": 0.7619047619047619,
+            "values": 8
+          },
+          "seconds": 4.914711082819849,
+          "values": [
+            16,
+            42,
+            44,
+            50,
+            53,
+            121,
+            203,
+            248
+          ],
+          "values_named": 8
+        }
+      },
+      "1": {
+        "names": {
+          "active": 1973,
+          "by_description": {
+            "token(p)": 0.234375,
+            "token(p+1)": 0.0,
+            "token(p-1)": 0.0234375,
+            "token(p-2)": 0.0078125,
+            "token(p-3)": 0.0
+          },
+          "coverage_median": 0.7693739681228777,
+          "named": 0.265625,
+          "sampled": 256,
+          "seconds": 0.949387582950294,
+          "width": 2048
+        },
+        "open": {
+          "candidates": 590,
+          "instances": 32,
+          "measured": 32,
+          "no_span": 0,
+          "orders": {
+            "absolute": {
+              "error_median": [
+                0.7928937389221122,
+                0.6265418937795075,
+                0.45447020488819545,
+                0.2935518660208609,
+                0.17991127228486553,
+                0.127878236992846,
+                0.14291051031733507,
+                0.12482557897529414
+              ],
+              "reading_median": 96.0,
+              "readings": [
+                null,
+                16,
+                16,
+                8,
+                null,
+                64,
+                4,
+                8,
+                null,
+                16,
+                null,
+                null,
+                128,
+                32,
+                128,
+                8,
+                32,
+                32,
+                2,
+                null,
+                null,
+                null,
+                null,
+                32,
+                null,
+                8,
+                null,
+                null,
+                4,
+                32,
+                null,
+                null
+              ],
+              "within": 0.5625
+            },
+            "random": {
+              "error_median": [
+                0.999991154669053,
+                0.9999599568138247,
+                1.0000391084798492,
+                0.9999282525322384,
+                0.9992169615703819,
+                0.994500782372564,
+                0.9908339991968169,
+                0.9661210894786585
+              ],
+              "reading_median": null,
+              "readings": [
+                null,
+                null,
+                null,
+                null,
+                null,
+                128,
+                64,
+                null,
+                null,
+                32,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "within": 0.09375
+            },
+            "signed": {
+              "error_median": [
+                0.7928937389221122,
+                0.6087462796294927,
+                0.4055420794318386,
+                0.2719559899266878,
+                0.16392590927169626,
+                0.15858436186793473,
+                0.152918767326217,
+                0.13727896372806653
+              ],
+              "reading_median": 16.0,
+              "readings": [
+                null,
+                16,
+                null,
+                4,
+                16,
+                4,
+                null,
+                8,
+                null,
+                4,
+                null,
+                4,
+                16,
+                8,
+                16,
+                4,
+                8,
+                16,
+                2,
+                32,
+                null,
+                128,
+                16,
+                8,
+                null,
+                8,
+                32,
+                null,
+                4,
+                null,
+                null,
+                4
+              ],
+              "within": 0.6875
+            }
+          },
+          "planted": null,
+          "seconds": 3.261231833137572,
+          "windows": [
+            [
+              0,
+              57
+            ],
+            [
+              0,
+              160
+            ],
+            [
+              2,
+              123
+            ],
+            [
+              3,
+              209
+            ],
+            [
+              10,
+              247
+            ],
+            [
+              13,
+              5
+            ],
+            [
+              14,
+              75
+            ],
+            [
+              16,
+              58
+            ],
+            [
+              16,
+              98
+            ],
+            [
+              21,
+              1
+            ],
+            [
+              22,
+              173
+            ],
+            [
+              22,
+              199
+            ],
+            [
+              23,
+              29
+            ],
+            [
+              23,
+              222
+            ],
+            [
+              24,
+              43
+            ],
+            [
+              24,
+              168
+            ],
+            [
+              25,
+              241
+            ],
+            [
+              27,
+              194
+            ],
+            [
+              28,
+              239
+            ],
+            [
+              31,
+              145
+            ],
+            [
+              32,
+              64
+            ],
+            [
+              35,
+              48
+            ],
+            [
+              38,
+              250
+            ],
+            [
+              40,
+              150
+            ],
+            [
+              40,
+              231
+            ],
+            [
+              41,
+              61
+            ],
+            [
+              41,
+              125
+            ],
+            [
+              45,
+              247
+            ],
+            [
+              46,
+              200
+            ],
+            [
+              51,
+              149
+            ],
+            [
+              53,
+              218
+            ],
+            [
+              59,
+              102
+            ]
+          ]
+        },
+        "steering": {
+          "by_value": [
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.75,
+                "unchanged": 1.0
+              },
+              "value": 7
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.625,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.375
+              },
+              "value": 16
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.875
+              },
+              "value": 40
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.5,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.625,
+                "unchanged": 0.5
+              },
+              "value": 44
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.625,
+                "unchanged": 1.0
+              },
+              "value": 50
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.875,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.125
+              },
+              "value": 53
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 203
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.7142857142857143,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 7,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.2857142857142857
+              },
+              "value": 257
+            }
+          ],
+          "pooled": {
+            "ablated_changed": 0.3333333333333333,
+            "follows": 0.0,
+            "instances": 63,
+            "null_follows": 0.0,
+            "null_unchanged": 0.873015873015873,
+            "unchanged": 0.6507936507936508,
+            "values": 8
+          },
+          "seconds": 4.738905542064458,
+          "values": [
+            7,
+            16,
+            40,
+            44,
+            50,
+            53,
+            203,
+            257
+          ],
+          "values_named": 8
+        }
+      },
+      "2": {
+        "names": {
+          "active": 2037,
+          "by_description": {
+            "token(p)": 0.18359375,
+            "token(p+1)": 0.01171875,
+            "token(p-1)": 0.015625,
+            "token(p-2)": 0.0,
+            "token(p-3)": 0.0
+          },
+          "coverage_median": 0.8255994667069599,
+          "named": 0.2109375,
+          "sampled": 256,
+          "seconds": 0.9557150839827955,
+          "width": 2048
+        },
+        "open": {
+          "candidates": 1369,
+          "instances": 32,
+          "measured": 32,
+          "no_span": 0,
+          "orders": {
+            "absolute": {
+              "error_median": [
+                0.9902349964625682,
+                0.9671662950292433,
+                0.7535308932354093,
+                0.5431593132793517,
+                0.3126841003613613,
+                0.271725862230342,
+                0.18919063135503877,
+                0.15705935814478444
+              ],
+              "reading_median": null,
+              "readings": [
+                null,
+                null,
+                128,
+                null,
+                16,
+                128,
+                8,
+                16,
+                32,
+                null,
+                8,
+                null,
+                128,
+                null,
+                null,
+                32,
+                null,
+                null,
+                128,
+                8,
+                64,
+                32,
+                null,
+                null,
+                null,
+                4,
+                null,
+                null,
+                2,
+                null,
+                null,
+                null
+              ],
+              "within": 0.46875
+            },
+            "random": {
+              "error_median": [
+                1.000002046819357,
+                0.9999936825135782,
+                1.0000059651328166,
+                0.9998059107277586,
+                0.9992958284066792,
+                0.9992579893622345,
+                0.9967022996459449,
+                0.9742215430274692
+              ],
+              "reading_median": null,
+              "readings": [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                128,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "within": 0.03125
+            },
+            "signed": {
+              "error_median": [
+                0.9746709826705802,
+                0.9600976890560102,
+                0.5962726974583683,
+                0.2581308553052911,
+                0.20304398999005918,
+                0.14195695353213278,
+                0.1232033919334598,
+                0.10215685902520318
+              ],
+              "reading_median": 32.0,
+              "readings": [
+                null,
+                null,
+                128,
+                null,
+                16,
+                32,
+                4,
+                8,
+                8,
+                null,
+                8,
+                null,
+                32,
+                8,
+                16,
+                8,
+                null,
+                64,
+                null,
+                8,
+                32,
+                16,
+                16,
+                null,
+                128,
+                4,
+                128,
+                32,
+                null,
+                null,
+                null,
+                16
+              ],
+              "within": 0.65625
+            }
+          },
+          "planted": null,
+          "seconds": 3.248784124851227,
+          "windows": [
+            [
+              0,
+              59
+            ],
+            [
+              1,
+              47
+            ],
+            [
+              2,
+              224
+            ],
+            [
+              4,
+              31
+            ],
+            [
+              11,
+              146
+            ],
+            [
+              13,
+              39
+            ],
+            [
+              15,
+              52
+            ],
+            [
+              16,
+              214
+            ],
+            [
+              17,
+              32
+            ],
+            [
+              21,
+              75
+            ],
+            [
+              23,
+              34
+            ],
+            [
+              23,
+              36
+            ],
+            [
+              23,
+              48
+            ],
+            [
+              23,
+              250
+            ],
+            [
+              24,
+              160
+            ],
+            [
+              24,
+              176
+            ],
+            [
+              26,
+              223
+            ],
+            [
+              28,
+              92
+            ],
+            [
+              30,
+              5
+            ],
+            [
+              31,
+              160
+            ],
+            [
+              32,
+              243
+            ],
+            [
+              36,
+              26
+            ],
+            [
+              40,
+              93
+            ],
+            [
+              41,
+              206
+            ],
+            [
+              42,
+              77
+            ],
+            [
+              42,
+              175
+            ],
+            [
+              43,
+              45
+            ],
+            [
+              47,
+              112
+            ],
+            [
+              48,
+              144
+            ],
+            [
+              52,
+              25
+            ],
+            [
+              54,
+              225
+            ],
+            [
+              61,
+              40
+            ]
+          ]
+        },
+        "steering": {
+          "by_value": [
+            {
+              "steering": {
+                "ablated_changed": 0.125,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.75,
+                "unchanged": 0.75
+              },
+              "value": 4
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.875,
+                "unchanged": 1.0
+              },
+              "value": 6
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.875,
+                "unchanged": 0.875
+              },
+              "value": 7
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.625,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.375
+              },
+              "value": 16
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.25,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.625
+              },
+              "value": 40
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.75
+              },
+              "value": 42
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.875,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.875,
+                "unchanged": 0.125
+              },
+              "value": 44
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 50
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.625,
+                "unchanged": 1.0
+              },
+              "value": 53
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.5,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.25
+              },
+              "value": 66
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.42857142857142855,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 7,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.2857142857142857
+              },
+              "value": 248
+            }
+          ],
+          "pooled": {
+            "ablated_changed": 0.25287356321839083,
+            "follows": 0.0,
+            "instances": 87,
+            "null_follows": 0.0,
+            "null_unchanged": 0.9080459770114943,
+            "unchanged": 0.6436781609195402,
+            "values": 11
+          },
+          "seconds": 6.493180249817669,
+          "values": [
+            4,
+            6,
+            7,
+            16,
+            40,
+            42,
+            44,
+            50,
+            53,
+            66,
+            248
+          ],
+          "values_named": 11
+        }
+      },
+      "3": {
+        "names": {
+          "active": 2046,
+          "by_description": {
+            "token(p)": 0.08984375,
+            "token(p+1)": 0.0078125,
+            "token(p-1)": 0.0078125,
+            "token(p-2)": 0.0,
+            "token(p-3)": 0.00390625
+          },
+          "coverage_median": 0.7084684082681683,
+          "named": 0.109375,
+          "sampled": 256,
+          "seconds": 0.9609695826657116,
+          "width": 2048
+        },
+        "open": {
+          "candidates": 3355,
+          "instances": 32,
+          "measured": 32,
+          "no_span": 0,
+          "orders": {
+            "absolute": {
+              "error_median": [
+                0.7862374269480559,
+                0.6120227798399223,
+                0.4390319674540606,
+                0.2240443919651372,
+                0.14185794797247278,
+                0.09740816879934766,
+                0.045831446897219935,
+                0.07235675108531736
+              ],
+              "reading_median": 24.0,
+              "readings": [
+                4,
+                16,
+                128,
+                16,
+                4,
+                8,
+                16,
+                8,
+                32,
+                64,
+                null,
+                null,
+                16,
+                16,
+                32,
+                16,
+                32,
+                128,
+                16,
+                32,
+                128,
+                16,
+                32,
+                8,
+                8,
+                null,
+                2,
+                32,
+                null,
+                null,
+                16,
+                128
+              ],
+              "within": 0.84375
+            },
+            "random": {
+              "error_median": [
+                0.9999822144442363,
+                1.0000526330405122,
+                1.0003179394657327,
+                1.0003865057625458,
+                0.9998939989982978,
+                0.9990511095724403,
+                1.0000783531238244,
+                0.9524401130645859
+              ],
+              "reading_median": null,
+              "readings": [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "within": 0.0
+            },
+            "signed": {
+              "error_median": [
+                0.7862374269480559,
+                0.6086549810067061,
+                0.34425612257945826,
+                0.1769463821205417,
+                0.1254830791566358,
+                0.1622429641721964,
+                0.19986962346346787,
+                0.2432862868107099
+              ],
+              "reading_median": 16.0,
+              "readings": [
+                4,
+                8,
+                null,
+                8,
+                4,
+                8,
+                16,
+                4,
+                16,
+                null,
+                null,
+                32,
+                8,
+                8,
+                16,
+                16,
+                16,
+                32,
+                4,
+                8,
+                32,
+                16,
+                32,
+                8,
+                8,
+                64,
+                2,
+                null,
+                null,
+                null,
+                8,
+                16
+              ],
+              "within": 0.8125
+            }
+          },
+          "planted": null,
+          "seconds": 3.238329540938139,
+          "windows": [
+            [
+              0,
+              59
+            ],
+            [
+              0,
+              249
+            ],
+            [
+              2,
+              10
+            ],
+            [
+              3,
+              128
+            ],
+            [
+              9,
+              173
+            ],
+            [
+              11,
+              44
+            ],
+            [
+              13,
+              150
+            ],
+            [
+              15,
+              151
+            ],
+            [
+              15,
+              203
+            ],
+            [
+              18,
+              107
+            ],
+            [
+              20,
+              204
+            ],
+            [
+              21,
+              71
+            ],
+            [
+              21,
+              83
+            ],
+            [
+              21,
+              191
+            ],
+            [
+              22,
+              153
+            ],
+            [
+              22,
+              154
+            ],
+            [
+              24,
+              176
+            ],
+            [
+              25,
+              129
+            ],
+            [
+              26,
+              231
+            ],
+            [
+              28,
+              111
+            ],
+            [
+              30,
+              44
+            ],
+            [
+              33,
+              141
+            ],
+            [
+              38,
+              130
+            ],
+            [
+              39,
+              139
+            ],
+            [
+              40,
+              213
+            ],
+            [
+              41,
+              82
+            ],
+            [
+              42,
+              92
+            ],
+            [
+              46,
+              249
+            ],
+            [
+              48,
+              22
+            ],
+            [
+              50,
+              247
+            ],
+            [
+              54,
+              121
+            ],
+            [
+              61,
+              106
+            ]
+          ]
+        },
+        "steering": {
+          "by_value": [
+            {
+              "steering": {
+                "ablated_changed": 0.875,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.125
+              },
+              "value": 2
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.5,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.5,
+                "unchanged": 0.375
+              },
+              "value": 4
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.375,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.875,
+                "unchanged": 0.625
+              },
+              "value": 6
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.625,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.75,
+                "unchanged": 0.25
+              },
+              "value": 7
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.875,
+                "causal": true,
+                "follows": 0.125,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.125
+              },
+              "value": 8
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.875,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.125
+              },
+              "value": 16
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.625,
+                "unchanged": 1.0
+              },
+              "value": 40
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.875,
+                "unchanged": 1.0
+              },
+              "value": 42
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.875,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 0.875,
+                "unchanged": 0.125
+              },
+              "value": 44
+            },
+            {
+              "steering": {
+                "ablated_changed": 0.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 1.0
+              },
+              "value": 50
+            },
+            {
+              "steering": {
+                "ablated_changed": 1.0,
+                "causal": true,
+                "follows": 0.0,
+                "instances": 8,
+                "null_follows": 0.0,
+                "null_unchanged": 1.0,
+                "unchanged": 0.0
+              },
+              "value": 53
+            }
+          ],
+          "pooled": {
+            "ablated_changed": 0.5454545454545454,
+            "follows": 0.011363636363636364,
+            "instances": 88,
+            "null_follows": 0.0,
+            "null_unchanged": 0.8636363636363636,
+            "unchanged": 0.4318181818181818,
+            "values": 11
+          },
+          "seconds": 6.227840583771467,
+          "values": [
+            2,
+            4,
+            6,
+            7,
+            8,
+            16,
+            40,
+            42,
+            44,
+            50,
+            53
+          ],
+          "values_named": 11
+        }
+      }
+    },
+    "dictionaries": [
+      "d3aabf6c720cb50994db7fbdc0a50932df8915a17f612d7807bc500b6f0639ca",
+      "eff6c5d2bccbd4e6fcd9c4d50062f472e6b01ea06cb20860f9f7cdae282e2f78",
+      "9914c986b4d171d26416389a433d0448e71cb1fb31951158a6bcff4161ca7097",
+      "b46712f4583360a0686a0698eeaa506f509f78f56967a6ee0784267ff6241676"
+    ],
+    "held_out_sha256": "74cbb80fc7d9c758c7c350ea5d62fa779d4ee3bf2c2c082dfe2358c2cb0e8e93",
+    "held_out_windows": 64,
+    "run_id": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+    "seconds": {
+      "0": 6.628799708094448,
+      "1": 9.637027792166919,
+      "2": 11.380766415968537,
+      "3": 11.081899166572839,
+      "total": 39.04879008419812
+    },
+    "seed": 70,
+    "settings": {
+      "latents": 256,
+      "open": 32,
+      "per_value": 8,
+      "values": 32
+    },
+    "step": 12208,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-22T05:04:47Z",
+  "xla_flags": ""
+}
