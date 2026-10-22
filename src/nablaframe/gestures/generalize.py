@@ -58,7 +58,7 @@ and a record holds what ``generalize_name`` or ``generalize_edge`` returns (D47)
   by every ``steer_description`` below, in the order given.
 
   - ``"description"``, ``"class"``, ``"site"``, ``"tap"`` (the site's output tap) and ``"values"``
-    (``d``'s values at ``T``).
+    (how many values ``d`` takes at ``T``).
   - ``"slices"``: the held-out windows split by ``numpy.array_split(range(B), SLICES)``. For each
     slice, ``{"windows", "f1", "follows", "null_follows"}``: its window count;
     ``description_f1`` of the ``ClassTable`` of the slice's codes and descriptions at the class's

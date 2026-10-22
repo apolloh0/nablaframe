@@ -24,14 +24,17 @@ or judges: the gates ask for open-this-up, and a record holds what ``open_up`` r
   unintervened pass, the output tap's value less ``core.decode`` of ``up.codes``, held fixed as the
   edge meter holds it (D42). The downstream input tap is read at each target's position. The pass is
   ``model.instrumented`` with that one intervention, compiled with ``jax.jit`` with the codes, tokens
-  and error as arguments and computed in float32, ``chunk`` targets at a time.
+  and error as arguments and computed in float32, ``chunk`` targets at a time. ValueError, before
+  anything runs, for readings ``open_up`` refuses, no targets, a target whose window, position or
+  latents fall outside the windows, the sequence or ``down``'s active width, codes of another
+  shape, or a ``chunk`` that isn't a positive int.
 * ``attribute(up, down, targets, *, chunk=32)``: ``Attribution(codes, attributions, full, none)``:
   ``codes``, float32 (n, seq, up.width), ``up.codes`` of each target's window; ``attributions``,
   float64 (n, seq, up.width), integrated gradients from zero, ``codes`` times the mean over ``α`` in
   ``(s + 0.5) / IG_STEPS``, ``s`` in ``range(IG_STEPS)``, of the gradient of ``evaluate``'s
   pre-activation with respect to the codes at ``α · codes``, taken with ``jax.grad`` in float32 and
   averaged in float64, and zero at every position after the target's; ``full``, ``evaluate`` with
-  ``codes``; ``none``, ``evaluate`` with every code zero.
+  ``codes``; ``none``, ``evaluate`` with every code zero. ValueError as ``evaluate`` raises it, codes aside.
 * ``order(attributions, codes, kind, rng=None)``: one target's parts in order, an int64 array of
   ``position * width + latent``, for ``attributions`` and ``codes`` shaped (positions, width), the
   positions up to and including the target's: every part there, each once.

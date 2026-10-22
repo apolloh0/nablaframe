@@ -1,8 +1,8 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes".
 
-Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/`` or ``reports/phase5/``. The Phase 0
+Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/``, ``reports/phase5/`` or ``reports/phase6/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
 status must agree with its own measurements.
 
@@ -10,7 +10,7 @@ Report fields, all required, no others allowed (version 2 adds two; see below):
 
 ==================  =============================================================
 schema_version      1 or 2
-gate_id             one of GATE_IDS and PHASE1_GATE_IDS to PHASE5_GATE_IDS
+gate_id             one of GATE_IDS and PHASE1_GATE_IDS to PHASE6_GATE_IDS
 status              one of STATUSES; see STATUS RULES below
 measurements        JSON object containing at least REQUIRED_MEASUREMENTS[gate_id];
                     every number finite
@@ -34,6 +34,8 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE5_GATE_IDS = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5")`. The validator accepts them, and a Phase 5 report must use schema version 2. `PHASE5_GATE_IDS` gains G5.6.
 
+`PHASE6_GATE_IDS = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")`. The validator accepts them, and a Phase 6 report must use schema version 2.
+
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
 * G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
@@ -44,7 +46,7 @@ STATUS RULES (a report whose status contradicts its measurements is invalid):
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
-* fail is allowed for any gate except G0.6, G2.5, G3.3, G3.4, G4.4 and G5.5
+* fail is allowed for any gate except G0.6, G2.5, G3.3, G3.4, G4.4, G5.5 and G6.6
 
 Status rules for Phase 1:
 
@@ -118,6 +120,40 @@ Status rules for Phase 5:
 * G5.5's status is always `pass`: it records, not judges (D44).
 * G5.6 pass requires `builds_identical` true, `external_urls == 0`, `dictionaries_missing == 0` and `subjects_missing == 0`.
 
+Status rules for Phase 6:
+
+* G6.1 pass requires `identities_checked >= 1`, `identities_exact == identities_checked`, `request_hashes_distinct` true, `request_hashes_stable` true and `records_identical` true.
+* G6.2 pass requires:
+  * `named_as_planted_min >= 0.7`
+  * `follows_min >= 0.8`
+  * `null_follows_max <= 0.05`
+  * `twin_named_max <= 0.1`
+  * `twin_follows_max <= 0.05`
+* G6.3 pass requires:
+  * `follows_min >= 0.8`
+  * `null_follows_max <= 0.1`
+  * `output_follows_min >= 0.8`
+  * `kept_max <= 0.4`
+  * `null_kept_min >= 0.8`
+  * `residual_alone_max <= 0.1`
+  * `labels_computed` true
+  * `twin_excess_max <= 0.1`
+* G6.4 pass requires:
+  * `reading_ratio_max <= 1`
+  * `within_min >= 0.8`
+  * `planted_top_min >= 0.6`
+  * `random_within_max <= 0.1`
+  * `twin_planted_top_max <= 0.1`
+* G6.5 pass requires:
+  * `slice_f1_min >= 0.5`
+  * `slice_follows_min >= 0.8`
+  * `seed_f1_min >= 0.5`
+  * `seed_follows_min >= 0.8`
+  * `step0_outside` true
+  * `one_final_run` true
+  * `start_offset_max <= 2`
+* G6.6's status is always `pass`: it records, not judges (D44).
+
 Measurements:
 
 Null is allowed for anything a gate could not measure; every number must be finite. Values must be plain JSON types: convert numpy scalars with int(), float() or bool().
@@ -169,6 +205,15 @@ Required measurements for Phase 5:
 * G5.4: `edge_pairs`, `judged_mlps`, `edge_ratio_max`, `block_pairs`, `jsae`
 * G5.5: `meters`, `edge_pairs`, `train_seconds`
 * G5.6: `badges`, `subjects_missing`, `dictionaries`, `dictionaries_missing`, `features`, `builds_identical`, `external_urls`
+
+Required measurements for Phase 6:
+
+* G6.1: `identities_checked`, `identities_exact`, `identities_by_site`, `request_hashes_checked`, `request_hashes_distinct`, `request_hashes_stable`, `records_identical`, `records_by_kind`
+* G6.2: `names`, `named_as_planted_min`, `follows_min`, `null_follows_max`, `twin_named_max`, `twin_follows_max`
+* G6.3: `edges`, `follows_min`, `null_follows_max`, `output_follows_min`, `kept_max`, `null_kept_min`, `residual_alone_max`, `labels_computed`, `twin_excess_max`
+* G6.4: `targets`, `reading_ratio_max`, `within_min`, `planted_top_min`, `random_within_max`, `twin_planted_top_max`
+* G6.5: `names`, `slice_f1_min`, `slice_follows_min`, `seed_f1_min`, `seed_follows_min`, `step0_outside`, `one_final_run`, `start_offset_max`
+* G6.6: `blocks`, `seconds`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """
