@@ -87,8 +87,11 @@ that there the gestures are recorded, not judged.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
+
+from nablaframe.reports import validate_report
 
 SUBJECTS = ("name", "edge", "open", "generalize", "dsteer")
 UNITS = ("fraction", "ratio", "score", "count", "parts", "step", "span", "flag", "label")
@@ -112,5 +115,178 @@ DSTEER_NOTE = ("The identities show dsteer changes nothing where it should chang
                "nothing, removing only latents whose code is zero, and adding only zero amounts.")
 
 
+_GATES = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5")
+_JUDGED_BY = {"name": ("G6.1", "G6.2"), "edge": ("G6.1", "G6.3"), "open": ("G6.1", "G6.4"),
+              "generalize": ("G6.1", "G6.5"), "dsteer": ("G6.1",)}
+_NOTES = {"name": [STEERING_NOTE, REFERENCE_NOTE], "edge": [LABEL_NOTE, REFERENCE_NOTE],
+          "open": [TWIN_OPEN_NOTE, REFERENCE_NOTE], "generalize": [CHECKPOINTS_NOTE, PATCH_NOTE, REFERENCE_NOTE],
+          "dsteer": [DSTEER_NOTE]}
+
+
+def _checked(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
+    out: dict[str, Mapping[str, Any]] = {}
+    for gate_id in _GATES:
+        if gate_id not in reports:
+            raise ValueError(f"reports must hold {', '.join(_GATES)}; {gate_id} is missing")
+        report = reports[gate_id]
+        problems = validate_report(report)
+        if problems:
+            raise ValueError(f"the {gate_id} report is invalid: {'; '.join(problems)}")
+        if report["gate_id"] != gate_id:
+            raise ValueError(f"the report filed under {gate_id} carries gate id {report['gate_id']!r}")
+        out[gate_id] = report
+    return out
+
+
+class _Facts:
+    """Collects facts, reading each value from the report at its path."""
+
+    def __init__(self, reports: Mapping[str, Mapping[str, Any]]) -> None:
+        self.reports = reports
+        self.facts: list[dict[str, Any]] = []
+
+    def value(self, gate: str, path: list) -> Any:
+        value: Any = self.reports[gate]["measurements"]
+        for segment in path:
+            try:
+                value = value[segment]
+            except (KeyError, IndexError, TypeError):
+                raise ValueError(f"the {gate} report has no measurement at {path!r}") from None
+        return value
+
+    def add(self, label: str, unit: str, gate: str, path: list) -> None:
+        self.facts.append({"label": label, "value": copy.deepcopy(self.value(gate, path)), "unit": unit,
+                           "gate": gate, "path": list(path)})
+
+    def flag(self, gate: str, path: list, what: str) -> bool:
+        value = self.value(gate, path)
+        if not isinstance(value, bool):
+            raise ValueError(f"the {gate} report's {what} must be a flag")
+        return value
+
+    def places(self, gate: str, key: str) -> list[str]:
+        mapping = self.value(gate, [key])
+        if not isinstance(mapping, Mapping):
+            raise ValueError(f"the {gate} report's {key} must be a mapping of places")
+        return sorted(mapping)
+
+
+def _built(f: _Facts, kind: str) -> None:
+    f.add(f"{kind} records: one request built twice gives identical bytes", "flag", "G6.1",
+          ["records_by_kind", kind, 0])
+    f.add(f"{kind} records: the command line's build gives identical bytes too", "flag", "G6.1",
+          ["records_by_kind", kind, 1])
+
+
+def _name(f: _Facts) -> None:
+    _built(f, "name")
+    for key, label in (("named_as_planted_min", "values named as planted, least of any judged name"),
+                       ("follows_min", "steering follows, least of any judged name"),
+                       ("null_follows_max", "steering follows under the null, most of any judged name"),
+                       ("twin_named_max", "twin: values named at all, most of any judged name"),
+                       ("twin_follows_max", "twin: steering follows, most of any judged name")):
+        f.add(label, "fraction", "G6.2", [key])
+    for place in f.places("G6.2", "names"):
+        if not f.flag("G6.2", ["names", place, "judged"], f"judged flag at {place}"):
+            continue
+        trained = ["names", place, "trained"]
+        f.add(f"{place}: values named as planted", "fraction", "G6.2", trained + ["named_as_planted"])
+        f.add(f"{place}: steering follows", "fraction", "G6.2", trained + ["steering", "follows"])
+        f.add(f"{place}: values whose set's effect ranks them first", "fraction", "G6.2",
+              trained + ["effect", "first"])
+        f.add(f"{place}: values whose set's effect ranks them last", "fraction", "G6.2",
+              trained + ["effect", "last"])
+
+
+def _edge(f: _Facts) -> None:
+    _built(f, "edge")
+    for key, label in (("follows_min", "the swap follows, least of any judged edge"),
+                       ("null_follows_max", "the swap follows under the null, most of any judged edge"),
+                       ("output_follows_min", "the swap follows at the output, least of any judged edge"),
+                       ("kept_max", "with the upstream set removed, the downstream set's mass kept (median), "
+                                    "most of any judged edge"),
+                       ("null_kept_min", "with the null's latents removed instead, the mass kept, least of any "
+                                         "judged edge"),
+                       ("residual_alone_max", "with every block between the sites frozen, the swap still follows, "
+                                              "most of any judged edge")):
+        f.add(label, "fraction", "G6.3", [key])
+    f.add("every judged edge is labelled computed", "flag", "G6.3", ["labels_computed"])
+    f.add("twin: follows less its null's follows, most of any judged edge", "fraction", "G6.3",
+          ["twin_excess_max"])
+    for place in f.places("G6.3", "edges"):
+        judged = f.flag("G6.3", ["edges", place, "judged"], f"judged flag at {place}")
+        tag = "" if judged else " (recorded)"
+        trained = ["edges", place, "trained"]
+        f.add(f"{place}: the swap follows{tag}", "fraction", "G6.3", trained + ["follows"])
+        f.add(f"{place}: the swap follows under the null{tag}", "fraction", "G6.3", trained + ["null_follows"])
+        f.add(f"{place}: the edge is labelled{tag}", "label", "G6.3", trained + ["label"])
+
+
+def _open(f: _Facts) -> None:
+    _built(f, "open")
+    f.add("median reading over its bar, most of any target", "ratio", "G6.4",
+          ["reading_ratio_max"])
+    for key, label in (("within_min", "instances read within 128 parts, least of any target"),
+                       ("planted_top_min", "the planted set's first part in the top 8 parts, least of any target"),
+                       ("random_within_max", "in random order of parts, instances read within 128 parts, most of any "
+                                          "target"),
+                       ("twin_planted_top_max", "twin: the planted set's first part in the top 8 parts, most of any "
+                                              "target")):
+        f.add(label, "fraction", "G6.4", [key])
+    for place in f.places("G6.4", "targets"):
+        target = ["targets", place]
+        absolute = target + ["trained", "orders", "absolute"]
+        f.add(f"{place}: median number of upstream parts to read the set", "parts", "G6.4",
+              absolute + ["reading_median"])
+        f.add(f"{place}: the bar, in upstream parts", "parts", "G6.4", target + ["bar"])
+        f.add(f"{place}: instances read within 128 parts", "fraction", "G6.4", absolute + ["within"])
+        f.add(f"{place}: the planted set's first part in the top 8 parts", "fraction", "G6.4",
+              target + ["trained", "planted", "top"])
+        if f.flag("G6.4", target + ["twin_judged"], f"twin_judged flag at {place}"):
+            f.add(f"{place}: twin: the planted set's first part in the top 8 parts", "fraction", "G6.4",
+                  target + ["twin", "planted", "top"])
+
+
+def _generalize(f: _Facts) -> None:
+    _built(f, "generalize")
+    for key, unit, label in (
+            ("slice_f1_min", "score", "held-out slices: F1, least"),
+            ("slice_follows_min", "fraction", "held-out slices: steering follows, least"),
+            ("seed_f1_min", "score", "dictionary seeds 1 and 2, the name derived again: F1, least"),
+            ("seed_follows_min", "fraction", "dictionary seeds 1 and 2, the name derived again: steering follows, "
+             "least"),
+            ("step0_outside", "flag", "step 0 lies outside the envelope"),
+            ("one_final_run", "flag", "each envelope is one run, ending at the final checkpoint"),
+            ("start_offset_max", "count", "checkpoints between the envelope's start and the probe's first reading, "
+             "most of any judged name")):
+        f.add(label, unit, "G6.5", [key])
+    for place in f.places("G6.5", "names"):
+        envelope = ["names", place, "results", "envelope"]
+        f.add(f"{place}: the envelope's run to the final checkpoint", "span", "G6.5", envelope + ["final"])
+        f.add(f"{place}: step the probe reads the variable from", "step", "G6.5",
+              envelope + ["probe_reads_from"])
+
+
+def _dsteer(f: _Facts) -> None:
+    f.add("identities reproduced bit for bit", "count", "G6.1", ["identities_exact"])
+    f.add("identities checked", "count", "G6.1", ["identities_checked"])
+
+
+_BUILDERS = {"name": _name, "edge": _edge, "open": _open, "generalize": _generalize, "dsteer": _dsteer}
+
+
 def gesture_badges(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    raise NotImplementedError
+    checked = _checked(reports)
+    f = _Facts(checked)
+    badges: dict[str, dict[str, Any]] = {}
+    for subject in SUBJECTS:
+        f.facts = []
+        _BUILDERS[subject](f)
+        labels = [fact["label"] for fact in f.facts]
+        if len(set(labels)) != len(labels):
+            raise ValueError(f"the {subject} badge would repeat a label")
+        passed = all(checked[g]["status"] == "pass" for g in _JUDGED_BY[subject])
+        badges[subject] = {"status": "judged: pass" if passed else "judged: fail",
+                           "sources": sorted({fact["gate"] for fact in f.facts}), "facts": f.facts,
+                           "notes": list(_NOTES[subject])}
+    return badges
