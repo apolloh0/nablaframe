@@ -239,7 +239,7 @@ PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.
 PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
 PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5", "G4.6")
 PHASE5_GATE_IDS: tuple[str, ...] = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5", "G5.6")
-PHASE6_GATE_IDS: tuple[str, ...] = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")
+PHASE6_GATE_IDS: tuple[str, ...] = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6", "G6.7")
 _ALL_GATE_IDS: tuple[str, ...] = (
     GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS + PHASE5_GATE_IDS
     + PHASE6_GATE_IDS
@@ -372,6 +372,7 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
         "one_final_run", "start_offset_max",
     ),
     "G6.6": ("blocks", "seconds"),
+    "G6.7": ("badges", "subjects_missing", "records", "builds_identical", "external_urls", "reports_match"),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
 _ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4", "G5.5", "G6.6")
@@ -683,6 +684,10 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
             at_least("slice_f1_min", 0.5), at_least("slice_follows_min", 0.8), at_least("seed_f1_min", 0.5),
             at_least("seed_follows_min", 0.8), is_("step0_outside", True), is_("one_final_run", True),
             at_most("start_offset_max", 2),
+        ],
+        ("G6.7", "pass"): [
+            is_("builds_identical", True), equals("external_urls", 0), equals("subjects_missing", 0),
+            is_("reports_match", True),
         ],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
