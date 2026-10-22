@@ -1,0 +1,1257 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G6.5",
+  "git_commit": "76c5f75658dcd58b9104aa3aa78fc9f784b14f17",
+  "git_dirty": false,
+  "measurements": {
+    "bars": {
+      "edge_follows": 0.8,
+      "edge_null_follows": 0.1,
+      "follows": 0.8,
+      "kept": 0.4,
+      "named_as_planted": 0.7,
+      "null_follows": 0.05,
+      "null_kept": 0.8,
+      "output_follows": 0.8,
+      "planted_top": 0.6,
+      "random_within": 0.1,
+      "reading_ratio": 1.0,
+      "residual_alone": 0.1,
+      "seed_f1": 0.5,
+      "seed_follows": 0.8,
+      "slice_f1": 0.5,
+      "slice_follows": 0.8,
+      "start_offset": 2,
+      "twin_excess": 0.1,
+      "twin_follows": 0.05,
+      "twin_named": 0.1,
+      "twin_planted_top": 0.1,
+      "within": 0.8
+    },
+    "instances": 512,
+    "names": {
+      "induction token(p+1) after block 1 at mechanism": {
+        "checks": {
+          "one_final_run": true,
+          "start_offset": 1,
+          "step0_outside": true
+        },
+        "patch": [
+          {
+            "rate": 0.01953125,
+            "step": 0
+          },
+          {
+            "rate": 0.013020833333333334,
+            "step": 50
+          },
+          {
+            "rate": 0.0026041666666666665,
+            "step": 100
+          },
+          {
+            "rate": 0.0,
+            "step": 150
+          },
+          {
+            "rate": 0.0013020833333333333,
+            "step": 200
+          },
+          {
+            "rate": 0.0026041666666666665,
+            "step": 250
+          },
+          {
+            "rate": 0.0,
+            "step": 300
+          },
+          {
+            "rate": 0.0,
+            "step": 350
+          },
+          {
+            "rate": 0.0013020833333333333,
+            "step": 400
+          },
+          {
+            "rate": 0.009114583333333334,
+            "step": 450
+          },
+          {
+            "rate": 0.07552083333333333,
+            "step": 500
+          },
+          {
+            "rate": 0.3268229166666667,
+            "step": 550
+          },
+          {
+            "rate": 0.6315104166666666,
+            "step": 600
+          },
+          {
+            "rate": 0.8294270833333334,
+            "step": 650
+          },
+          {
+            "rate": 0.9049479166666666,
+            "step": 700
+          },
+          {
+            "rate": 0.921875,
+            "step": 750
+          },
+          {
+            "rate": 0.9609375,
+            "step": 800
+          },
+          {
+            "rate": 0.9791666666666666,
+            "step": 850
+          },
+          {
+            "rate": 0.9778645833333334,
+            "step": 900
+          },
+          {
+            "rate": 0.98828125,
+            "step": 950
+          },
+          {
+            "rate": 0.9765625,
+            "step": 1000
+          },
+          {
+            "rate": 0.9817708333333334,
+            "step": 1050
+          },
+          {
+            "rate": 0.9973958333333334,
+            "step": 1100
+          },
+          {
+            "rate": 0.9908854166666666,
+            "step": 1150
+          },
+          {
+            "rate": 0.9973958333333334,
+            "step": 1200
+          },
+          {
+            "rate": 0.9895833333333334,
+            "step": 1250
+          },
+          {
+            "rate": 0.99609375,
+            "step": 1300
+          },
+          {
+            "rate": 1.0,
+            "step": 1350
+          },
+          {
+            "rate": 1.0,
+            "step": 1400
+          },
+          {
+            "rate": 1.0,
+            "step": 1450
+          },
+          {
+            "rate": 0.9986979166666666,
+            "step": 1500
+          },
+          {
+            "rate": 1.0,
+            "step": 1750
+          },
+          {
+            "rate": 1.0,
+            "step": 2000
+          },
+          {
+            "rate": 1.0,
+            "step": 2250
+          },
+          {
+            "rate": 1.0,
+            "step": 2500
+          },
+          {
+            "rate": 1.0,
+            "step": 2750
+          },
+          {
+            "rate": 1.0,
+            "step": 3000
+          },
+          {
+            "rate": 1.0,
+            "step": 3250
+          },
+          {
+            "rate": 1.0,
+            "step": 3500
+          },
+          {
+            "rate": 1.0,
+            "step": 3750
+          },
+          {
+            "rate": 1.0,
+            "step": 4000
+          }
+        ],
+        "record": "8c0145428fb90f08411edfe8c95f4dbb90c023c3e024abd450ec7eb9d81f1ea0",
+        "results": {
+          "checkpoints": [
+            {
+              "accuracy": 0.013545866935483871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.020281944823002464,
+              "follows": 0.013671875,
+              "holds": false,
+              "null_follows": 0.015625,
+              "probe": 0.04107862903225806,
+              "step": 0
+            },
+            {
+              "accuracy": 0.03197454637096774,
+              "causal": true,
+              "extras": null,
+              "f1": 0.02874181642778044,
+              "follows": 0.0078125,
+              "holds": false,
+              "null_follows": 0.009765625,
+              "probe": 0.03975554435483871,
+              "step": 50
+            },
+            {
+              "accuracy": 0.04325226814516129,
+              "causal": true,
+              "extras": null,
+              "f1": 0.04675617855519504,
+              "follows": 0.015625,
+              "holds": false,
+              "null_follows": 0.009765625,
+              "probe": 0.04164566532258065,
+              "step": 100
+            },
+            {
+              "accuracy": 0.04841859879032258,
+              "causal": true,
+              "extras": null,
+              "f1": 0.05816748813445959,
+              "follows": 0.0,
+              "holds": false,
+              "null_follows": 0.0,
+              "probe": 0.04548891129032258,
+              "step": 150
+            },
+            {
+              "accuracy": 0.05509702620967742,
+              "causal": true,
+              "extras": null,
+              "f1": 0.06842369350442803,
+              "follows": 0.001953125,
+              "holds": false,
+              "null_follows": 0.001953125,
+              "probe": 0.04624495967741935,
+              "step": 200
+            },
+            {
+              "accuracy": 0.05815272177419355,
+              "causal": true,
+              "extras": null,
+              "f1": 0.07224702401978289,
+              "follows": 0.0,
+              "holds": false,
+              "null_follows": 0.0,
+              "probe": 0.05052923387096774,
+              "step": 250
+            },
+            {
+              "accuracy": 0.06407510080645161,
+              "causal": true,
+              "extras": null,
+              "f1": 0.07751354896699214,
+              "follows": 0.001953125,
+              "holds": false,
+              "null_follows": 0.0,
+              "probe": 0.056640625,
+              "step": 300
+            },
+            {
+              "accuracy": 0.07242313508064516,
+              "causal": true,
+              "extras": null,
+              "f1": 0.08757706074613104,
+              "follows": 0.0,
+              "holds": false,
+              "null_follows": 0.0,
+              "probe": 0.06464213709677419,
+              "step": 350
+            },
+            {
+              "accuracy": 0.0946320564516129,
+              "causal": true,
+              "extras": null,
+              "f1": 0.10385167488242156,
+              "follows": 0.001953125,
+              "holds": false,
+              "null_follows": 0.00390625,
+              "probe": 0.08360635080645161,
+              "step": 400
+            },
+            {
+              "accuracy": 0.1740171370967742,
+              "causal": true,
+              "extras": null,
+              "f1": 0.15930197870109908,
+              "follows": 0.001953125,
+              "holds": false,
+              "null_follows": 0.001953125,
+              "probe": 0.1622983870967742,
+              "step": 450
+            },
+            {
+              "accuracy": 0.3245652721774194,
+              "causal": true,
+              "extras": null,
+              "f1": 0.25005167275587054,
+              "follows": 0.0078125,
+              "holds": false,
+              "null_follows": 0.00390625,
+              "probe": 0.31256300403225806,
+              "step": 500
+            },
+            {
+              "accuracy": 0.5420866935483871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.36040128473018374,
+              "follows": 0.041015625,
+              "holds": false,
+              "null_follows": 0.001953125,
+              "probe": 0.5228704637096774,
+              "step": 550
+            },
+            {
+              "accuracy": 0.7274760584677419,
+              "causal": true,
+              "extras": null,
+              "f1": 0.47026669112390784,
+              "follows": 0.138671875,
+              "holds": false,
+              "null_follows": 0.0,
+              "probe": 0.7211441532258065,
+              "step": 600
+            },
+            {
+              "accuracy": 0.8348979334677419,
+              "causal": true,
+              "extras": null,
+              "f1": 0.5411622303290158,
+              "follows": 0.388671875,
+              "holds": false,
+              "null_follows": 0.0,
+              "probe": 0.826171875,
+              "step": 650
+            },
+            {
+              "accuracy": 0.8892389112903226,
+              "causal": true,
+              "extras": null,
+              "f1": 0.5851995685850085,
+              "follows": 0.6328125,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.8816154233870968,
+              "step": 700
+            },
+            {
+              "accuracy": 0.928679435483871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.6313813654707534,
+              "follows": 0.763671875,
+              "holds": true,
+              "null_follows": 0.001953125,
+              "probe": 0.9265372983870968,
+              "step": 750
+            },
+            {
+              "accuracy": 0.9541015625,
+              "causal": true,
+              "extras": null,
+              "f1": 0.6631070292236745,
+              "follows": 0.80078125,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9516759072580645,
+              "step": 800
+            },
+            {
+              "accuracy": 0.9690650201612904,
+              "causal": true,
+              "extras": null,
+              "f1": 0.6927523659546337,
+              "follows": 0.865234375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9664188508064516,
+              "step": 850
+            },
+            {
+              "accuracy": 0.9833354334677419,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7258867479422688,
+              "follows": 0.861328125,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.981413810483871,
+              "step": 900
+            },
+            {
+              "accuracy": 0.9872101814516129,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7284446186737916,
+              "follows": 0.921875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9860761088709677,
+              "step": 950
+            },
+            {
+              "accuracy": 0.9909274193548387,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7415378567439334,
+              "follows": 0.8984375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9890372983870968,
+              "step": 1000
+            },
+            {
+              "accuracy": 0.9954322076612904,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7540926654263821,
+              "follows": 0.916015625,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9945186491935484,
+              "step": 1050
+            },
+            {
+              "accuracy": 0.9947076612903226,
+              "causal": true,
+              "extras": null,
+              "f1": 0.751408043303482,
+              "follows": 0.90234375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9937626008064516,
+              "step": 1100
+            },
+            {
+              "accuracy": 0.9968813004032258,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7608049842560844,
+              "follows": 0.931640625,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.99609375,
+              "step": 1150
+            },
+            {
+              "accuracy": 0.9977948588709677,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7724440393353382,
+              "follows": 0.9296875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.997101814516129,
+              "step": 1200
+            },
+            {
+              "accuracy": 0.9975428427419355,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7641227501808396,
+              "follows": 0.943359375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.997101814516129,
+              "step": 1250
+            },
+            {
+              "accuracy": 0.998991935483871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7523393062492678,
+              "follows": 0.919921875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9989289314516129,
+              "step": 1300
+            },
+            {
+              "accuracy": 0.999054939516129,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7873586806425312,
+              "follows": 0.935546875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9988029233870968,
+              "step": 1350
+            },
+            {
+              "accuracy": 0.9995589717741935,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7697420637184105,
+              "follows": 0.93359375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.999054939516129,
+              "step": 1400
+            },
+            {
+              "accuracy": 0.9991179435483871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7693675658112755,
+              "follows": 0.9296875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9988659274193549,
+              "step": 1450
+            },
+            {
+              "accuracy": 0.9996534778225806,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7792100917894307,
+              "follows": 0.935546875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9994959677419355,
+              "step": 1500
+            },
+            {
+              "accuracy": 0.9997794858870968,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7662550928495718,
+              "follows": 0.943359375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9994959677419355,
+              "step": 1750
+            },
+            {
+              "accuracy": 0.999968497983871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7836374175198717,
+              "follows": 0.9453125,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9999369959677419,
+              "step": 2000
+            },
+            {
+              "accuracy": 0.9999369959677419,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7680391629137493,
+              "follows": 0.931640625,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9999369959677419,
+              "step": 2250
+            },
+            {
+              "accuracy": 1.0,
+              "causal": true,
+              "extras": null,
+              "f1": 0.8136005194200422,
+              "follows": 0.958984375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 1.0,
+              "step": 2500
+            },
+            {
+              "accuracy": 0.9999369959677419,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7989248974032932,
+              "follows": 0.947265625,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9997479838709677,
+              "step": 2750
+            },
+            {
+              "accuracy": 0.999968497983871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7895145998878491,
+              "follows": 0.958984375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 0.9999369959677419,
+              "step": 3000
+            },
+            {
+              "accuracy": 0.9999369959677419,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7775319412108097,
+              "follows": 0.958984375,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 1.0,
+              "step": 3250
+            },
+            {
+              "accuracy": 1.0,
+              "causal": true,
+              "extras": null,
+              "f1": 0.791047916825226,
+              "follows": 0.96875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 1.0,
+              "step": 3500
+            },
+            {
+              "accuracy": 1.0,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7870965515912949,
+              "follows": 0.966796875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 1.0,
+              "step": 3750
+            },
+            {
+              "accuracy": 0.999968497983871,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7900398260552235,
+              "follows": 0.96875,
+              "holds": true,
+              "null_follows": 0.0,
+              "probe": 1.0,
+              "step": 4000
+            }
+          ],
+          "class": "mechanism",
+          "description": "token(p+1)",
+          "envelope": {
+            "final": [
+              700,
+              4000
+            ],
+            "gap": [],
+            "probe_reads_from": 750,
+            "runs": [
+              [
+                700,
+                4000
+              ]
+            ],
+            "steps": [
+              700,
+              750,
+              800,
+              850,
+              900,
+              950,
+              1000,
+              1050,
+              1100,
+              1150,
+              1200,
+              1250,
+              1300,
+              1350,
+              1400,
+              1450,
+              1500,
+              1750,
+              2000,
+              2250,
+              2500,
+              2750,
+              3000,
+              3250,
+              3500,
+              3750,
+              4000
+            ]
+          },
+          "seeds": [
+            {
+              "cosine": 0.4493265978138803,
+              "f1": 0.7467820341572364,
+              "follows": 0.99609375,
+              "null_follows": 0.0,
+              "seed": 1
+            },
+            {
+              "cosine": 0.4657056854505647,
+              "f1": 0.7718604668533238,
+              "follows": 0.958984375,
+              "null_follows": 0.0,
+              "seed": 2
+            }
+          ],
+          "site": 0,
+          "slices": {
+            "f1": [
+              0.7865468139633911,
+              0.7944600557012877
+            ],
+            "follows": [
+              0.947265625,
+              0.98046875
+            ],
+            "rows": [
+              {
+                "f1": 0.7934607722784064,
+                "follows": 0.962890625,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.7865468139633911,
+                "follows": 0.953125,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.7944600557012877,
+                "follows": 0.947265625,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.7927272817915734,
+                "follows": 0.96484375,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.789103284320354,
+                "follows": 0.97265625,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.7894431564543636,
+                "follows": 0.98046875,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.792329519209566,
+                "follows": 0.94921875,
+                "null_follows": 0.0,
+                "windows": 128
+              },
+              {
+                "f1": 0.7869017157158242,
+                "follows": 0.951171875,
+                "null_follows": 0.0,
+                "windows": 128
+              }
+            ]
+          },
+          "tap": "blocks.1.hook_resid_post",
+          "values": 64
+        }
+      },
+      "two_hop b after block 2 at query": {
+        "checks": {
+          "one_final_run": true,
+          "start_offset": 0,
+          "step0_outside": true
+        },
+        "patch": [
+          {
+            "rate": 0.0234375,
+            "step": 0
+          },
+          {
+            "rate": 0.01953125,
+            "step": 1000
+          },
+          {
+            "rate": 0.0,
+            "step": 2000
+          },
+          {
+            "rate": 0.015625,
+            "step": 3000
+          },
+          {
+            "rate": 0.00390625,
+            "step": 4000
+          },
+          {
+            "rate": 0.01171875,
+            "step": 5000
+          },
+          {
+            "rate": 0.78515625,
+            "step": 6000
+          },
+          {
+            "rate": 0.921875,
+            "step": 7000
+          },
+          {
+            "rate": 0.9140625,
+            "step": 8000
+          },
+          {
+            "rate": 0.96875,
+            "step": 9000
+          },
+          {
+            "rate": 0.984375,
+            "step": 10000
+          },
+          {
+            "rate": 0.98046875,
+            "step": 11000
+          },
+          {
+            "rate": 0.98046875,
+            "step": 12000
+          },
+          {
+            "rate": 0.96484375,
+            "step": 13000
+          },
+          {
+            "rate": 0.97265625,
+            "step": 14000
+          },
+          {
+            "rate": 0.97265625,
+            "step": 15000
+          },
+          {
+            "rate": 0.9453125,
+            "step": 16000
+          },
+          {
+            "rate": 0.9453125,
+            "step": 17000
+          },
+          {
+            "rate": 0.94921875,
+            "step": 18000
+          },
+          {
+            "rate": 0.9609375,
+            "step": 19000
+          },
+          {
+            "rate": 0.94921875,
+            "step": 20000
+          }
+        ],
+        "record": "e0dc10392f0fd3435fc8cee6733c3b8e3b5da00d30baec9610f40c25866ba6ae",
+        "results": {
+          "checkpoints": [
+            {
+              "accuracy": 0.01953125,
+              "causal": true,
+              "extras": null,
+              "f1": 0.0261366756786743,
+              "follows": 0.009765625,
+              "holds": false,
+              "null_follows": 0.01953125,
+              "probe": 0.337890625,
+              "step": 0
+            },
+            {
+              "accuracy": 0.16455078125,
+              "causal": true,
+              "extras": null,
+              "f1": 0.11189948985193994,
+              "follows": 0.216796875,
+              "holds": false,
+              "null_follows": 0.1875,
+              "probe": 0.2763671875,
+              "step": 1000
+            },
+            {
+              "accuracy": 0.17919921875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.11705361958254873,
+              "follows": 0.2421875,
+              "holds": false,
+              "null_follows": 0.1953125,
+              "probe": 0.2783203125,
+              "step": 2000
+            },
+            {
+              "accuracy": 0.474609375,
+              "causal": true,
+              "extras": null,
+              "f1": 0.17544748108985087,
+              "follows": 0.185546875,
+              "holds": false,
+              "null_follows": 0.1484375,
+              "probe": 0.2255859375,
+              "step": 3000
+            },
+            {
+              "accuracy": 0.619140625,
+              "causal": true,
+              "extras": null,
+              "f1": 0.24283856256993416,
+              "follows": 0.103515625,
+              "holds": false,
+              "null_follows": 0.080078125,
+              "probe": 0.244140625,
+              "step": 4000
+            },
+            {
+              "accuracy": 0.74267578125,
+              "causal": true,
+              "extras": null,
+              "f1": 0.3264322222776514,
+              "follows": 0.20703125,
+              "holds": false,
+              "null_follows": 0.099609375,
+              "probe": 0.3662109375,
+              "step": 5000
+            },
+            {
+              "accuracy": 0.966796875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.5777952851706649,
+              "follows": 0.86328125,
+              "holds": true,
+              "null_follows": 0.02734375,
+              "probe": 0.9814453125,
+              "step": 6000
+            },
+            {
+              "accuracy": 0.98779296875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.677944020703296,
+              "follows": 0.923828125,
+              "holds": true,
+              "null_follows": 0.009765625,
+              "probe": 0.9873046875,
+              "step": 7000
+            },
+            {
+              "accuracy": 0.9921875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7055666070323771,
+              "follows": 0.912109375,
+              "holds": true,
+              "null_follows": 0.021484375,
+              "probe": 0.9912109375,
+              "step": 8000
+            },
+            {
+              "accuracy": 0.99365234375,
+              "causal": true,
+              "extras": null,
+              "f1": 0.681108772608123,
+              "follows": 0.94140625,
+              "holds": true,
+              "null_follows": 0.005859375,
+              "probe": 0.998046875,
+              "step": 9000
+            },
+            {
+              "accuracy": 0.99462890625,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7453481936410996,
+              "follows": 0.92578125,
+              "holds": true,
+              "null_follows": 0.005859375,
+              "probe": 0.99609375,
+              "step": 10000
+            },
+            {
+              "accuracy": 0.998046875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7489089020062787,
+              "follows": 0.953125,
+              "holds": true,
+              "null_follows": 0.005859375,
+              "probe": 0.9931640625,
+              "step": 11000
+            },
+            {
+              "accuracy": 0.998046875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.755612473175749,
+              "follows": 0.9375,
+              "holds": true,
+              "null_follows": 0.015625,
+              "probe": 0.994140625,
+              "step": 12000
+            },
+            {
+              "accuracy": 0.9990234375,
+              "causal": true,
+              "extras": null,
+              "f1": 0.781233121872367,
+              "follows": 0.931640625,
+              "holds": true,
+              "null_follows": 0.013671875,
+              "probe": 0.9921875,
+              "step": 13000
+            },
+            {
+              "accuracy": 0.99853515625,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7747642853107255,
+              "follows": 0.951171875,
+              "holds": true,
+              "null_follows": 0.013671875,
+              "probe": 0.9951171875,
+              "step": 14000
+            },
+            {
+              "accuracy": 0.9990234375,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7650618129080128,
+              "follows": 0.92578125,
+              "holds": true,
+              "null_follows": 0.005859375,
+              "probe": 0.9912109375,
+              "step": 15000
+            },
+            {
+              "accuracy": 0.99951171875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7752140247425293,
+              "follows": 0.931640625,
+              "holds": true,
+              "null_follows": 0.0078125,
+              "probe": 0.9931640625,
+              "step": 16000
+            },
+            {
+              "accuracy": 0.9990234375,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7871105587215178,
+              "follows": 0.9296875,
+              "holds": true,
+              "null_follows": 0.009765625,
+              "probe": 0.99609375,
+              "step": 17000
+            },
+            {
+              "accuracy": 0.99853515625,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7900579397376628,
+              "follows": 0.90234375,
+              "holds": true,
+              "null_follows": 0.00390625,
+              "probe": 0.9931640625,
+              "step": 18000
+            },
+            {
+              "accuracy": 1.0,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7885406693183404,
+              "follows": 0.9375,
+              "holds": true,
+              "null_follows": 0.0078125,
+              "probe": 0.99609375,
+              "step": 19000
+            },
+            {
+              "accuracy": 0.99951171875,
+              "causal": true,
+              "extras": null,
+              "f1": 0.7949299265645586,
+              "follows": 0.91796875,
+              "holds": true,
+              "null_follows": 0.015625,
+              "probe": 0.9931640625,
+              "step": 20000
+            }
+          ],
+          "class": "query",
+          "description": "b",
+          "envelope": {
+            "final": [
+              6000,
+              20000
+            ],
+            "gap": [],
+            "probe_reads_from": 6000,
+            "runs": [
+              [
+                6000,
+                20000
+              ]
+            ],
+            "steps": [
+              6000,
+              7000,
+              8000,
+              9000,
+              10000,
+              11000,
+              12000,
+              13000,
+              14000,
+              15000,
+              16000,
+              17000,
+              18000,
+              19000,
+              20000
+            ]
+          },
+          "seeds": [
+            {
+              "cosine": 0.5134835091185717,
+              "f1": 0.756014237734654,
+              "follows": 0.8984375,
+              "null_follows": 0.009765625,
+              "seed": 1
+            },
+            {
+              "cosine": 0.5280792645926137,
+              "f1": 0.831591875857168,
+              "follows": 0.947265625,
+              "null_follows": 0.009765625,
+              "seed": 2
+            }
+          ],
+          "site": 0,
+          "slices": {
+            "f1": [
+              0.7852063769604336,
+              0.8383972782976571
+            ],
+            "follows": [
+              0.8984375,
+              0.93359375
+            ],
+            "rows": [
+              {
+                "f1": 0.8149715915534415,
+                "follows": 0.92578125,
+                "null_follows": 0.01171875,
+                "windows": 256
+              },
+              {
+                "f1": 0.803674686215764,
+                "follows": 0.93359375,
+                "null_follows": 0.00390625,
+                "windows": 256
+              },
+              {
+                "f1": 0.8147286248373204,
+                "follows": 0.91796875,
+                "null_follows": 0.0078125,
+                "windows": 256
+              },
+              {
+                "f1": 0.8383972782976571,
+                "follows": 0.9296875,
+                "null_follows": 0.01171875,
+                "windows": 256
+              },
+              {
+                "f1": 0.8036772797549606,
+                "follows": 0.9296875,
+                "null_follows": 0.0,
+                "windows": 256
+              },
+              {
+                "f1": 0.7852063769604336,
+                "follows": 0.921875,
+                "null_follows": 0.015625,
+                "windows": 256
+              },
+              {
+                "f1": 0.7909845692663031,
+                "follows": 0.8984375,
+                "null_follows": 0.0,
+                "windows": 256
+              },
+              {
+                "f1": 0.8284052233059829,
+                "follows": 0.921875,
+                "null_follows": 0.00390625,
+                "windows": 256
+              }
+            ]
+          },
+          "tap": "blocks.2.hook_resid_post",
+          "values": 48
+        }
+      }
+    },
+    "one_final_run": true,
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "seed": 40,
+    "seed_f1_min": 0.7467820341572364,
+    "seed_follows_min": 0.8984375,
+    "slice_f1_min": 0.7852063769604336,
+    "slice_follows_min": 0.8984375,
+    "start_offset_max": 1.0,
+    "step0_outside": true,
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-22T05:04:06Z",
+  "xla_flags": ""
+}
