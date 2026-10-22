@@ -237,12 +237,15 @@ PHASE2_GATE_IDS: tuple[str, ...] = ("G2.1", "G2.2", "G2.3", "G2.4", "G2.5", "G2.
 PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
 PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5", "G4.6")
 PHASE5_GATE_IDS: tuple[str, ...] = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5", "G5.6")
+PHASE6_GATE_IDS: tuple[str, ...] = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")
 _ALL_GATE_IDS: tuple[str, ...] = (
     GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS + PHASE5_GATE_IDS
+    + PHASE6_GATE_IDS
 )
 # Gates written from Phase 1 on, which must use schema version 2.
 _V2_ONLY_GATE_IDS: tuple[str, ...] = (
     PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS + PHASE5_GATE_IDS
+    + PHASE6_GATE_IDS
 )
 STATUSES: tuple[str, ...] = ("pass", "conditional_pass", "fail")
 ENV_NAMES: tuple[str, ...] = ("nf-jax", "nf-metal", "nf-torch")
@@ -350,9 +353,26 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
         "builds_identical",
         "external_urls",
     ),
+    "G6.1": (
+        "identities_checked", "identities_exact", "identities_by_site", "request_hashes_checked",
+        "request_hashes_distinct", "request_hashes_stable", "records_identical", "records_by_kind",
+    ),
+    "G6.2": ("names", "named_as_planted_min", "follows_min", "null_follows_max", "twin_named_max", "twin_follows_max"),
+    "G6.3": (
+        "edges", "follows_min", "null_follows_max", "output_follows_min", "kept_max", "null_kept_min",
+        "residual_alone_max", "labels_computed", "twin_excess_max",
+    ),
+    "G6.4": (
+        "targets", "reading_ratio_max", "within_min", "planted_top_min", "random_within_max", "twin_planted_top_max",
+    ),
+    "G6.5": (
+        "names", "slice_f1_min", "slice_follows_min", "seed_f1_min", "seed_follows_min", "step0_outside",
+        "one_final_run", "start_offset_max",
+    ),
+    "G6.6": ("blocks", "seconds"),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
-_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4", "G5.5")
+_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4", "G5.5", "G6.6")
 # Gates whose three final-state hashes must agree with ``identical`` under every status.
 _HASH_GATES: tuple[str, ...] = ("G0.2", "G1.3")
 
@@ -638,6 +658,29 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
             equals("external_urls", 0),
             equals("dictionaries_missing", 0),
             equals("subjects_missing", 0),
+        ],
+        ("G6.1", "pass"): [
+            at_least("identities_checked", 1), equals_key("identities_exact", "identities_checked"),
+            is_("request_hashes_distinct", True), is_("request_hashes_stable", True),
+            is_("records_identical", True),
+        ],
+        ("G6.2", "pass"): [
+            at_least("named_as_planted_min", 0.7), at_least("follows_min", 0.8), at_most("null_follows_max", 0.05),
+            at_most("twin_named_max", 0.1), at_most("twin_follows_max", 0.05),
+        ],
+        ("G6.3", "pass"): [
+            at_least("follows_min", 0.8), at_most("null_follows_max", 0.1), at_least("output_follows_min", 0.8),
+            at_most("kept_max", 0.4), at_least("null_kept_min", 0.8), at_most("residual_alone_max", 0.1),
+            is_("labels_computed", True), at_most("twin_excess_max", 0.1),
+        ],
+        ("G6.4", "pass"): [
+            at_most("reading_ratio_max", 1), at_least("within_min", 0.8), at_least("planted_top_min", 0.6),
+            at_most("random_within_max", 0.1), at_most("twin_planted_top_max", 0.1),
+        ],
+        ("G6.5", "pass"): [
+            at_least("slice_f1_min", 0.5), at_least("slice_follows_min", 0.8), at_least("seed_f1_min", 0.5),
+            at_least("seed_follows_min", 0.8), is_("step0_outside", True), is_("one_final_run", True),
+            at_most("start_offset_max", 2),
         ],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
