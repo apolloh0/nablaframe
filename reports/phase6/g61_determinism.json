@@ -1,0 +1,117 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G6.1",
+  "git_commit": "9b2124bdbc03286a5ce14ea6e42573834a3b9ef6",
+  "git_dirty": false,
+  "measurements": {
+    "dictionaries": {
+      "induction": [
+        "210adba637c3d8fc0f8448b04553cbc2ab51fd1994f9e8722f9b030eec3c2f67",
+        "b4556636b76b680d8f9616b96f13fb88f1414a970aa32ffb8d96d302a4f2d21d"
+      ],
+      "two_hop": [
+        "4dfd9fe1c1b6005e4456dc64e1e4ca23749013a1dbf06a9fade1cc6c1944607d",
+        "81aaa2de40648b7fe7c88ff227131ad7a9836ef0702b7ecad2ee78cfff3a15cf",
+        "7e25eeb11d31c87de0da81e50a02edb490e1a22cc0979d47ade90b4d5526ab3d",
+        "b7751524c1a5d74f3dc968017b2ad6226e830c5847aedab33f5ad41833661282"
+      ]
+    },
+    "held_out_sha256": {
+      "induction": "63895ce69a5fb12ed679256f888ddde71fb93a838939f5e3d2fff69715b2ebfa",
+      "two_hop": "743cbf3eac8ded2e17c3cf414999237c0e4ad97bdf3915ca40e010136c3a4780"
+    },
+    "identities": [
+      "empty",
+      "zero codes",
+      "zero amounts"
+    ],
+    "identities_by_site": {
+      "induction topk blocks.0.hook_resid_post": [
+        true,
+        true,
+        true
+      ],
+      "induction topk blocks.1.hook_resid_post": [
+        true,
+        true,
+        true
+      ],
+      "two_hop topk blocks.0.hook_resid_post": [
+        true,
+        true,
+        true
+      ],
+      "two_hop topk blocks.1.hook_resid_post": [
+        true,
+        true,
+        true
+      ],
+      "two_hop topk blocks.2.hook_resid_post": [
+        true,
+        true,
+        true
+      ],
+      "two_hop topk blocks.3.hook_resid_post": [
+        true,
+        true,
+        true
+      ]
+    },
+    "identities_checked": 18,
+    "identities_exact": 18,
+    "identity_windows": 64,
+    "record_instances": 32,
+    "record_keys": {
+      "edge": "59d1e05d0981bbcdcf91591a0b956e808394b325fe281e6d247db5c1efc8a856",
+      "generalize": "e840e8112bddef58c22f576037fc6c2c8d79ef27110937d0a759f02ce1758bda",
+      "name": "8340a4799176273b7aa15619011590dcd718ceea37150c1c3fba47faa0ace982",
+      "open": "b4bc59ba1220eef19c33033459f6fd302f2b22e95b2e40c65df0d1533ac97331"
+    },
+    "records_by_kind": {
+      "edge": [
+        true,
+        true
+      ],
+      "generalize": [
+        true,
+        true
+      ],
+      "name": [
+        true,
+        true
+      ],
+      "open": [
+        true,
+        true
+      ]
+    },
+    "records_identical": true,
+    "request_hashes_checked": 64,
+    "request_hashes_distinct": true,
+    "request_hashes_stable": true,
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "steps": {
+      "induction": 4000,
+      "two_hop": 20000
+    },
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    }
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-22T04:51:44Z",
+  "xla_flags": ""
+}
