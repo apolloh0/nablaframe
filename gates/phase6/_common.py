@@ -572,3 +572,153 @@ def request_hashes(reqs: Sequence[Any]) -> dict[str, Any]:
                                                r.instances, r.seed)
         stable = stable and records.request_hash(read_back) == h and records.request_hash(reversed_args) == h
     return {"checked": len(reqs), "distinct": len(set(hashes)) == len(hashes), "stable": bool(stable)}
+
+
+# ---------------------------------------------------------------------------
+# Beyond the contract: what the Phase 6 gates share
+# ---------------------------------------------------------------------------
+#
+# * The start checks on earlier reports (``start``), the report paths, and Phase 6's working folders
+#   (``fresh_dir``, under RUN_DIR).
+# * ``zoo_model``: Phase 5's reading of one zoo run at its final checkpoint, with its twin, and the run's
+#   declaration; ``reference_model``: Phase 5's reading of G1.4's run, with the reference declaration.
+# * ``topk``: a Phase 5 TopK SAE from the cache under the key Phase 5 computed, a missing one stopping the
+#   gate; ``context``: a zoo run's ``cli.Context``; ``read``: one site read over the held-out windows.
+#
+# Paths are read from this module's globals, and those of ``p5`` and the earlier phases, when a function
+# runs, never bound at import, so everything here can be pointed at a scratch folder.
+
+ZOO = ("induction", "two_hop")
+VERSIONS = p5.VERSIONS
+REPORTS = {
+    "G5.2": ("phase5", "g52_induction.json", "the induction run's dictionaries come from G5.2"),
+    "G5.3": ("phase5", "g53_two_hop.json", "the two-hop run's dictionaries come from G5.3"),
+    "G5.5": ("phase5", "g55_reference.json", "the reference run's dictionaries come from G5.5"),
+    "G6.1": ("phase6", "g61_determinism.json",
+             "no gesture is judged before dsteer, the requests and the records pass their determinism checks"),
+}
+TRAINED_BY = {"induction": "G5.2", "two_hop": "G5.3", "reference": "G5.5"}
+
+
+def say(line: str) -> None:
+    print(line, flush=True)
+
+
+def report_relative(name: str) -> str:
+    """``reports/phase6/<name>``, as Phase 1's ``start`` takes it."""
+    return str((Path(REPORT_DIR) / name).relative_to(p1.REPO_ROOT))
+
+
+def require(gate_id: str) -> dict[str, Any]:
+    """The report a Phase 6 gate builds on, once it exists, passes ``validate_report`` and says ``pass``."""
+    if gate_id == "G4.1":
+        return p4.require_g41()
+    phase, name, why = REPORTS[gate_id]
+    folder = p5.REPORT_DIR if phase == "phase5" else REPORT_DIR
+    return p5._require(gate_id, Path(folder) / name, why=why)
+
+
+def start(args: Any, report_name: str, needs: Sequence[str]) -> tuple[Path, dict[str, Any]]:
+    """Phase 1's start checks, then every report in ``needs``: ``(the report's path, G4.1's report)``."""
+    report = p1.start(args, report_relative(report_name))
+    reports = {gate_id: require(gate_id) for gate_id in needs}
+    return report, reports.get("G4.1")
+
+
+def fresh_dir(path: Path, *, overwrite: bool) -> Path:
+    """An empty working folder under RUN_DIR. An existing one is removed only with ``overwrite``."""
+    import shutil
+
+    if Path(RUN_DIR).resolve() not in Path(path).resolve().parents:
+        raise ValueError(f"refusing to manage {path}: Phase 6 working folders live under {RUN_DIR}")
+    if Path(path).exists():
+        if not overwrite:
+            raise SystemExit(f"{p1.rel(path)} exists. Pass --overwrite to start it over.")
+        shutil.rmtree(path)
+    Path(path).mkdir(parents=True)
+    return Path(path)
+
+
+def zoo_model(name: str, g41: dict[str, Any]) -> Any:
+    """Phase 5's ``zoo_model``, G4.1's run at its final checkpoint with its twin, plus ``declaration``, the run's."""
+    m = p5.zoo_model(name, g41)
+    m.declaration = cli.declaration_for(name, m.config)
+    return m
+
+
+def reference_model() -> Any:
+    """Phase 5's ``reference_model``, G1.4's run at its final checkpoint, plus the reference ``declaration``."""
+    m = p5.reference_model()
+    m.declaration = cli.declaration_for("reference", m.config)
+    return m
+
+
+def topk(m: Any, layer: int, *, twin: bool = False, seed: int = p5.DICT_SEED) -> Any:
+    """The Phase 5 TopK SAE after block ``layer`` of model ``m`` (or its twin, or a robustness seed's), from the cache.
+
+    Its key is the one the Phase 5 gates computed (``p5.dictionary_spec``). A dictionary the cache doesn't
+    hold stops the gate: no Phase 6 gate trains one.
+    """
+    _, _, key = p5.dictionary_spec(m, "topk", layer, twin=twin, seed=seed)
+    who = "twin" if twin else ("trained" if seed == p5.DICT_SEED else f"seed {seed}")
+    label = f"{who} TopK SAE after block {layer}"
+
+    def missing() -> Any:
+        raise SystemExit(f"{m.name}: the Phase 5 cache holds no {label}, key {key}, in"
+                         f" {p1.rel(Path(p5.DICTIONARY_DIR) / key)}. Run {TRAINED_BY[m.name]} first; no Phase 6"
+                         " gate trains a dictionary. No report written.")
+
+    dictionary, _ = p5.cached(p5.DICTIONARY_DIR, key, missing)
+    say(f"{m.name}: {label} from the cache, key {key[:12]}, content {core.content_hash(dictionary)[:12]}")
+    return dictionary
+
+
+def held(dictionaries: Sequence[Any]) -> Any:
+    """A context's ``dictionary``: each of ``dictionaries`` by its content hash, ValueError for any other."""
+    by_hash = {core.content_hash(d): d for d in dictionaries}
+
+    def dictionary(digest: str) -> Any:
+        if digest not in by_hash:
+            raise ValueError(f"the context holds no dictionary {digest}")
+        return by_hash[digest]
+
+    return dictionary
+
+
+def context(m: Any, dictionaries: Sequence[Any], seeds: Mapping[int, Mapping[str, str]] | None = None) -> Any:
+    """The zoo run's ``cli.Context``: its held-out windows, every checkpoint, ``dictionaries`` and ``seeds``.
+
+    ``params_at`` is the run's own loader, so the final checkpoint's params are ``m.params``, the object
+    every reading the gate makes shares.
+    """
+    run = m.run
+    return cli.Context(run=m.run_id, declaration=m.declaration, model=m.model, n_layers=m.n_layers,
+                       steps=tuple(int(s) for s in run.steps), params_at=run.params_for, state_at=run.state_sha256,
+                       windows=m.held_out, dictionary=held(dictionaries),
+                       seeds={int(s): dict(c) for s, c in (seeds or {}).items()})
+
+
+def read(m: Any, params: Any, dictionary: Any, label: str, site: int = 0) -> Any:
+    """``sets.read_site`` of one site over the held-out windows, at ``cli.READ_CHUNK``, inside ``ticking``."""
+    with ticking(label, write=say):
+        return sets.read_site(m.model, params, n_layers=m.n_layers, declaration=m.declaration, dictionary=dictionary,
+                              site=site, windows=m.held_out, chunk=cli.READ_CHUNK)
+
+
+def place_name(run: str, description: str, block: int, cls: str) -> str:
+    """A place as the reports name it, ``"<run> <description> after block <l> at <class>"``."""
+    return f"{run} {description} after block {block} at {cls}"
+
+
+def results_of(record: Any) -> dict[str, Any]:
+    """A record's results as plain JSON values."""
+    return records.record_json(record)["results"]
+
+
+def number(value: Any) -> bool:
+    """A plain int or float, not a bool or None: what a bar can be held to."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def show(value: Any) -> str:
+    return "null" if value is None else f"{value:.4f}" if isinstance(value, float) else str(value)
