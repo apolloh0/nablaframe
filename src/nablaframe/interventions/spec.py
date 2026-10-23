@@ -47,7 +47,7 @@ import numpy as np
 
 from ..trace.schema import canonical_json, sha256_hex, tensor_sha256
 
-OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap", "dpatch", "dsteer")
+OPERATIONS = ("zero", "mean", "resample", "patch", "add", "swap", "jswap", "dpatch", "dsteer", "set")
 
 # Each operation's arguments: name -> kind. Exactly these keys, no others.
 _ARGS: dict[str, dict[str, str]] = {
@@ -60,6 +60,7 @@ _ARGS: dict[str, dict[str, str]] = {
     "jswap": {"J": "hash", "a": "int", "b": "int"},
     "dpatch": {"dictionary": "hash", "source": "hash"},
     "dsteer": {"dictionary": "hash", "remove": "hash", "add": "hash", "amounts": "hash"},
+    "set": {"values": "hash"},
 }
 # The other form an operation's arguments may take: ``zero`` of one head, ``dpatch`` of some latents.
 _ALTERNATIVE: dict[str, dict[str, str]] = {

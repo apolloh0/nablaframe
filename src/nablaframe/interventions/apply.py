@@ -165,6 +165,8 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             raise ValueError(f"jswap applies at residual-stream taps ({', '.join(_RESIDUAL)}), not {e.tap!r}")
         elif "head" in e.args and not e.tap.endswith(".attn.hook_z"):
             raise ValueError(f"zeroing one head applies only at attn.hook_z, not {e.tap!r}")
+        elif e.op == "set" and e.tap.endswith(".attn.hook_z"):
+            raise ValueError(f"set applies at taps shaped (batch, pos, d_model), not at a head's tap, {e.tap!r}")
         else:
             selected.append(position_index(e.positions, seq))
     resolved: dict[str, np.ndarray] = {}
@@ -204,6 +206,9 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             arrays = {name: resolved.setdefault(e.args[name], _resolved(resolve, e.args[name], array_hash))
                       for name in ("remove", "add", "amounts")}
             _check_dsteer(e.tap, arrays, batch, index, d.active_width(site))
+        elif e.op == "set":
+            values = resolved.setdefault(e.args["values"], _resolved(resolve, e.args["values"], array_hash))
+            _check_set(e.tap, values, batch, len(index), np.shape(params.wte)[1])
     heads = sorted({e.tap for e in edits if "head" in e.args})
     steered = [(e.tap, dictionaries[e.args["dictionary"]]) for e in edits if e.op == "dsteer"]
     if heads or steered:
@@ -228,11 +233,12 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
             params = swap_component(params, params_at(e.args["step"]), e.tap)
 
     # Each edit's operand: zeros, the scaled vector, the source or reference values at its tap, per
-    # sequence, jswap's coefficient and direction differences, or dpatch's and dsteer's change in the output.
+    # sequence, jswap's coefficient and direction differences, dpatch's and dsteer's change in the output, or
+    # set's values at the positions it selects.
     operations: list[tuple[str, str, np.ndarray, int | None, Any]] = []
     for e, index in zip(edits, selected):
-        if e.op == "swap" or (e.op == "jswap" and e.args["a"] == e.args["b"]):
-            continue  # a self-swap adds no operation at all (D25)
+        if e.op == "swap" or (e.op == "jswap" and e.args["a"] == e.args["b"]) or (e.op == "set" and not len(index)):
+            continue  # a self-swap, or a set at no positions, adds no operation at all (D25)
         mask = np.zeros(seq, dtype=bool)
         mask[index] = True
         if e.op == "zero":
@@ -255,6 +261,10 @@ def run_intervened(model: Any, params: Any, tokens: np.ndarray, spec: Interventi
                 continue  # no change at any selected position adds no operation at all (D25)
             site = _dpatch_site(d, e.tap)
             operand = decode_delta(d, site, change.reshape(-1, d.settings.width)).reshape(batch, seq, d.d_out)
+        elif e.op == "set":
+            values = resolved[e.args["values"]]
+            operand = np.zeros((batch, seq, values.shape[2]), np.float32)
+            operand[:, index] = values  # values[:, i] at the i-th selected position; positions are distinct
         elif e.op == "patch":
             operand = _tap_value(model, params, resolved[e.args["source"]], e.tap)
         else:
@@ -366,6 +376,15 @@ def _check_dsteer(tap: str, arrays: dict[str, np.ndarray], batch: int, index: np
                          f" {amounts.dtype.name}{list(amounts.shape)}")
     if not np.all(np.isfinite(amounts)):
         raise ValueError(f"dsteer at {tap}: every amount must be finite")
+
+
+def _check_set(tap: str, values: np.ndarray, batch: int, count: int, d_model: int) -> None:
+    """ValueError unless ``values`` is float32 shaped (batch, the number of selected positions, d_model) and finite."""
+    if values.dtype.name != "float32" or values.shape != (batch, count, d_model):
+        raise ValueError(f"set at {tap}: values must be float32 shaped (batch, the positions the edit selects, d_model)"
+                         f" = {(batch, count, d_model)}, not {values.dtype.name}{list(values.shape)}")
+    if not np.all(np.isfinite(values)):
+        raise ValueError(f"set at {tap}: every value must be finite")
 
 
 def _dsteer_change(model: Any, params: Any, tokens: np.ndarray, dictionary: Dictionary, tap: str, remove: np.ndarray,
