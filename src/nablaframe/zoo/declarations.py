@@ -197,4 +197,23 @@ def induction(task: Any) -> Declaration:
 
 
 def modular_addition(task: Any) -> Declaration:
-    raise NotImplementedError
+    seq = int(task.seq)
+    answer = int(task.mechanism_positions[0])
+
+    def describe_variables(windows: np.ndarray) -> dict[str, np.ndarray]:
+        return {}
+
+    def predict(description: str, window: np.ndarray, position: int, w: int) -> tuple[int, int] | None:
+        check_prediction_args(description, DESCRIPTIONS, window, position, w, seq)
+        return (answer, int(w)) if description == "token(p+1)" and position == answer else None
+
+    def pairs(relation: str, window: np.ndarray) -> tuple[tuple[int, int], ...]:
+        raise ValueError(f"run 'modular_addition' has no relation {relation!r}")
+
+    def value_map(relation: str, window: np.ndarray, v: int) -> int | None:
+        raise ValueError(f"run 'modular_addition' has no relation {relation!r}")
+
+    return Declaration(
+        run="modular_addition", seq=seq, classes={"answer": (answer,), "every": range(seq)}, variables=(),
+        planted=(Planted(Place("token(p+1)", 0, "answer"), False),), relations=(),
+        describe_variables=describe_variables, predict=predict, pairs=pairs, value_map=value_map)

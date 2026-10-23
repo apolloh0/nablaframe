@@ -181,55 +181,85 @@ class TwoHopTask:
         return Tokenizer(self.vocab).to_json()
 
 
+def _is_int(x: object) -> bool:
+    return isinstance(x, (int, np.integer)) and not isinstance(x, (bool, np.bool_))
+
+
 @dataclass(frozen=True)
 class ModularAdditionTask:
     p: int = 113
     train_fraction: float = 0.3
     split_seed: int = 0
 
+    def __post_init__(self) -> None:
+        if not _is_int(self.p) or self.p < 3:
+            raise ValueError(f"p must be an int of at least 3, got {self.p!r}")
+        if not _is_int(self.split_seed) or self.split_seed < 0:
+            raise ValueError(f"split_seed must be a non-negative int, got {self.split_seed!r}")
+        tf = self.train_fraction
+        if isinstance(tf, (bool, np.bool_)) or not isinstance(tf, (int, float, np.integer, np.floating)) \
+                or not np.isfinite(tf):
+            raise ValueError(f"train_fraction must be a number, got {tf!r}")
+        if not 1 <= self._n_train <= self.p * self.p - 1:
+            raise ValueError(f"train_fraction {tf!r} leaves a part of the {self.p * self.p} pairs empty")
+
+    @property
+    def _n_train(self) -> int:
+        return round(self.train_fraction * self.p * self.p)
+
     @property
     def vocab(self) -> tuple[str, ...]:
-        raise NotImplementedError
+        return (*(str(i) for i in range(self.p)), "=")
 
     @property
     def window(self) -> int:
-        raise NotImplementedError
+        return 4
 
     @property
     def seq(self) -> int:
-        raise NotImplementedError
+        return self.window - 1
 
     @property
     def chance(self) -> float:
-        raise NotImplementedError
+        return 1 / self.p
 
     @property
     def mechanism_positions(self) -> np.ndarray:
-        raise NotImplementedError
+        return np.array([2])
 
     @property
     def control_positions(self) -> np.ndarray:
-        raise NotImplementedError
+        return np.array([0])
 
     @property
     def pairs(self) -> np.ndarray:
-        raise NotImplementedError
+        i = np.arange(self.p * self.p, dtype=np.int64)
+        return np.stack([i // self.p, i % self.p], axis=1)
 
     @property
     def split(self) -> tuple[np.ndarray, np.ndarray]:
-        raise NotImplementedError
+        order = np.random.default_rng(int(self.split_seed)).permutation(self.p * self.p)
+        n = self._n_train
+        return np.sort(order[:n]).astype(np.int64), np.sort(order[n:]).astype(np.int64)
 
     def windows(self, index: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
+        index = np.asarray(index)
+        if index.ndim != 1 or not np.issubdtype(index.dtype, np.integer):
+            raise ValueError(f"index must be a one-dimensional integer array, got {index.dtype} {index.shape}")
+        if index.size and (index.min() < 0 or index.max() >= self.p * self.p):
+            raise ValueError(f"index must lie in range({self.p * self.p})")
+        a, b = index // self.p, index % self.p
+        return np.stack([a, b, np.full_like(a, self.p), (a + b) % self.p], axis=1).astype(np.int32)
 
     def training(self) -> np.ndarray:
-        raise NotImplementedError
+        return self.windows(self.split[0])
 
     def held_out(self) -> np.ndarray:
-        raise NotImplementedError
+        return self.windows(self.split[1])
 
     def batch_for_step(self, seed: int, step: int, batch: int) -> np.ndarray:
-        raise NotImplementedError
+        rng = np.random.default_rng([seed, step])
+        return self.windows(rng.choice(self.split[0], size=batch, replace=True))
 
     def tokenizer_json(self) -> str:
-        raise NotImplementedError
+        return Tokenizer(self.vocab).to_json()
