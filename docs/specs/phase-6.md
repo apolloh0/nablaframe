@@ -1,6 +1,6 @@
 # Phase 6 spec: gestures on dictionary features
 
-Status: proposed with D47 to D52. Charter: [../charter.md](../charter.md).
+Status: complete. Ruled at human gate H6 on 2026-10-23: see D53 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
