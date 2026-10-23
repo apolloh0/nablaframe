@@ -22,6 +22,22 @@ and ``tokenizer_json()`` (``Tokenizer(vocab).to_json()``).
     entities appearing nowhere in the facts.
   - ``parse(window)``: a ``TwoHop`` with ``a``, ``b``, ``c`` (ints) and ``facts`` (subject to
     object), where ``b = facts[a]`` and ``c`` is the window's last token.
+* ``ModularAdditionTask(p=113, train_fraction=0.3, split_seed=0)`` (D54): vocab ``"0"`` to
+  ``str(p - 1)``, then ``"="``, whose id is ``p``. A window is ``a b = c``, four tokens with
+  ``c = (a + b) mod p``, so ``window`` is 4 and ``seq`` 3. Mechanism position 2, where the ``=``
+  predicts ``c``; control position 0, which predicts ``b`` from ``a``; chance ``1 / p``.
+
+  - ``pairs``: int64 (p * p, 2), row ``i`` being ``(i // p, i % p)``.
+  - ``split``: ``(train, held)``, int64 arrays of pair indices, each ascending. With
+    ``order = numpy.random.default_rng(split_seed).permutation(p * p)`` and
+    ``n = round(train_fraction * p * p)``, ``train`` holds ``order[:n]`` and ``held`` the rest.
+  - ``windows(index)``: int32 (len(index), 4), the pairs ``index`` names, in that order, each
+    ``[a, b, p, (a + b) % p]``. ValueError for an index outside ``range(p * p)`` or one that isn't
+    integers. ``training()`` and ``held_out()``: ``windows(train)`` and ``windows(held)``.
+  - ``batch_for_step(seed, step, batch)``: ``windows(rng.choice(train, size=batch, replace=True))``,
+    ``rng`` being ``numpy.random.default_rng([seed, step])``.
+  - ValueError unless ``p`` is an int of at least 3, ``train_fraction`` is a float or int that
+    leaves both parts non-empty, and ``split_seed`` is a non-negative int. A bool is not an int.
 """
 
 from __future__ import annotations
@@ -163,3 +179,57 @@ class TwoHopTask:
 
     def tokenizer_json(self) -> str:
         return Tokenizer(self.vocab).to_json()
+
+
+@dataclass(frozen=True)
+class ModularAdditionTask:
+    p: int = 113
+    train_fraction: float = 0.3
+    split_seed: int = 0
+
+    @property
+    def vocab(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def window(self) -> int:
+        raise NotImplementedError
+
+    @property
+    def seq(self) -> int:
+        raise NotImplementedError
+
+    @property
+    def chance(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def mechanism_positions(self) -> np.ndarray:
+        raise NotImplementedError
+
+    @property
+    def control_positions(self) -> np.ndarray:
+        raise NotImplementedError
+
+    @property
+    def pairs(self) -> np.ndarray:
+        raise NotImplementedError
+
+    @property
+    def split(self) -> tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
+
+    def windows(self, index: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+    def training(self) -> np.ndarray:
+        raise NotImplementedError
+
+    def held_out(self) -> np.ndarray:
+        raise NotImplementedError
+
+    def batch_for_step(self, seed: int, step: int, batch: int) -> np.ndarray:
+        raise NotImplementedError
+
+    def tokenizer_json(self) -> str:
+        raise NotImplementedError

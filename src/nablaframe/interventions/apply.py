@@ -66,6 +66,15 @@ module imports without it.
     kept. Where the change is zero at every selected position, as with empty ``remove`` and
     ``add``, removing only latents whose code is zero, or adding only zero amounts, it adds no
     operation at all, so it reproduces the unintervened pass bit for bit (D25).
+  - ``set`` (D55) applies at every editable tap whose values are shaped (batch, pos, d_model): every
+    one but ``attn.hook_z``, which raises ValueError before anything runs. ``resolve`` returns its
+    ``values``, checked with ``array_hash``: a float32 array shaped (batch, the number of positions
+    the edit selects, d_model), ``d_model`` being ``params.wte``'s second dimension, with every
+    value finite. Anything else raises ValueError before anything runs. At the ``i``-th position the
+    edit selects, in ``position_index``'s order, each sequence's value at the tap becomes
+    ``values[:, i]``. Its operand enters the compiled program as an argument. Where the edit selects
+    no positions it adds no operation at all, and values equal to the tap's own values on the
+    unintervened pass reproduce that pass bit for bit (D25).
 * ``code_identity()``: this module's git blob hash (D18, D24).
 """
 

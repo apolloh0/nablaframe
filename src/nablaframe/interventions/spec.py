@@ -31,6 +31,8 @@ Spec: docs/specs/phase-3.md, D22.
   ``tensor_sha256``. Arrays equal in dtype, shape and values hash equal, whatever their byte
   order. Unlike the byte hash alone, it tells apart arrays whose bytes agree, such as an empty
   ``remove`` and an empty ``amounts``. ValueError for an array that isn't of integers or floats.
+* ``OPERATIONS`` gains ``set`` (D55), taking ``values``, a content hash: the ``array_hash`` of the
+  values it writes.
 """
 
 from __future__ import annotations

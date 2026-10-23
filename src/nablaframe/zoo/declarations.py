@@ -38,6 +38,16 @@ Spec: docs/specs/phase-6.md, "What each run declares". Each declaration is a
     1 at ``mechanism``, judged. ``pairs``: ``(s, s + P - 1)`` for each sole target ``s``, in
     order. ``value_map``: ``v`` to ``v``.
 
+* ``modular_addition(task)``, for a ``ModularAdditionTask`` (D54, D57), ``seq`` being ``task.seq``:
+
+  - ``run`` ``"modular_addition"``. Classes: ``"answer"`` (2) and ``"every"`` (0 to 2). No
+    variables.
+  - Planted: ``token(p+1)`` after block 0 at ``answer``, recorded, never judged: Phase 6's names
+    don't hold the sum (C11).
+  - ``predict``: ``token(p+1)`` at 2 moved to ``w`` gives ``(2, w)``. Anything else gives None.
+  - No relations: ``pairs`` and ``value_map`` raise ValueError, naming the relation, as the
+    reference run's do.
+
 * ``period(window)``: the smallest ``i >= 1`` with ``window[i] == window[0]``. ValueError when
   the window doesn't repeat its first token.
 * ``sole_targets(task, window)``: the sole targets of an induction window, a sorted int64 array:
@@ -45,7 +55,7 @@ Spec: docs/specs/phase-6.md, "What each run declares". Each declaration is a
   token at ``s + P - 1`` has occurred once before, at ``s - 1``, so the induction head there copies
   from ``s`` and nowhere else. ValueError for a window of the wrong length or without a period.
 
-Both declarations check their arguments as ``gestures.declare`` says every declaration does.
+Every declaration here checks its arguments as ``gestures.declare`` says every declaration does.
 """
 
 from __future__ import annotations
@@ -184,3 +194,7 @@ def induction(task: Any) -> Declaration:
         planted=(Planted(Place("token(p)", 0, "every"), True), Planted(Place("token(p+1)", 1, "mechanism"), True)),
         relations=(Relation("copy", Place("token(p)", 0, "every"), Place("token(p+1)", 1, "mechanism"), True),),
         describe_variables=describe_variables, predict=predict, pairs=pairs, value_map=value_map)
+
+
+def modular_addition(task: Any) -> Declaration:
+    raise NotImplementedError
