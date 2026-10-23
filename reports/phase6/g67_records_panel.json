@@ -1,0 +1,3560 @@
+{
+  "chip": "Apple M2 Max",
+  "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
+  "env_name": "nf-jax",
+  "gate_id": "G6.7",
+  "git_commit": "2a78dd76c60f01317452b6d3b4b3885305a459cc",
+  "git_dirty": false,
+  "measurements": {
+    "addresses": {
+      "induction": "http://localhost:8000/viewer/?views=../runs/phase5/views/induction/&trace=../runs/phase4/induction/store/&interventions=../runs/phase4/induction/interventions/&badges=../runs/phase6/badges.json&gestures=../runs/phase6/gestures/induction/#step=4000",
+      "reference": "http://localhost:8000/viewer/?views=../runs/phase5/views/reference/&trace=../runs/phase1/g16_trace/store/&badges=../runs/phase6/badges.json&gestures=../runs/phase6/gestures/reference/#step=12208",
+      "two_hop": "http://localhost:8000/viewer/?views=../runs/phase5/views/two_hop/&trace=../runs/phase4/two_hop/store/&interventions=../runs/phase4/two_hop/interventions/&badges=../runs/phase6/badges.json&gestures=../runs/phase6/gestures/two_hop/#step=20000&seq=0&pos=25&features=7e25eeb11d31c87de0da81e50a02edb490e1a22cc0979d47ade90b4d5526ab3d-0"
+    },
+    "badges": {
+      "add": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "attention_pattern": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "best head's attention to induction targets",
+            "path": [
+              "best_head_attention"
+            ],
+            "unit": "fraction",
+            "value": 0.985577030948416
+          },
+          {
+            "gate": "G4.2",
+            "label": "the random-weights twin's best head",
+            "path": [
+              "twin_best_attention"
+            ],
+            "unit": "fraction",
+            "value": 0.04757002226069708
+          },
+          {
+            "gate": "G4.2",
+            "label": "uniform baseline",
+            "path": [
+              "uniform_baseline"
+            ],
+            "unit": "fraction",
+            "value": 0.04583965457967783
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      },
+      "attribution": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "induction: mean contribution of blocks.1.hook_mlp_out, trained",
+            "path": [
+              "attribution",
+              "induction",
+              "trained",
+              "blocks.1.hook_mlp_out"
+            ],
+            "unit": "logit",
+            "value": 9.953374187374656
+          },
+          {
+            "gate": "G4.4",
+            "label": "induction: mean contribution of blocks.1.hook_attn_out, trained",
+            "path": [
+              "attribution",
+              "induction",
+              "trained",
+              "blocks.1.hook_attn_out"
+            ],
+            "unit": "logit",
+            "value": 3.3522505860769654
+          },
+          {
+            "gate": "G4.4",
+            "label": "two_hop: mean contribution of blocks.3.hook_attn_out, trained",
+            "path": [
+              "attribution",
+              "two_hop",
+              "trained",
+              "blocks.3.hook_attn_out"
+            ],
+            "unit": "logit",
+            "value": 11.131236079312075
+          },
+          {
+            "gate": "G4.4",
+            "label": "two_hop: mean contribution of blocks.3.hook_mlp_out, trained",
+            "path": [
+              "attribution",
+              "two_hop",
+              "trained",
+              "blocks.3.hook_mlp_out"
+            ],
+            "unit": "logit",
+            "value": 2.61186261564989
+          },
+          {
+            "gate": "G4.2",
+            "label": "induction: accuracy above chance removed by zeroing the induction heads together",
+            "path": [
+              "ablation_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 1.0005120327700974
+          }
+        ],
+        "notes": [
+          "Attribution measures each part's direct contribution to the logit, not whether the model needs that part."
+        ],
+        "sources": [
+          "G4.2",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "dpatch": {
+        "facts": [
+          {
+            "gate": "G5.1",
+            "label": "identities reproduced bit for bit",
+            "path": [
+              "identities_exact"
+            ],
+            "unit": "count",
+            "value": 36
+          },
+          {
+            "gate": "G5.1",
+            "label": "identities checked",
+            "path": [
+              "identities_checked"
+            ],
+            "unit": "count",
+            "value": 36
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.95703125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "The identities show dpatch changes nothing where it should change nothing. The rates judge a patch through a dictionary's code against the residual patch, so they judge the operation and the dictionaries together."
+        ],
+        "sources": [
+          "G5.1",
+          "G5.2",
+          "G5.3"
+        ],
+        "status": "judged: pass"
+      },
+      "dsteer": {
+        "facts": [
+          {
+            "gate": "G6.1",
+            "label": "identities reproduced bit for bit",
+            "path": [
+              "identities_exact"
+            ],
+            "unit": "count",
+            "value": 18
+          },
+          {
+            "gate": "G6.1",
+            "label": "identities checked",
+            "path": [
+              "identities_checked"
+            ],
+            "unit": "count",
+            "value": 18
+          }
+        ],
+        "notes": [
+          "The identities show dsteer changes nothing where it should change nothing: removing and adding nothing, removing only latents whose code is zero, and adding only zero amounts."
+        ],
+        "sources": [
+          "G6.1"
+        ],
+        "status": "judged: pass"
+      },
+      "edge": {
+        "facts": [
+          {
+            "gate": "G6.1",
+            "label": "edge records: one request built twice gives identical bytes",
+            "path": [
+              "records_by_kind",
+              "edge",
+              0
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.1",
+            "label": "edge records: the command line's build gives identical bytes too",
+            "path": [
+              "records_by_kind",
+              "edge",
+              1
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.3",
+            "label": "the swap follows, least of any judged edge",
+            "path": [
+              "follows_min"
+            ],
+            "unit": "fraction",
+            "value": 0.916015625
+          },
+          {
+            "gate": "G6.3",
+            "label": "the swap follows under the null, most of any judged edge",
+            "path": [
+              "null_follows_max"
+            ],
+            "unit": "fraction",
+            "value": 0.033203125
+          },
+          {
+            "gate": "G6.3",
+            "label": "the swap follows at the output, least of any judged edge",
+            "path": [
+              "output_follows_min"
+            ],
+            "unit": "fraction",
+            "value": 0.921875
+          },
+          {
+            "gate": "G6.3",
+            "label": "with the upstream set removed, the downstream set's mass kept (median), most of any judged edge",
+            "path": [
+              "kept_max"
+            ],
+            "unit": "fraction",
+            "value": 0.19844897891958405
+          },
+          {
+            "gate": "G6.3",
+            "label": "with the null's latents removed instead, the mass kept, least of any judged edge",
+            "path": [
+              "null_kept_min"
+            ],
+            "unit": "fraction",
+            "value": 0.9720886899229098
+          },
+          {
+            "gate": "G6.3",
+            "label": "with every block between the sites frozen, the swap still follows, most of any judged edge",
+            "path": [
+              "residual_alone_max"
+            ],
+            "unit": "fraction",
+            "value": 0.03125
+          },
+          {
+            "gate": "G6.3",
+            "label": "every judged edge is labelled computed",
+            "path": [
+              "labels_computed"
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.3",
+            "label": "twin: follows less its null's follows, most of any judged edge",
+            "path": [
+              "twin_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.3",
+            "label": "induction copy: the swap follows",
+            "path": [
+              "edges",
+              "induction copy",
+              "trained",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.3",
+            "label": "induction copy: the swap follows under the null",
+            "path": [
+              "edges",
+              "induction copy",
+              "trained",
+              "null_follows"
+            ],
+            "unit": "fraction",
+            "value": 0.009765625
+          },
+          {
+            "gate": "G6.3",
+            "label": "induction copy: the edge is labelled",
+            "path": [
+              "edges",
+              "induction copy",
+              "trained",
+              "label"
+            ],
+            "unit": "label",
+            "value": "computed"
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop carry: the swap follows (recorded)",
+            "path": [
+              "edges",
+              "two_hop carry",
+              "trained",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 0.98828125
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop carry: the swap follows under the null (recorded)",
+            "path": [
+              "edges",
+              "two_hop carry",
+              "trained",
+              "null_follows"
+            ],
+            "unit": "fraction",
+            "value": 0.001953125
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop carry: the edge is labelled (recorded)",
+            "path": [
+              "edges",
+              "two_hop carry",
+              "trained",
+              "label"
+            ],
+            "unit": "label",
+            "value": "carried"
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop hop: the swap follows",
+            "path": [
+              "edges",
+              "two_hop hop",
+              "trained",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 0.916015625
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop hop: the swap follows under the null",
+            "path": [
+              "edges",
+              "two_hop hop",
+              "trained",
+              "null_follows"
+            ],
+            "unit": "fraction",
+            "value": 0.033203125
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop hop: the edge is labelled",
+            "path": [
+              "edges",
+              "two_hop hop",
+              "trained",
+              "label"
+            ],
+            "unit": "label",
+            "value": "computed"
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop two back: the swap follows (recorded)",
+            "path": [
+              "edges",
+              "two_hop two back",
+              "trained",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 0.96875
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop two back: the swap follows under the null (recorded)",
+            "path": [
+              "edges",
+              "two_hop two back",
+              "trained",
+              "null_follows"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.3",
+            "label": "two_hop two back: the edge is labelled (recorded)",
+            "path": [
+              "edges",
+              "two_hop two back",
+              "trained",
+              "label"
+            ],
+            "unit": "label",
+            "value": "computed"
+          }
+        ],
+        "notes": [
+          "An edge at one position is labelled carried where the swap still follows at least half as often with every block between the two sites frozen: the residual stream passes on whatever is put into it. A label says little where follows is no higher than its null.",
+          "On the reference run every gesture is recorded, not judged: it has no planted structure to recover (D44). G6.6's report holds its readings."
+        ],
+        "sources": [
+          "G6.1",
+          "G6.3"
+        ],
+        "status": "judged: pass"
+      },
+      "generalize": {
+        "facts": [
+          {
+            "gate": "G6.1",
+            "label": "generalize records: one request built twice gives identical bytes",
+            "path": [
+              "records_by_kind",
+              "generalize",
+              0
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.1",
+            "label": "generalize records: the command line's build gives identical bytes too",
+            "path": [
+              "records_by_kind",
+              "generalize",
+              1
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.5",
+            "label": "held-out slices: F1, least",
+            "path": [
+              "slice_f1_min"
+            ],
+            "unit": "score",
+            "value": 0.7852063769604336
+          },
+          {
+            "gate": "G6.5",
+            "label": "held-out slices: steering follows, least",
+            "path": [
+              "slice_follows_min"
+            ],
+            "unit": "fraction",
+            "value": 0.8984375
+          },
+          {
+            "gate": "G6.5",
+            "label": "dictionary seeds 1 and 2, the name derived again: F1, least",
+            "path": [
+              "seed_f1_min"
+            ],
+            "unit": "score",
+            "value": 0.7467820341572364
+          },
+          {
+            "gate": "G6.5",
+            "label": "dictionary seeds 1 and 2, the name derived again: steering follows, least",
+            "path": [
+              "seed_follows_min"
+            ],
+            "unit": "fraction",
+            "value": 0.8984375
+          },
+          {
+            "gate": "G6.5",
+            "label": "step 0 lies outside the envelope",
+            "path": [
+              "step0_outside"
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.5",
+            "label": "each envelope is one run, ending at the final checkpoint",
+            "path": [
+              "one_final_run"
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.5",
+            "label": "checkpoints between the envelope's start and the probe's first reading, most of any judged name",
+            "path": [
+              "start_offset_max"
+            ],
+            "unit": "count",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.5",
+            "label": "induction token(p+1) after block 1 at mechanism: the envelope's run to the final checkpoint",
+            "path": [
+              "names",
+              "induction token(p+1) after block 1 at mechanism",
+              "results",
+              "envelope",
+              "final"
+            ],
+            "unit": "span",
+            "value": [
+              700,
+              4000
+            ]
+          },
+          {
+            "gate": "G6.5",
+            "label": "induction token(p+1) after block 1 at mechanism: step the probe reads the variable from",
+            "path": [
+              "names",
+              "induction token(p+1) after block 1 at mechanism",
+              "results",
+              "envelope",
+              "probe_reads_from"
+            ],
+            "unit": "step",
+            "value": 750
+          },
+          {
+            "gate": "G6.5",
+            "label": "two_hop b after block 2 at query: the envelope's run to the final checkpoint",
+            "path": [
+              "names",
+              "two_hop b after block 2 at query",
+              "results",
+              "envelope",
+              "final"
+            ],
+            "unit": "span",
+            "value": [
+              6000,
+              20000
+            ]
+          },
+          {
+            "gate": "G6.5",
+            "label": "two_hop b after block 2 at query: step the probe reads the variable from",
+            "path": [
+              "names",
+              "two_hop b after block 2 at query",
+              "results",
+              "envelope",
+              "probe_reads_from"
+            ],
+            "unit": "step",
+            "value": 6000
+          }
+        ],
+        "notes": [
+          "Every checkpoint is read through the final dictionaries (D44), so a name formed another way earlier in training can't be seen. The gap shows the checkpoints where the probe reads the variable but the name doesn't hold.",
+          "Beside each checkpoint, G6.5 patches two-hop's residual stream at position 25 only, where the name is read. G4.3's query patch moves positions 24 and 25.",
+          "On the reference run every gesture is recorded, not judged: it has no planted structure to recover (D44). G6.6's report holds its readings."
+        ],
+        "sources": [
+          "G6.1",
+          "G6.5"
+        ],
+        "status": "judged: pass"
+      },
+      "jlens": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 24 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 26.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 24 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "jlens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 27.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 25 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 50.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the intermediate at position 25 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "jlens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 29.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "jlens: median rank of the answer at position 25 after block 3, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "jlens",
+              "25",
+              "3",
+              "answer"
+            ],
+            "unit": "rank",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "patch: share of answers swapped at query, after block 2",
+            "path": [
+              "swap_by_site",
+              "query",
+              2
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G4.1",
+            "label": "vocabulary of the two-hop model",
+            "path": [
+              "models",
+              "two_hop",
+              "model_config",
+              "vocab"
+            ],
+            "unit": "tokens",
+            "value": 51
+          },
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers swapped, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.0234375
+          },
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers unchanged, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "unchanged"
+            ],
+            "unit": "fraction",
+            "value": 0.62890625
+          }
+        ],
+        "notes": [
+          "J is fitted over D17's valid positions, 16 to 24, which leave out \u21d2, the position the answer is read from."
+        ],
+        "sources": [
+          "G4.1",
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "jswap": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "J-lens coordinate swap: share of answers swapped, block 2",
+            "path": [
+              "jswap_by_layer",
+              "2",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.0234375
+          },
+          {
+            "gate": "G4.3",
+            "label": "aligned patch: share of answers swapped at the best site and block",
+            "path": [
+              "best_swap",
+              "rate"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "layer_structure": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "logit_lens": {
+        "facts": [
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 24 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 27.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 24 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "logit_lens",
+              "24",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 26.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 25 after block 2, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 50.0
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the intermediate at position 25 after block 2, twin",
+            "path": [
+              "lens_ranks",
+              "twin",
+              "logit_lens",
+              "25",
+              "2",
+              "intermediate"
+            ],
+            "unit": "rank",
+            "value": 28.5
+          },
+          {
+            "gate": "G4.4",
+            "label": "logit_lens: median rank of the answer at position 25 after block 3, trained",
+            "path": [
+              "lens_ranks",
+              "trained",
+              "logit_lens",
+              "25",
+              "3",
+              "answer"
+            ],
+            "unit": "rank",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "patch: share of answers swapped at query, after block 2",
+            "path": [
+              "swap_by_site",
+              "query",
+              2
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G4.1",
+            "label": "vocabulary of the two-hop model",
+            "path": [
+              "models",
+              "two_hop",
+              "model_config",
+              "vocab"
+            ],
+            "unit": "tokens",
+            "value": 51
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.1",
+          "G4.3",
+          "G4.4"
+        ],
+        "status": "recorded"
+      },
+      "mean": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "name": {
+        "facts": [
+          {
+            "gate": "G6.1",
+            "label": "name records: one request built twice gives identical bytes",
+            "path": [
+              "records_by_kind",
+              "name",
+              0
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.1",
+            "label": "name records: the command line's build gives identical bytes too",
+            "path": [
+              "records_by_kind",
+              "name",
+              1
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.2",
+            "label": "values named as planted, least of any judged name",
+            "path": [
+              "named_as_planted_min"
+            ],
+            "unit": "fraction",
+            "value": 0.8125
+          },
+          {
+            "gate": "G6.2",
+            "label": "steering follows, least of any judged name",
+            "path": [
+              "follows_min"
+            ],
+            "unit": "fraction",
+            "value": 0.92626953125
+          },
+          {
+            "gate": "G6.2",
+            "label": "steering follows under the null, most of any judged name",
+            "path": [
+              "null_follows_max"
+            ],
+            "unit": "fraction",
+            "value": 0.01025390625
+          },
+          {
+            "gate": "G6.2",
+            "label": "twin: values named at all, most of any judged name",
+            "path": [
+              "twin_named_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "twin: steering follows, most of any judged name",
+            "path": [
+              "twin_follows_max"
+            ],
+            "unit": "fraction",
+            "value": 0.02099609375
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p) after block 0 at every: values named as planted",
+            "path": [
+              "names",
+              "induction token(p) after block 0 at every",
+              "trained",
+              "named_as_planted"
+            ],
+            "unit": "fraction",
+            "value": 0.96875
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p) after block 0 at every: steering follows",
+            "path": [
+              "names",
+              "induction token(p) after block 0 at every",
+              "trained",
+              "steering",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p) after block 0 at every: values whose set's effect ranks them first",
+            "path": [
+              "names",
+              "induction token(p) after block 0 at every",
+              "trained",
+              "effect",
+              "first"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p) after block 0 at every: values whose set's effect ranks them last",
+            "path": [
+              "names",
+              "induction token(p) after block 0 at every",
+              "trained",
+              "effect",
+              "last"
+            ],
+            "unit": "fraction",
+            "value": 0.03125
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p+1) after block 1 at mechanism: values named as planted",
+            "path": [
+              "names",
+              "induction token(p+1) after block 1 at mechanism",
+              "trained",
+              "named_as_planted"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p+1) after block 1 at mechanism: steering follows",
+            "path": [
+              "names",
+              "induction token(p+1) after block 1 at mechanism",
+              "trained",
+              "steering",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 0.963221749348917
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p+1) after block 1 at mechanism: values whose set's effect ranks them first",
+            "path": [
+              "names",
+              "induction token(p+1) after block 1 at mechanism",
+              "trained",
+              "effect",
+              "first"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "induction token(p+1) after block 1 at mechanism: values whose set's effect ranks them last",
+            "path": [
+              "names",
+              "induction token(p+1) after block 1 at mechanism",
+              "trained",
+              "effect",
+              "last"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop b after block 2 at query: values named as planted",
+            "path": [
+              "names",
+              "two_hop b after block 2 at query",
+              "trained",
+              "named_as_planted"
+            ],
+            "unit": "fraction",
+            "value": 0.8125
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop b after block 2 at query: steering follows",
+            "path": [
+              "names",
+              "two_hop b after block 2 at query",
+              "trained",
+              "steering",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 0.92626953125
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop b after block 2 at query: values whose set's effect ranks them first",
+            "path": [
+              "names",
+              "two_hop b after block 2 at query",
+              "trained",
+              "effect",
+              "first"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop b after block 2 at query: values whose set's effect ranks them last",
+            "path": [
+              "names",
+              "two_hop b after block 2 at query",
+              "trained",
+              "effect",
+              "last"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop token(p+1) after block 3 at query: values named as planted",
+            "path": [
+              "names",
+              "two_hop token(p+1) after block 3 at query",
+              "trained",
+              "named_as_planted"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop token(p+1) after block 3 at query: steering follows",
+            "path": [
+              "names",
+              "two_hop token(p+1) after block 3 at query",
+              "trained",
+              "steering",
+              "follows"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop token(p+1) after block 3 at query: values whose set's effect ranks them first",
+            "path": [
+              "names",
+              "two_hop token(p+1) after block 3 at query",
+              "trained",
+              "effect",
+              "first"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.2",
+            "label": "two_hop token(p+1) after block 3 at query: values whose set's effect ranks them last",
+            "path": [
+              "names",
+              "two_hop token(p+1) after block 3 at query",
+              "trained",
+              "effect",
+              "last"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          }
+        ],
+        "notes": [
+          "Steering swaps a value's set for another value's, drawn from every value of the description that the window doesn't hold. Where few of those values have a set that names them, as on the reference run, steering rarely follows.",
+          "On the reference run every gesture is recorded, not judged: it has no planted structure to recover (D44). G6.6's report holds its readings."
+        ],
+        "sources": [
+          "G6.1",
+          "G6.2"
+        ],
+        "status": "judged: pass"
+      },
+      "open": {
+        "facts": [
+          {
+            "gate": "G6.1",
+            "label": "open records: one request built twice gives identical bytes",
+            "path": [
+              "records_by_kind",
+              "open",
+              0
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.1",
+            "label": "open records: the command line's build gives identical bytes too",
+            "path": [
+              "records_by_kind",
+              "open",
+              1
+            ],
+            "unit": "flag",
+            "value": true
+          },
+          {
+            "gate": "G6.4",
+            "label": "median reading over its bar, most of any target",
+            "path": [
+              "reading_ratio_max"
+            ],
+            "unit": "ratio",
+            "value": 0.5
+          },
+          {
+            "gate": "G6.4",
+            "label": "instances read within 128 parts, least of any target",
+            "path": [
+              "within_min"
+            ],
+            "unit": "fraction",
+            "value": 0.9140625
+          },
+          {
+            "gate": "G6.4",
+            "label": "the planted set's first part in the top 8 parts, least of any target",
+            "path": [
+              "planted_top_min"
+            ],
+            "unit": "fraction",
+            "value": 0.765625
+          },
+          {
+            "gate": "G6.4",
+            "label": "in random order of parts, instances read within 128 parts, most of any target",
+            "path": [
+              "random_within_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0390625
+          },
+          {
+            "gate": "G6.4",
+            "label": "twin: the planted set's first part in the top 8 parts, most of any target",
+            "path": [
+              "twin_planted_top_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "induction copy: median number of upstream parts to read the set",
+            "path": [
+              "targets",
+              "induction copy",
+              "trained",
+              "orders",
+              "absolute",
+              "reading_median"
+            ],
+            "unit": "parts",
+            "value": 32.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "induction copy: the bar, in upstream parts",
+            "path": [
+              "targets",
+              "induction copy",
+              "bar"
+            ],
+            "unit": "parts",
+            "value": 64
+          },
+          {
+            "gate": "G6.4",
+            "label": "induction copy: instances read within 128 parts",
+            "path": [
+              "targets",
+              "induction copy",
+              "trained",
+              "orders",
+              "absolute",
+              "within"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "induction copy: the planted set's first part in the top 8 parts",
+            "path": [
+              "targets",
+              "induction copy",
+              "trained",
+              "planted",
+              "top"
+            ],
+            "unit": "fraction",
+            "value": 0.8046875
+          },
+          {
+            "gate": "G6.4",
+            "label": "induction copy: twin: the planted set's first part in the top 8 parts",
+            "path": [
+              "targets",
+              "induction copy",
+              "twin",
+              "planted",
+              "top"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop carry: median number of upstream parts to read the set",
+            "path": [
+              "targets",
+              "two_hop carry",
+              "trained",
+              "orders",
+              "absolute",
+              "reading_median"
+            ],
+            "unit": "parts",
+            "value": 8.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop carry: the bar, in upstream parts",
+            "path": [
+              "targets",
+              "two_hop carry",
+              "bar"
+            ],
+            "unit": "parts",
+            "value": 16
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop carry: instances read within 128 parts",
+            "path": [
+              "targets",
+              "two_hop carry",
+              "trained",
+              "orders",
+              "absolute",
+              "within"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop carry: the planted set's first part in the top 8 parts",
+            "path": [
+              "targets",
+              "two_hop carry",
+              "trained",
+              "planted",
+              "top"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop hop: median number of upstream parts to read the set",
+            "path": [
+              "targets",
+              "two_hop hop",
+              "trained",
+              "orders",
+              "absolute",
+              "reading_median"
+            ],
+            "unit": "parts",
+            "value": 32.0
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop hop: the bar, in upstream parts",
+            "path": [
+              "targets",
+              "two_hop hop",
+              "bar"
+            ],
+            "unit": "parts",
+            "value": 64
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop hop: instances read within 128 parts",
+            "path": [
+              "targets",
+              "two_hop hop",
+              "trained",
+              "orders",
+              "absolute",
+              "within"
+            ],
+            "unit": "fraction",
+            "value": 0.9140625
+          },
+          {
+            "gate": "G6.4",
+            "label": "two_hop hop: the planted set's first part in the top 8 parts",
+            "path": [
+              "targets",
+              "two_hop hop",
+              "trained",
+              "planted",
+              "top"
+            ],
+            "unit": "fraction",
+            "value": 0.765625
+          }
+        ],
+        "notes": [
+          "On the random-weights twin, a planted set at its target's own position ranks in the top 8 as well, because the residual stream carries it. So only the induction target, read across positions, is judged on the twin.",
+          "On the reference run every gesture is recorded, not judged: it has no planted structure to recover (D44). G6.6's report holds its readings."
+        ],
+        "sources": [
+          "G6.1",
+          "G6.4"
+        ],
+        "status": "judged: pass"
+      },
+      "patch": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "copy target followed after a patch at block 0, least",
+            "path": [
+              "patch_after_block0_min"
+            ],
+            "unit": "fraction",
+            "value": 1.0
+          },
+          {
+            "gate": "G4.2",
+            "label": "copy target followed after a patch at block 1, most",
+            "path": [
+              "patch_after_block1_max"
+            ],
+            "unit": "fraction",
+            "value": 0.0
+          },
+          {
+            "gate": "G4.3",
+            "label": "distractor-only control: answer unchanged, least",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          },
+          {
+            "gate": "G4.3",
+            "label": "aligned patch: share of answers swapped at the best site and block",
+            "path": [
+              "best_swap",
+              "rate"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2",
+          "G4.3"
+        ],
+        "status": "judged: pass"
+      },
+      "per_token_loss": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "resample": {
+        "facts": [],
+        "notes": [
+          "No Phase 4 test exercises this operation on a model with known structure."
+        ],
+        "sources": [],
+        "status": "not tested"
+      },
+      "residual_norm": {
+        "facts": [],
+        "notes": [
+          "An exact readout of the trace, checked by its hash; there is no model-level structure for it to recover."
+        ],
+        "sources": [],
+        "status": "readout"
+      },
+      "staircase": {
+        "facts": [
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0",
+            "path": [
+              "selectivity",
+              "staircase blocks.0.hook_resid_post cur",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.6834742541584418
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.0.hook_resid_post cur",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.14986057750399168
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1",
+            "path": [
+              "selectivity",
+              "staircase blocks.1.hook_resid_post next",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.847749116726127
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.1.hook_resid_post next",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.0492449366763328
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2",
+            "path": [
+              "selectivity",
+              "staircase blocks.2.hook_resid_post b",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7547022338166519
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.2.hook_resid_post b",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.23902523294032893
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3",
+            "path": [
+              "selectivity",
+              "staircase blocks.3.hook_resid_post c",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.8339609013681549
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3, twin",
+            "path": [
+              "selectivity",
+              "staircase blocks.3.hook_resid_post c",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.11539452679226737
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch at the query after block 2 swaps the answer",
+            "path": [
+              "faithful",
+              "staircase",
+              "2",
+              "code",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.86328125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the residual patch there swaps it",
+            "path": [
+              "faithful",
+              "staircase",
+              "2",
+              "residual",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: moving only the intermediate's latents swaps it (recorded)",
+            "path": [
+              "faithful",
+              "staircase",
+              "2",
+              "latents",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.09375
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.95703125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "Each twin figure is a dictionary trained the same way on the model's random-weights twin, which has nothing to find."
+        ],
+        "sources": [
+          "G5.2",
+          "G5.3"
+        ],
+        "status": "judged: pass"
+      },
+      "swap": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "checkpoint step the block-1 attention is swapped from",
+            "path": [
+              "swap_step"
+            ],
+            "unit": "step",
+            "value": 50
+          },
+          {
+            "gate": "G4.2",
+            "label": "accuracy above chance removed by the swap",
+            "path": [
+              "swap_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 0.9286994367639528
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      },
+      "topk": {
+        "facts": [
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0",
+            "path": [
+              "selectivity",
+              "topk blocks.0.hook_resid_post cur",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.8897900636127322
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token after block 0, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.0.hook_resid_post cur",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.17134600607138678
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1",
+            "path": [
+              "selectivity",
+              "topk blocks.1.hook_resid_post next",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7900398260552235
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token after block 1, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.1.hook_resid_post next",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.047703797610490505
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2",
+            "path": [
+              "selectivity",
+              "topk blocks.2.hook_resid_post b",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7949299265645586
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2 after block 2, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.2.hook_resid_post b",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.24778551634686408
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3",
+            "path": [
+              "selectivity",
+              "topk blocks.3.hook_resid_post c",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.8659263298205704
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the answer at \u21d2 after block 3, twin",
+            "path": [
+              "selectivity",
+              "topk blocks.3.hook_resid_post c",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.1232033285090841
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch at the query after block 2 swaps the answer",
+            "path": [
+              "faithful",
+              "topk",
+              "2",
+              "code",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.90234375
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the residual patch there swaps it",
+            "path": [
+              "faithful",
+              "topk",
+              "2",
+              "residual",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.8515625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: moving only the intermediate's latents swaps it (recorded)",
+            "path": [
+              "faithful",
+              "topk",
+              "2",
+              "latents",
+              "swap"
+            ],
+            "unit": "fraction",
+            "value": 0.23046875
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.95703125
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: the control patch through the code leaves the answer unchanged, least of any kind",
+            "path": [
+              "control_unchanged_min"
+            ],
+            "unit": "fraction",
+            "value": 0.99609375
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 0: edges the meter needs",
+            "path": [
+              "edge_pairs",
+              "induction mlp 0",
+              "trained",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 602
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 0: edges the meter needs, twin",
+            "path": [
+              "edge_pairs",
+              "induction mlp 0",
+              "twin",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 56632
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 1: edges the meter needs",
+            "path": [
+              "edge_pairs",
+              "induction mlp 1",
+              "trained",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 122
+          },
+          {
+            "gate": "G5.4",
+            "label": "induction mlp 1: edges the meter needs, twin",
+            "path": [
+              "edge_pairs",
+              "induction mlp 1",
+              "twin",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 22506
+          },
+          {
+            "gate": "G5.4",
+            "label": "two_hop mlp 0: edges the meter needs",
+            "path": [
+              "edge_pairs",
+              "two_hop mlp 0",
+              "trained",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 269
+          },
+          {
+            "gate": "G5.4",
+            "label": "two_hop mlp 0: edges the meter needs, twin",
+            "path": [
+              "edge_pairs",
+              "two_hop mlp 0",
+              "twin",
+              "meter"
+            ],
+            "unit": "edges",
+            "value": 3981
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "Each twin figure is a dictionary trained the same way on the model's random-weights twin, which has nothing to find.",
+          "The edge meter is judged across the MLPs whose mean ablation costs at least 0.1 nats. Across a block it is recorded, not judged: masking a latent also moves attention (D42)."
+        ],
+        "sources": [
+          "G5.2",
+          "G5.3",
+          "G5.4"
+        ],
+        "status": "judged: pass"
+      },
+      "transcoder": {
+        "facts": [
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token, from block 0's MLP input",
+            "path": [
+              "selectivity",
+              "transcoder blocks.0.hook_mlp_out cur",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7694584570851777
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the current token, from block 0's MLP input, twin",
+            "path": [
+              "selectivity",
+              "transcoder blocks.0.hook_mlp_out cur",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.23504780051254295
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token, from block 1's MLP input",
+            "path": [
+              "selectivity",
+              "transcoder blocks.1.hook_mlp_out next",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.6239664165332157
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: mean best F1 for the next token, from block 1's MLP input, twin",
+            "path": [
+              "selectivity",
+              "transcoder blocks.1.hook_mlp_out next",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.05145490262342766
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2, from block 2's MLP input",
+            "path": [
+              "selectivity",
+              "transcoder blocks.2.hook_mlp_out b",
+              "trained"
+            ],
+            "unit": "score",
+            "value": 0.7689324686445089
+          },
+          {
+            "gate": "G5.3",
+            "label": "two-hop: mean best F1 for the intermediate at \u21d2, from block 2's MLP input, twin",
+            "path": [
+              "selectivity",
+              "transcoder blocks.2.hook_mlp_out b",
+              "twin"
+            ],
+            "unit": "score",
+            "value": 0.25349613062390325
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction: the code patch's rate over the residual patch's, least of any kind",
+            "path": [
+              "faithful_ratio_min"
+            ],
+            "unit": "ratio",
+            "value": 0.9716981132075472
+          },
+          {
+            "gate": "G5.2",
+            "label": "induction, breaking: how much more often the code patch keeps the prediction than the residual patch does, most of any kind",
+            "path": [
+              "break_excess_max"
+            ],
+            "unit": "fraction",
+            "value": 0.015625
+          }
+        ],
+        "notes": [
+          "A figure for any kind is its gate's bound over every kind that gate judges, not this kind's alone.",
+          "Each twin figure is a dictionary trained the same way on the model's random-weights twin, which has nothing to find.",
+          "Two-hop's MLP outputs carry no planted variable at the query, so a transcoder's code is patched on the induction model only."
+        ],
+        "sources": [
+          "G5.2",
+          "G5.3"
+        ],
+        "status": "judged: pass"
+      },
+      "zero": {
+        "facts": [
+          {
+            "gate": "G4.2",
+            "label": "accuracy above chance removed by zeroing the induction heads together",
+            "path": [
+              "ablation_fraction_removed"
+            ],
+            "unit": "fraction removed",
+            "value": 1.0005120327700974
+          }
+        ],
+        "notes": [],
+        "sources": [
+          "G4.2"
+        ],
+        "status": "judged: pass"
+      }
+    },
+    "badges_file": "runs/phase6/badges.json",
+    "badges_sha256": "fd40c9f72c16fd97e85ffa8b7c958ad05e3ec41c28e602962df364feabf6fe46",
+    "builds": {
+      "badges": {
+        "files_compared": 1,
+        "files_differing": [],
+        "identical": true
+      },
+      "induction": {
+        "files_compared": 246,
+        "files_differing": [],
+        "first_build_dir": "runs/phase6/gestures/induction",
+        "identical": true,
+        "second_build_dir": "runs/phase6/scratch/gestures/induction"
+      },
+      "reference": {
+        "files_compared": 1089,
+        "files_differing": [],
+        "first_build_dir": "runs/phase6/gestures/reference",
+        "identical": true,
+        "second_build_dir": "runs/phase6/scratch/gestures/reference"
+      },
+      "two_hop": {
+        "files_compared": 301,
+        "files_differing": [],
+        "first_build_dir": "runs/phase6/gestures/two_hop",
+        "identical": true,
+        "second_build_dir": "runs/phase6/scratch/gestures/two_hop"
+      }
+    },
+    "builds_identical": true,
+    "external_url_matches": [],
+    "external_urls": 0,
+    "intermediate": {
+      "generalize": {
+        "envelope": {
+          "final": [
+            6000,
+            20000
+          ],
+          "gap": [],
+          "probe_reads_from": 6000,
+          "runs": [
+            [
+              6000,
+              20000
+            ]
+          ],
+          "steps": [
+            6000,
+            7000,
+            8000,
+            9000,
+            10000,
+            11000,
+            12000,
+            13000,
+            14000,
+            15000,
+            16000,
+            17000,
+            18000,
+            19000,
+            20000
+          ]
+        },
+        "key": "e0dc10392f0fd3435fc8cee6733c3b8e3b5da00d30baec9610f40c25866ba6ae"
+      },
+      "place": "two_hop b after block 2 at query",
+      "values": [
+        {
+          "key": "fa19ae4ef64ed8ad23be3f884bfad4e5163721da5bc9766f278f764e96ea5446",
+          "latent": 761,
+          "meter": {
+            "ablated_changed": 0.7142857142857143,
+            "causal": true,
+            "coverage": 0.026848658292529914,
+            "description": "b",
+            "f1": 0.6666666666666666,
+            "follows": 0.9761904761904762,
+            "instances": 42,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9047619047619048,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.6666666666666666,
+            "unchanged": 0.0,
+            "value": 0
+          },
+          "value": 0
+        },
+        {
+          "key": "e3091e4cebadae9ed48a45fb2c926780085af35a523352d1a724f0daec9769f9",
+          "latent": 542,
+          "meter": {
+            "ablated_changed": 0.7954545454545454,
+            "causal": true,
+            "coverage": 0.027286938761797525,
+            "description": "b",
+            "f1": 0.671875,
+            "follows": 0.8863636363636364,
+            "instances": 44,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8636363636363636,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.671875,
+            "unchanged": 0.022727272727272728,
+            "value": 1
+          },
+          "value": 1
+        },
+        {
+          "key": "baf64c69879940df72b415bdec72517df0fd4b7ceb47783549fe0aa9dd076e1e",
+          "latent": 301,
+          "meter": {
+            "ablated_changed": 0.7708333333333334,
+            "causal": true,
+            "coverage": 0.030351687942198283,
+            "description": "b",
+            "f1": 0.9791666666666666,
+            "follows": 0.9375,
+            "instances": 48,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.020833333333333332,
+            "null_kl": null,
+            "null_unchanged": 0.9166666666666666,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9791666666666666,
+            "unchanged": 0.041666666666666664,
+            "value": 2
+          },
+          "value": 2
+        },
+        {
+          "key": "f3ed0b3f9aa765962fc6a4d905cb769447dbb4473dd093ecf0b7d4faa321ff22",
+          "latent": 553,
+          "meter": {
+            "ablated_changed": 0.8260869565217391,
+            "causal": true,
+            "coverage": 0.028627771839104553,
+            "description": "b",
+            "f1": 0.9484536082474226,
+            "follows": 0.9782608695652174,
+            "instances": 46,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8913043478260869,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9484536082474226,
+            "unchanged": 0.021739130434782608,
+            "value": 3
+          },
+          "value": 3
+        },
+        {
+          "key": "8a1b164c028de78caff8d323b97e792fca93bef5b9f4114e4db5d678148690b6",
+          "latent": 913,
+          "meter": {
+            "ablated_changed": 0.7380952380952381,
+            "causal": true,
+            "coverage": 0.02236372503020383,
+            "description": "b",
+            "f1": 0.9534883720930233,
+            "follows": 0.9523809523809523,
+            "instances": 42,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8809523809523809,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9534883720930233,
+            "unchanged": 0.023809523809523808,
+            "value": 4
+          },
+          "value": 4
+        },
+        {
+          "key": "d1a78eff8d486bda87cefa27df73aae3bb347aaa1e64c68e38d213a125b579c9",
+          "latent": 871,
+          "meter": {
+            "ablated_changed": 0.775,
+            "causal": true,
+            "coverage": 0.025607148722180756,
+            "description": "b",
+            "f1": 1.0,
+            "follows": 0.95,
+            "instances": 40,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.875,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 1.0,
+            "unchanged": 0.05,
+            "value": 5
+          },
+          "value": 5
+        },
+        {
+          "key": "4128d1c886de33f97515892106a172e0c2c8c2f1cbc9b136b4d4d84b8157be4c",
+          "latent": 147,
+          "meter": {
+            "ablated_changed": 0.6862745098039216,
+            "causal": true,
+            "coverage": 0.03079718667947119,
+            "description": "b",
+            "f1": 0.4731182795698925,
+            "follows": 0.9607843137254902,
+            "instances": 51,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.0196078431372549,
+            "null_kl": null,
+            "null_unchanged": 0.8823529411764706,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9702970297029703,
+            "unchanged": 0.0,
+            "value": 45
+          },
+          "value": 6
+        },
+        {
+          "key": "da0045d0a565f29a0816096f2791c784046b93b36e8e3fb1ecd62f58ce16d68d",
+          "latent": 593,
+          "meter": {
+            "ablated_changed": null,
+            "causal": false,
+            "coverage": 0.01683752836876997,
+            "description": "token(p-1)",
+            "f1": 0.6238532110091743,
+            "follows": null,
+            "instances": 36,
+            "kl": 0.001502234344937907,
+            "label": "named",
+            "null_follows": null,
+            "null_kl": 1.2079510449891395,
+            "null_unchanged": null,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.6238532110091743,
+            "unchanged": null,
+            "value": 7
+          },
+          "value": 7
+        },
+        {
+          "key": "f96458f820e436a8af5320d9db766eea354f29366d4049c923984906a3d9ffea",
+          "latent": 146,
+          "meter": {
+            "ablated_changed": 0.8648648648648649,
+            "causal": true,
+            "coverage": 0.014477632632485552,
+            "description": "b",
+            "f1": 0.7184466019417476,
+            "follows": 0.918918918918919,
+            "instances": 37,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8918918918918919,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.7184466019417476,
+            "unchanged": 0.0,
+            "value": 8
+          },
+          "value": 8
+        },
+        {
+          "key": "eeb06d2756a1078ed134e74e82da63390b627d5efcf376f4a08fa0455026f284",
+          "latent": 985,
+          "meter": {
+            "ablated_changed": 0.7837837837837838,
+            "causal": true,
+            "coverage": 0.022451605845896797,
+            "description": "b",
+            "f1": 1.0,
+            "follows": 0.9459459459459459,
+            "instances": 37,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8108108108108109,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 1.0,
+            "unchanged": 0.0,
+            "value": 9
+          },
+          "value": 9
+        },
+        {
+          "key": "e074788238ff3095cdd3b0fe0e29b22a933884659b924b16f5658f5cee18e8c5",
+          "latent": 693,
+          "meter": {
+            "ablated_changed": 0.8043478260869565,
+            "causal": true,
+            "coverage": 0.03601989873119123,
+            "description": "b",
+            "f1": 0.989010989010989,
+            "follows": 0.9782608695652174,
+            "instances": 46,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8260869565217391,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.989010989010989,
+            "unchanged": 0.021739130434782608,
+            "value": 10
+          },
+          "value": 10
+        },
+        {
+          "key": "141626b0292d983d7781615b7068df75594fc0217da7793b0e38991117732544",
+          "latent": 387,
+          "meter": {
+            "ablated_changed": 0.8043478260869565,
+            "causal": true,
+            "coverage": 0.019219419216614315,
+            "description": "b",
+            "f1": 0.4919786096256685,
+            "follows": 0.9782608695652174,
+            "instances": 46,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9347826086956522,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.4919786096256685,
+            "unchanged": 0.0,
+            "value": 35
+          },
+          "value": 11
+        },
+        {
+          "key": "18bc64ba8c2f97f63aa1abb3882a80537f9b536e9f729485cae7c8e145052c49",
+          "latent": 367,
+          "meter": {
+            "ablated_changed": 0.8431372549019608,
+            "causal": true,
+            "coverage": 0.030595397233356286,
+            "description": "b",
+            "f1": 0.9504950495049505,
+            "follows": 0.9411764705882353,
+            "instances": 51,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9215686274509803,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9504950495049505,
+            "unchanged": 0.0392156862745098,
+            "value": 12
+          },
+          "value": 12
+        },
+        {
+          "key": "79b11022e4c607f255d51e8585ea84fa8619838910281f87fcef76d85b8bf2d2",
+          "latent": 63,
+          "meter": {
+            "ablated_changed": 0.717391304347826,
+            "causal": true,
+            "coverage": 0.02860155358793866,
+            "description": "b",
+            "f1": 0.9662921348314607,
+            "follows": 0.9130434782608695,
+            "instances": 46,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.782608695652174,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9662921348314607,
+            "unchanged": 0.08695652173913043,
+            "value": 13
+          },
+          "value": 13
+        },
+        {
+          "key": "f728cff206a8e4484db25f915da306ce3ac31e46214a3c0794678609c6f9fbc0",
+          "latent": 362,
+          "meter": {
+            "ablated_changed": 0.8,
+            "causal": true,
+            "coverage": 0.03021580262880811,
+            "description": "b",
+            "f1": 0.5316455696202531,
+            "follows": 0.9111111111111111,
+            "instances": 45,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.022222222222222223,
+            "null_kl": null,
+            "null_unchanged": 0.8,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.5316455696202531,
+            "unchanged": 0.08888888888888889,
+            "value": 14
+          },
+          "value": 14
+        },
+        {
+          "key": "3942bb8f689a2d8cec978ab3afa142a146f1116a1e237e0099b164a61fd0450d",
+          "latent": 775,
+          "meter": {
+            "ablated_changed": 0.7555555555555555,
+            "causal": true,
+            "coverage": 0.015304912882690086,
+            "description": "b",
+            "f1": 0.989010989010989,
+            "follows": 0.9777777777777777,
+            "instances": 45,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.044444444444444446,
+            "null_kl": null,
+            "null_unchanged": 0.8444444444444444,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.989010989010989,
+            "unchanged": 0.0,
+            "value": 15
+          },
+          "value": 15
+        },
+        {
+          "key": "1f401131ae4fc92df5b0019754b8362412b0c3d6549454cc6cfeab1bb2005a8a",
+          "latent": 608,
+          "meter": {
+            "ablated_changed": 0.7619047619047619,
+            "causal": true,
+            "coverage": 0.03336680324985407,
+            "description": "b",
+            "f1": 0.5714285714285714,
+            "follows": 0.9523809523809523,
+            "instances": 42,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.047619047619047616,
+            "null_kl": null,
+            "null_unchanged": 0.7857142857142857,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.5714285714285714,
+            "unchanged": 0.023809523809523808,
+            "value": 16
+          },
+          "value": 16
+        },
+        {
+          "key": "76a62b0c8171585680053eb2bcd1fd69436c5db439a00d93b1906f2cc41a4b61",
+          "latent": 737,
+          "meter": {
+            "ablated_changed": null,
+            "causal": false,
+            "coverage": 0.021392691356156027,
+            "description": "token(p-1)",
+            "f1": 0.7676767676767676,
+            "follows": null,
+            "instances": 38,
+            "kl": 0.004309705052058546,
+            "label": "named",
+            "null_follows": null,
+            "null_kl": 1.7040419261020978,
+            "null_unchanged": null,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.7676767676767676,
+            "unchanged": null,
+            "value": 17
+          },
+          "value": 17
+        },
+        {
+          "key": "f62be53a963449eb033c46c60f71814ab21233ba64f757134a1deff4319da272",
+          "latent": 357,
+          "meter": {
+            "ablated_changed": 0.8235294117647058,
+            "causal": true,
+            "coverage": 0.026487155219119676,
+            "description": "b",
+            "f1": 1.0,
+            "follows": 0.9117647058823529,
+            "instances": 34,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.029411764705882353,
+            "null_kl": null,
+            "null_unchanged": 0.8529411764705882,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 1.0,
+            "unchanged": 0.029411764705882353,
+            "value": 18
+          },
+          "value": 18
+        },
+        {
+          "key": "3824f87b7536f09efdbe0afe9490e446d4c26fde0b81a37a9c1abb7b613d138f",
+          "latent": 311,
+          "meter": {
+            "ablated_changed": 0.7317073170731707,
+            "causal": true,
+            "coverage": 0.028848414484019157,
+            "description": "b",
+            "f1": 0.9210526315789473,
+            "follows": 0.975609756097561,
+            "instances": 41,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8536585365853658,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9210526315789473,
+            "unchanged": 0.0,
+            "value": 19
+          },
+          "value": 19
+        },
+        {
+          "key": "2efd779516e0e64957c3ead72b42de54eca6b4ce27a703fface23203f8b71d58",
+          "latent": 551,
+          "meter": {
+            "ablated_changed": 0.875,
+            "causal": true,
+            "coverage": 0.04007846164926966,
+            "description": "b",
+            "f1": 0.9787234042553191,
+            "follows": 0.8958333333333334,
+            "instances": 48,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.020833333333333332,
+            "null_kl": null,
+            "null_unchanged": 0.7708333333333334,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9787234042553191,
+            "unchanged": 0.041666666666666664,
+            "value": 20
+          },
+          "value": 20
+        },
+        {
+          "key": "7762c49be3a8c0480faf3e514cd7c98070d5a8ca547e63fb7462e8b50b1896bf",
+          "latent": 548,
+          "meter": {
+            "ablated_changed": 0.7843137254901961,
+            "causal": true,
+            "coverage": 0.017188328006860154,
+            "description": "b",
+            "f1": 0.7132867132867133,
+            "follows": 0.9607843137254902,
+            "instances": 51,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.7843137254901961,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.7132867132867133,
+            "unchanged": 0.0,
+            "value": 21
+          },
+          "value": 21
+        },
+        {
+          "key": "9a4030ea2ebbba716b299f63045ffdcae7cdf33f3964b0ac1f864c0ff6688be1",
+          "latent": 148,
+          "meter": {
+            "ablated_changed": 0.9210526315789473,
+            "causal": true,
+            "coverage": 0.012452600550946635,
+            "description": "b",
+            "f1": 0.9620253164556962,
+            "follows": 0.9736842105263158,
+            "instances": 38,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8947368421052632,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9620253164556962,
+            "unchanged": 0.02631578947368421,
+            "value": 22
+          },
+          "value": 22
+        },
+        {
+          "key": "a8e65923596ee4a6a1d656d33cd473bfd414d98739a03f1e372e5cf54bd136f2",
+          "latent": 736,
+          "meter": {
+            "ablated_changed": 0.6857142857142857,
+            "causal": true,
+            "coverage": 0.031024199098149685,
+            "description": "b",
+            "f1": 0.43478260869565216,
+            "follows": 0.9428571428571428,
+            "instances": 35,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8571428571428571,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.43478260869565216,
+            "unchanged": 0.02857142857142857,
+            "value": 23
+          },
+          "value": 23
+        },
+        {
+          "key": "9988903194ec024b2a4f87267b07fefbde467a075e05e1eece0bbfa03a958a41",
+          "latent": 189,
+          "meter": {
+            "ablated_changed": 0.5263157894736842,
+            "causal": true,
+            "coverage": 0.0192946239910827,
+            "description": "b",
+            "f1": 0.38190954773869346,
+            "follows": 0.8947368421052632,
+            "instances": 38,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8947368421052632,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.38190954773869346,
+            "unchanged": 0.07894736842105263,
+            "value": 24
+          },
+          "value": 24
+        },
+        {
+          "key": "d394bed214fe2f0dc0dba4fda0e23c229f5678c58e57b8d4893d65506a19fedb",
+          "latent": 221,
+          "meter": {
+            "ablated_changed": 0.8333333333333334,
+            "causal": true,
+            "coverage": 0.025582264038787595,
+            "description": "b",
+            "f1": 1.0,
+            "follows": 0.9444444444444444,
+            "instances": 36,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9166666666666666,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 1.0,
+            "unchanged": 0.027777777777777776,
+            "value": 25
+          },
+          "value": 25
+        },
+        {
+          "key": "7ca792483ad7ae1e3a5cd328b17b66068adcb3e8f07e91ccf8a1c178eb4f286e",
+          "latent": 282,
+          "meter": {
+            "ablated_changed": 0.7741935483870968,
+            "causal": true,
+            "coverage": 0.017941355688058415,
+            "description": "b",
+            "f1": 0.8301886792452831,
+            "follows": 0.9032258064516129,
+            "instances": 31,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.03225806451612903,
+            "null_kl": null,
+            "null_unchanged": 0.7741935483870968,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.8301886792452831,
+            "unchanged": 0.0967741935483871,
+            "value": 26
+          },
+          "value": 26
+        },
+        {
+          "key": "987e362202b9dd89e3c9bed59b79d9f436f15e608873ef62b1698125a2831470",
+          "latent": 139,
+          "meter": {
+            "ablated_changed": 0.7954545454545454,
+            "causal": true,
+            "coverage": 0.016599684372499576,
+            "description": "b",
+            "f1": 0.6717557251908397,
+            "follows": 0.9090909090909091,
+            "instances": 44,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8181818181818182,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.6717557251908397,
+            "unchanged": 0.022727272727272728,
+            "value": 27
+          },
+          "value": 27
+        },
+        {
+          "key": "0fb3ccd64eb7415e95ddbbc042eae9c1ec103b1b01e40aea4aea6b7cd74a9a9b",
+          "latent": 80,
+          "meter": {
+            "ablated_changed": 0.7755102040816326,
+            "causal": true,
+            "coverage": 0.029470860464177163,
+            "description": "b",
+            "f1": 0.9591836734693877,
+            "follows": 0.9387755102040817,
+            "instances": 49,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.08163265306122448,
+            "null_kl": null,
+            "null_unchanged": 0.8163265306122449,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9591836734693877,
+            "unchanged": 0.0,
+            "value": 28
+          },
+          "value": 28
+        },
+        {
+          "key": "df323341e55d31b96fc58016b8808cf835e10cc33f3f316f5b3fa12ca05de9a3",
+          "latent": 526,
+          "meter": {
+            "ablated_changed": 0.8461538461538461,
+            "causal": true,
+            "coverage": 0.022417681181403915,
+            "description": "b",
+            "f1": 0.8266666666666667,
+            "follows": 1.0,
+            "instances": 39,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9230769230769231,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.8266666666666667,
+            "unchanged": 0.0,
+            "value": 29
+          },
+          "value": 29
+        },
+        {
+          "key": "dd76c5e42002e6d08d230bf11dd4b9e885283d4aec5d08d89785a2c07c34565b",
+          "latent": 544,
+          "meter": {
+            "ablated_changed": 0.6326530612244898,
+            "causal": true,
+            "coverage": 0.029864897032167406,
+            "description": "b",
+            "f1": 0.8376068376068376,
+            "follows": 0.9183673469387755,
+            "instances": 49,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8571428571428571,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.8376068376068376,
+            "unchanged": 0.04081632653061224,
+            "value": 30
+          },
+          "value": 30
+        },
+        {
+          "key": "189bb393214d485ccf98119eef7bf0ad86191f9903a1a16d186d29eda87388a0",
+          "latent": 323,
+          "meter": {
+            "ablated_changed": 0.8780487804878049,
+            "causal": true,
+            "coverage": 0.02378490574318619,
+            "description": "b",
+            "f1": 0.9487179487179487,
+            "follows": 0.9512195121951219,
+            "instances": 41,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.024390243902439025,
+            "null_kl": null,
+            "null_unchanged": 0.9024390243902439,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9487179487179487,
+            "unchanged": 0.0,
+            "value": 31
+          },
+          "value": 31
+        },
+        {
+          "key": "2a8bde0f70da747b6b3f646d8aa35ba19109ff068a80ec3c2b848e53be082b6d",
+          "latent": 211,
+          "meter": {
+            "ablated_changed": 0.9069767441860465,
+            "causal": true,
+            "coverage": 0.0268913441137434,
+            "description": "b",
+            "f1": 0.9767441860465116,
+            "follows": 0.9767441860465116,
+            "instances": 43,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8372093023255814,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9767441860465116,
+            "unchanged": 0.023255813953488372,
+            "value": 32
+          },
+          "value": 32
+        },
+        {
+          "key": "f82adc7bfbb4e42471ef2093651d4f7ac3d95dbfcb035bfa5931511cbec06f74",
+          "latent": 740,
+          "meter": {
+            "ablated_changed": 0.7380952380952381,
+            "causal": true,
+            "coverage": 0.03035696378887518,
+            "description": "b",
+            "f1": 0.9230769230769231,
+            "follows": 0.9285714285714286,
+            "instances": 42,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8571428571428571,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9230769230769231,
+            "unchanged": 0.07142857142857142,
+            "value": 33
+          },
+          "value": 33
+        },
+        {
+          "key": "96f5ecbbf29bcf417a081df9aa1b13354af8b6ee1221a7179824e678a41a3ab0",
+          "latent": 529,
+          "meter": {
+            "ablated_changed": 0.8947368421052632,
+            "causal": true,
+            "coverage": 0.02258297070457798,
+            "description": "b",
+            "f1": 0.987012987012987,
+            "follows": 0.9473684210526315,
+            "instances": 38,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.868421052631579,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.987012987012987,
+            "unchanged": 0.0,
+            "value": 34
+          },
+          "value": 34
+        },
+        {
+          "key": "141626b0292d983d7781615b7068df75594fc0217da7793b0e38991117732544",
+          "latent": 387,
+          "meter": {
+            "ablated_changed": 0.8043478260869565,
+            "causal": true,
+            "coverage": 0.019219419216614315,
+            "description": "b",
+            "f1": 0.4919786096256685,
+            "follows": 0.9782608695652174,
+            "instances": 46,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9347826086956522,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.4919786096256685,
+            "unchanged": 0.0,
+            "value": 35
+          },
+          "value": 35
+        },
+        {
+          "key": "50ae82c619839644dbec90120c5e9b181c75878892760a678d74d69d5b0aeb0d",
+          "latent": 603,
+          "meter": {
+            "ablated_changed": 0.85,
+            "causal": true,
+            "coverage": 0.03092404876167961,
+            "description": "b",
+            "f1": 0.9333333333333333,
+            "follows": 0.925,
+            "instances": 40,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9333333333333333,
+            "unchanged": 0.0,
+            "value": 36
+          },
+          "value": 36
+        },
+        {
+          "key": "a34bd792361ab0fd67437dac9235cab60b8e40cbedfdc5545c5908d64bd452ad",
+          "latent": 798,
+          "meter": {
+            "ablated_changed": 0.7380952380952381,
+            "causal": true,
+            "coverage": 0.022951851159953227,
+            "description": "b",
+            "f1": 0.672,
+            "follows": 0.9285714285714286,
+            "instances": 42,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.047619047619047616,
+            "null_kl": null,
+            "null_unchanged": 0.8809523809523809,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.672,
+            "unchanged": 0.023809523809523808,
+            "value": 37
+          },
+          "value": 37
+        },
+        {
+          "key": "4bd45f4db93262b8f8a09566ce6be105b3b518a48dd622021c5e243d7715c2ba",
+          "latent": 101,
+          "meter": {
+            "ablated_changed": 0.8947368421052632,
+            "causal": true,
+            "coverage": 0.0031718540065525398,
+            "description": "b",
+            "f1": 0.4375,
+            "follows": 1.0,
+            "instances": 38,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.02631578947368421,
+            "null_kl": null,
+            "null_unchanged": 0.8157894736842105,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.4375,
+            "unchanged": 0.0,
+            "value": 38
+          },
+          "value": 38
+        },
+        {
+          "key": "35eab53aafc9deef26c106e636335125dabef9436cc97316c3966a908ea7340c",
+          "latent": 677,
+          "meter": {
+            "ablated_changed": 0.8913043478260869,
+            "causal": true,
+            "coverage": 0.02559183487229493,
+            "description": "b",
+            "f1": 0.989247311827957,
+            "follows": 1.0,
+            "instances": 46,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8478260869565217,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.989247311827957,
+            "unchanged": 0.0,
+            "value": 39
+          },
+          "value": 39
+        },
+        {
+          "key": "ceb1d9345ae5a0e0a5f5ce0a2914fd817e70042b74293097641eca4f374b74ff",
+          "latent": 91,
+          "meter": {
+            "ablated_changed": 0.7714285714285715,
+            "causal": true,
+            "coverage": 0.012796071436976307,
+            "description": "b",
+            "f1": 0.9722222222222222,
+            "follows": 0.9714285714285714,
+            "instances": 35,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.02857142857142857,
+            "null_kl": null,
+            "null_unchanged": 0.8285714285714286,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9722222222222222,
+            "unchanged": 0.0,
+            "value": 40
+          },
+          "value": 40
+        },
+        {
+          "key": "06b7e290634efdb5c1336c178b0baec66da5a2a6eff1f029eecbcf7dafa0a1a7",
+          "latent": 687,
+          "meter": {
+            "ablated_changed": 0.7441860465116279,
+            "causal": true,
+            "coverage": 0.031997618768168416,
+            "description": "b",
+            "f1": 0.9885057471264368,
+            "follows": 0.9069767441860465,
+            "instances": 43,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8372093023255814,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9885057471264368,
+            "unchanged": 0.046511627906976744,
+            "value": 41
+          },
+          "value": 41
+        },
+        {
+          "key": "498a6616589a2930af37441bc6459a70538ff6d5997aa246c4967d907d831259",
+          "latent": 145,
+          "meter": {
+            "ablated_changed": 0.875,
+            "causal": true,
+            "coverage": 0.023397450524760006,
+            "description": "b",
+            "f1": 1.0,
+            "follows": 0.96875,
+            "instances": 32,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.03125,
+            "null_kl": null,
+            "null_unchanged": 0.875,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 1.0,
+            "unchanged": 0.0,
+            "value": 42
+          },
+          "value": 42
+        },
+        {
+          "key": "db2042fe3016dad4eec64133a325a98374489e730831f82556a42807a648a86a",
+          "latent": 119,
+          "meter": {
+            "ablated_changed": 0.66,
+            "causal": true,
+            "coverage": 0.03786727819905166,
+            "description": "b",
+            "f1": 0.5918367346938775,
+            "follows": 0.92,
+            "instances": 50,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.9,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.5918367346938775,
+            "unchanged": 0.04,
+            "value": 43
+          },
+          "value": 43
+        },
+        {
+          "key": "c08672e4bcb3023d29a76ac29f8b4f4458390d67eef6c575e8ea3ea97a382404",
+          "latent": 196,
+          "meter": {
+            "ablated_changed": 0.8260869565217391,
+            "causal": true,
+            "coverage": 0.04858582395923475,
+            "description": "b",
+            "f1": 0.5411764705882353,
+            "follows": 0.8695652173913043,
+            "instances": 46,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8478260869565217,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.5411764705882353,
+            "unchanged": 0.043478260869565216,
+            "value": 44
+          },
+          "value": 44
+        },
+        {
+          "key": "84fffd4d8c31e7eda8132baf8d0bbd65fbaac41859c3753eb8f8ea7bfb07222f",
+          "latent": 639,
+          "meter": {
+            "ablated_changed": 0.6862745098039216,
+            "causal": true,
+            "coverage": 0.03079718667947119,
+            "description": "b",
+            "f1": 0.9702970297029703,
+            "follows": 0.9607843137254902,
+            "instances": 51,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0196078431372549,
+            "null_kl": null,
+            "null_unchanged": 0.8823529411764706,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.9702970297029703,
+            "unchanged": 0.0,
+            "value": 45
+          },
+          "value": 45
+        },
+        {
+          "key": "543e6492b3d43101659908919cdb951f139a6a707b5b1a51b12a388ffb1ef50b",
+          "latent": 866,
+          "meter": {
+            "ablated_changed": 0.8048780487804879,
+            "causal": true,
+            "coverage": 0.027319926775459,
+            "description": "b",
+            "f1": 0.975609756097561,
+            "follows": 0.8536585365853658,
+            "instances": 41,
+            "kl": null,
+            "label": "named",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8048780487804879,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.975609756097561,
+            "unchanged": 0.04878048780487805,
+            "value": 46
+          },
+          "value": 46
+        },
+        {
+          "key": "076eaef0ff7bd8bdbb66baa7fa68ebf646f0bfcdb883b16cc2b6edd2c56ce0bd",
+          "latent": 285,
+          "meter": {
+            "ablated_changed": 0.803921568627451,
+            "causal": true,
+            "coverage": 0.03686491092957967,
+            "description": "b",
+            "f1": 0.48,
+            "follows": 0.9215686274509803,
+            "instances": 51,
+            "kl": null,
+            "label": "weak",
+            "null_follows": 0.0,
+            "null_kl": null,
+            "null_unchanged": 0.8627450980392157,
+            "rank_from_bottom": 0,
+            "rank_from_top": 50,
+            "set_f1": 0.48,
+            "unchanged": 0.058823529411764705,
+            "value": 47
+          },
+          "value": 47
+        }
+      ]
+    },
+    "matches": {
+      "edges": [
+        {
+          "in_folder": true,
+          "key": "5ec06cbcee2c84d6388158055570a87dc7914f1124edad0ec6c42eaae90aef8c",
+          "place": "induction copy",
+          "run": "induction"
+        },
+        {
+          "in_folder": true,
+          "key": "746a1b9b6695ff2259851ce70af0dd6e3a3800570949de6f1b04918bade1afb0",
+          "place": "two_hop carry",
+          "run": "two_hop"
+        },
+        {
+          "in_folder": true,
+          "key": "0435a72a2aacdfd992a332f3ac52577f430b12c19d4e78305544f1928f66864e",
+          "place": "two_hop hop",
+          "run": "two_hop"
+        },
+        {
+          "in_folder": true,
+          "key": "2649c1e12b07d4839d812ab306c2138a75c0982cf7ee39253807e30b22b1cccd",
+          "place": "two_hop two back",
+          "run": "two_hop"
+        }
+      ],
+      "generalize": [
+        {
+          "in_folder": true,
+          "key": "8c0145428fb90f08411edfe8c95f4dbb90c023c3e024abd450ec7eb9d81f1ea0",
+          "place": "induction token(p+1) after block 1 at mechanism",
+          "run": "induction"
+        },
+        {
+          "in_folder": true,
+          "key": "e0dc10392f0fd3435fc8cee6733c3b8e3b5da00d30baec9610f40c25866ba6ae",
+          "place": "two_hop b after block 2 at query",
+          "run": "two_hop"
+        }
+      ],
+      "reference": [
+        {
+          "block": 0,
+          "equal": true,
+          "g66": [
+            16,
+            42,
+            44,
+            50,
+            53,
+            121,
+            203,
+            248
+          ],
+          "g67": [
+            16,
+            42,
+            44,
+            50,
+            53,
+            121,
+            203,
+            248
+          ]
+        },
+        {
+          "block": 1,
+          "equal": true,
+          "g66": [
+            7,
+            16,
+            40,
+            44,
+            50,
+            53,
+            203,
+            257
+          ],
+          "g67": [
+            7,
+            16,
+            40,
+            44,
+            50,
+            53,
+            203,
+            257
+          ]
+        },
+        {
+          "block": 2,
+          "equal": true,
+          "g66": [
+            4,
+            6,
+            7,
+            16,
+            40,
+            42,
+            44,
+            50,
+            53,
+            66,
+            248
+          ],
+          "g67": [
+            4,
+            6,
+            7,
+            16,
+            40,
+            42,
+            44,
+            50,
+            53,
+            66,
+            248
+          ]
+        },
+        {
+          "block": 3,
+          "equal": true,
+          "g66": [
+            2,
+            4,
+            6,
+            7,
+            8,
+            16,
+            40,
+            42,
+            44,
+            50,
+            53
+          ],
+          "g67": [
+            2,
+            4,
+            6,
+            7,
+            8,
+            16,
+            40,
+            42,
+            44,
+            50,
+            53
+          ]
+        }
+      ]
+    },
+    "record_dirs": {
+      "induction": "runs/phase6/gestures/induction",
+      "reference": "runs/phase6/gestures/reference",
+      "two_hop": "runs/phase6/gestures/two_hop"
+    },
+    "records": {
+      "induction": {
+        "edge": 1,
+        "generalize": 1,
+        "name": 178,
+        "open": 64
+      },
+      "reference": {
+        "edge": 0,
+        "generalize": 0,
+        "name": 1057,
+        "open": 30
+      },
+      "two_hop": {
+        "edge": 3,
+        "generalize": 1,
+        "name": 199,
+        "open": 96
+      }
+    },
+    "reports_match": true,
+    "requests": {
+      "induction": {
+        "edge": 1,
+        "generalize": 1,
+        "name": 256,
+        "open": 64
+      },
+      "reference": {
+        "edge": 0,
+        "generalize": 0,
+        "name": 1062,
+        "open": 30
+      },
+      "two_hop": {
+        "edge": 3,
+        "generalize": 1,
+        "name": 336,
+        "open": 96
+      }
+    },
+    "run_ids": {
+      "induction": "76b02c0509a36a4b7021b2f9f13b5fbb9c6479a9e7b7a6744205ec1d76f297d8",
+      "reference": "b9258e47fef46b413d268683b7653ae29ba5d06bdf5b422f2f01aa91d6af8c0d",
+      "two_hop": "4f90b1dbd058e9e36392441c369116ae4f7cc8c4b432d6f7abbb87685f18bd97"
+    },
+    "settings": {
+      "instances": {
+        "edge": 512,
+        "name": 512,
+        "open": 128
+      },
+      "readout_latents": 8,
+      "reference": {
+        "latents": 256,
+        "open": 32,
+        "per_value": 8,
+        "values": 32
+      },
+      "seeds": {
+        "edge": 32,
+        "generalize": 40,
+        "name": 31,
+        "open": 35,
+        "reference": 70
+      }
+    },
+    "steps": {
+      "induction": 4000,
+      "reference": 12208,
+      "two_hop": 20000
+    },
+    "subjects_missing": 0,
+    "subjects_without_badge": [],
+    "versions": {
+      "equinox": "0.13.8",
+      "jax": "0.11.2",
+      "jaxlib": "0.11.2",
+      "marin-haliax": "0.2.129.dev36313914471",
+      "numpy": "2.5.3",
+      "optax": "0.2.6",
+      "safetensors": "0.6.2"
+    },
+    "viewer_files": [
+      "app.js",
+      "index.html"
+    ]
+  },
+  "schema_version": 2,
+  "status": "pass",
+  "thread_count": 12,
+  "timestamp_utc": "2026-10-23T02:17:58Z",
+  "xla_flags": ""
+}
