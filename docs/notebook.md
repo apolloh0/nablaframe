@@ -4,9 +4,11 @@ Status: working notes, started by apolloh0 at H5 on 2026-10-18 and updated as ph
 
 ## Where things stand
 
-Phase 5 is closed: H5 passed (D46, commit `8bef5da`). C10 split what comes next: Phase 6 builds four gestures on dictionary features (name-this-direction, assert-this-edge, open-this-up and generalize-this), Phase 7 crystallization, Phase 8 the ledger. Three feasibility rounds for the gestures ran on 2026-10-19 and 2026-10-20, and the Phase 6 spec (D47 to D52) took its bars from them. Their findings are under "Phase 6 feasibility". This notebook keeps what the zoo has shown, what it hasn't, and what to try next.
+Phase 6 is closed: H6 passed (D53, commit `6a918a4`). Its four gestures name latents, test edges, open targets and read names across training, each with a faithfulness number. Phase 7 builds crystallize-this, with modular addition joining the zoo. Two feasibility rounds in the cloud workspace on 2026-10-23 shaped the Phase 7 spec (C11, D54 to D57); their findings are under "Phase 7 feasibility". Phase 5 closed at H5 (D46, commit `8bef5da`), and the Phase 6 spec took its bars from the rounds under "Phase 6 feasibility". This notebook keeps what the zoo has shown, what it hasn't, and what to try next.
 
 The zoo's two-hop model has 4 layers and 51 tokens: entities `e0` to `e47`, then `→`, `;` and `⇒`. A window lists six facts `s → o ;` at positions 0 to 23, then `a ⇒ c`, with `⇒` at position 25. To answer, the model finds `b` in `a → b`, then `c` in `b → c`.
+
+The modular-addition model (Phase 7) has 1 block of width 32 and 114 tokens: the numbers `0` to `112`, then `=`. A window is `a b = c`, and position 2, the `=`, predicts `c = (a + b) mod 113`.
 
 Each entry carries one of five tags:
 
@@ -16,7 +18,7 @@ Each entry carries one of five tags:
 - **Hypothesis**: a reading of the results above that no intervention has tested.
 - **Idea**: something to build or try.
 
-Numbers come from `reports/phase4/`, `reports/phase5/` and `docs/decisions.md`, unless marked as read off the viewer or found in a feasibility round (the runs are listed under "Where the evidence lives"). To update: change a hypothesis's status in place, add new observations under the phase they came from, cite a report or decision for every number, and add a line to the log at the end.
+Numbers come from `reports/phase4/` to `reports/phase6/` and `docs/decisions.md`, unless marked as read off the viewer or found in a feasibility round (the runs are listed under "Where the evidence lives"). To update: change a hypothesis's status in place, add new observations under the phase they came from, cite a report or decision for every number, and add a line to the log at the end.
 
 ## Established results (judged)
 
@@ -238,6 +240,113 @@ TopK SAEs at G1.4's final checkpoint, 256 latents sampled per block:
 
 A named latent's median coverage is 0.72 to 0.84. Token offsets name fewer latents with depth, and the next-token sets steer weakly until the last block. The whole section took 15 seconds.
 
+## Phase 7 feasibility (2026-10-23)
+
+Two rounds in the cloud workspace measured what crystallize-this needs. Everything here is tagged feasibility:
+
+- **Induction and two-hop:** on stand-ins trained with G4.1's configs and seeds. Two-hop's stood at step 10,000 of 20,000.
+- **Modular addition:** on models trained there with the repo's trainer.
+
+A **crystallization** replaces a component's output, at its positions, by a function of what it reads. A **table** is the component's mean output for each value of the function's key, fitted on training windows. The **meter** is the KL from the model's prediction to the crystallized model's on held-out windows, beside a mean ablation's KL.
+
+### 23. Width decides how modular addition is learned
+
+`a b = c` with `c = (a + b) mod p`, `p` 113, 30% of the pairs trained. One block, weight decay 1.0, the trainer unchanged.
+
+| Width | Held-out ≥ 0.99 from step | Final held-out | Embedding energy in its top 5 frequencies | Logits vs. those frequencies' cosines, R² |
+| --- | --- | --- | --- | --- |
+| 128 | 3,000 | 0.995 | 0.104 (twin 0.102) | 0.081 |
+| 64 | 3,000 | 1.000 | 0.358 | 0.744 |
+| 32 | 1,800 | 1.000 | 0.795 (frequencies 2, 36, 25, 44, 18) | 0.966 |
+
+At width 128 each number gets its own direction. That model memorizes first, with 100% of training pairs and 18.3% held out at step 1,000. At width 32 the model learns the clock, and training and held-out accuracy rise together. A second seed at width 32 learned frequencies 48, 14, 2, 4 and 24, holding 0.822.
+
+### 24. Accuracy and loss can't judge a crystallization
+
+A table keyed by the answer predicts better than a model that hasn't learned. At width 128, step 1,000:
+
+- **The table:** with the MLP replaced by a table by the sum, the model is right on 99.3% of held-out pairs, against 18.3% for the model itself.
+- **The KL:** 3.63, above the mean ablation's 2.49.
+
+On the induction stand-in at step 300, block 1's attention as a table by the copied token is right 68.2% of the time, against 6.5% for the model.
+
+### 25. The meter
+
+The KL from the model's own prediction, beside a mean ablation's, catches both cases. At the final checkpoint:
+
+- **Modular addition, width 32:** the block's write at `=` as a table by the sum gives 0.021 against 4.14.
+- **Induction:** block 1's attention as a table by the copied token gives 0.000 against 6.94.
+- **Two-hop:** block 3's write at `⇒` as a table by the hop's object gives 0.134 against 4.58.
+- **Wrong functions:**
+  - induction's current token: 6.73
+  - two-hop's `a`: 4.61; its `b`: 4.62
+  - modular addition's `(a − b)`: 10.16; `(a + b + 1)`: 8.31; `a` or `b` alone: 5.90 to 5.94
+
+### 26. Counterfactuals separate what a component reads from the answer
+
+A function can equal the answer on every ordinary window, so a low KL alone can't say the component computes it. Inputs where the two part ways can:
+
+- **Induction, broken windows:** one token at position `j` is changed, and the model is read at `j − 1`, where it can't see the change.
+  - The model predicts the copied token every time, and the window's next token never.
+  - Keyed by the copied token, the crystallization agrees with it every time (KL 0.000).
+  - Keyed by the next token, it never does (KL 13.47).
+- **Two-hop, `b` patched at `⇒` after block 2 from G4.3's aligned source:**
+  - The model answers the counterpart `k`'s object 95.1% of the time.
+  - Keyed by `k`'s object, what block 3 reads, the crystallization agrees 93.8% (KL 0.346).
+  - Keyed by the window's answer, 0.8% (KL 9.33).
+- **Modular addition, width 32, the attention output at `=` patched from another pair:**
+  - The MLP, crystallized additively in the sum and both operands, agrees with the patched model every time when keyed by the other pair (KL 0.017).
+  - Keyed by the window's own pair, it agrees 0.8% (KL 8.08).
+
+### 27. Modular addition's block computes the sum, not its MLP alone
+
+At width 32:
+
+- **The attention output at `=`** is additive in the operands: `A[a] + B[b]`, KL 0.094 against 7.99.
+- **The MLP alone,** as a table by the sum, gives 1.546 against 7.50. As the sum plus a term for each operand, it gives 0.019 (R² 0.971).
+- **The block's write,** attention plus MLP, is a function of the sum alone: 0.021. The MLP's operand terms cancel the attention's.
+- **At width 128,** the remainder isn't operand terms: the MLP's additive form is no better than its table, 0.334 each.
+
+So the component has to be drawn where the function holds.
+
+### 28. Five frequencies
+
+At width 32 the block's write at `=`, fitted as cosines and sines of the sum at the embedding's five largest frequencies, gives KL 0.019 against 4.14. That is 11 vectors of 32 numbers. With four frequencies the KL is 0.263; with six, still 0.019. The second seed gives 0.027 against 4.03. The loss delta is −0.027 nats against the model's 0.123: the crystallized write is a little more confident than the model's own.
+
+### 29. One head isn't a component
+
+Induction's copy is spread over all four of block 1's heads, each putting 0.36 to 0.45 of its attention from `q` on `q − P + 1`. Replacing the best head's pattern by the explicit one-hot, or by its mean, moves the KL by at most 0.001: the other heads cover it.
+
+### 30. Envelopes and gaps
+
+The crystallization holds where its KL is at most 0.25 and the ablation's is at least 1:
+
+- **Modular addition:**
+  - The fourier form holds from step 1,100 (KL 0.199, ablation 1.12), while held-out accuracy is 0.061. Accuracy passes 0.9 at step 1,700: the clock forms before the model reads it out.
+  - The table holds at 1,100, misses at 1,200 (0.258), and holds from 1,300.
+- **Induction:** holds from step 900. Accuracy passes 0.9 at step 800 (0.951, KL 0.307), so step 800 is a gap.
+- **Two-hop:**
+  - Block 3's write at `⇒` barely matters through step 5,000: the ablation's KL is 0.35 there while the model answers 69.6%.
+  - It holds from step 8,000.
+- **Width 128's MLP table:** lowest at step 8,000 (0.106). It drifts back to 0.334 by step 25,000, while held-out accuracy slips from 1.000 to 0.995.
+
+### 31. Phase 6's names can't hold the sum
+
+On modular addition at width 32, with a TopK SAE at block 0 (Phase 5's settings, FVU 0.017, twin 0.046), name-this-direction, unchanged, at `=`:
+
+- **The sum:**
+  - Named as planted for 23.9% of values (named at all: 31.0%; mean set F1 0.459).
+  - Steering follows 0.8%, as its null does. The swapped output is unchanged 99.4% of the time.
+  - Ablating a value's set changes no prediction.
+- **`a` and `b` at `=`:** named as planted for no value.
+- **The twin:** names 1.8% of sums, none as planted.
+
+The sum is written in five frequencies (finding 28), a code no set of four latents carries. C11 rules on it.
+
+### 32. The twins show nothing
+
+On every twin, the right function and the wrong ones all leave the twin's prediction within 0.005 nats, and within 0.003 of each other. The mean ablation does the same: induction 0.0035, two-hop 0.0016, modular addition 0.0041. A twin's components don't steer its readout, so there is nothing to crystallize, and no function stands out.
+
 ## Hypotheses to test
 
 Readings of the results above. Feasibility tested H1, H3, H4 and H8, and added H6 to H9. Phase 6's gestures can test most of the rest. Status is one of Open, Testing, Supported or Refuted; a status set by feasibility says so.
@@ -249,10 +358,11 @@ Readings of the results above. Feasibility tested H1, H3, H4 and H8, and added H
 | H3 | A latent adds up its entity's nearby occurrences | Self-loop facts give three of the top contexts (Observation 4). Over the held-out windows, a self-loop's mean code is 1.32, against 0.75 elsewhere (finding 16) | Done in feasibility | Supported (feasibility) |
 | H4 | Something at position 16 keeps these latents quiet | 0 of 40 subject contexts at position 16 (Observation 4). Over the held-out windows, position 16 holds 3.3% of the mass, as positions 12 and 20 hold 3.4% (finding 16) | Done in feasibility: chance in a top-8 list | Refuted (feasibility) |
 | H5 | The five shared latents (48, 50, 64, 90, 984) carry the format, not a variable | Active in all 8 windows whatever `b` is, and at 4% to 36% of all positions; largest effects `⇒`, `;`, `→`. The same five are active at `⇒` in at least 90% of 2,048 held-out windows, and leaving them out doesn't change the sign (finding 10) | Patch only those latents between windows and check the answer doesn't move | Open |
-| H6 | Before step 6,000, two-hop answers by an earlier route that never holds `b` at `⇒` | 74% accuracy at step 5,000 with no probe, patch or lens sign for `b` at `⇒`, while `c` is already readable after block 2 (0.36), which fades as the composing route appears (finding 11). A second run, not bit-identical, learned in the same order (finding 11). Zeroing block 1's heads at step 20,000 leaves 24.6% accuracy, well above chance (finding 14), so the earlier route may survive as a backup | At step 5,000: patch each fact position from G4.3's aligned sources and see which moves the answer; train a dictionary there. At step 20,000: compare what block 1's heads zeroed leaves right with what step 5,000 got right | Open |
+| H6 | Before step 6,000, two-hop answers by an earlier route that never holds `b` at `⇒` | 74% accuracy at step 5,000 with no probe, patch or lens sign for `b` at `⇒`, while `c` is already readable after block 2 (0.36), which fades as the composing route appears (finding 11). A second run, not bit-identical, learned in the same order (finding 11). Zeroing block 1's heads at step 20,000 leaves 24.6% accuracy, well above chance (finding 14), so the earlier route may survive as a backup. On a cloud stand-in, block 3's write at `⇒` barely matters through step 5,000: mean-ablating it moves the prediction by 0.35 nats while the model answers 69.6%, against 4.58 at step 10,000 (finding 30) | At step 5,000: patch each fact position from G4.3's aligned sources and see which moves the answer; train a dictionary there. At step 20,000: compare what block 1's heads zeroed leaves right with what step 5,000 got right | Open |
 | H7 | Head 1.0, which looks one back from fact tokens, carries `b` to `⇒` | Zeroing it alone leaves 51% of `b`'s set mass at `⇒` and 71.6% accuracy, while no two-back head matters alone (finding 14) | Its attention from `⇒`; patch its output at `⇒` from aligned sources and check that the answer swaps | Open |
 | H8 | A set chosen over every position misses what a position class carries | The token two back's set, chosen over every position, moves the entity's set in 0.6% of swaps, while changing the token moves it in 99.8%, and open-this-up ranks that set first (findings 12, 13). Chosen at object positions, it moves it in 6.8% (finding 19) | Done in feasibility: the edge fails for another reason, H9 | Refuted (feasibility) |
 | H9 | The entity two back is copied twice: by block 1's heads from after block 0, and by block 2's heads from after block 1 | Swapping the token's set after block 1 moves the entity's set in at most 6.8%, while removing it leaves half its mass (finding 19); zeroing block 1's or block 2's heads leaves 55% or 70% of the code (finding 14) | Swap the token's set two back after block 0, which reaches both copies; G6.3 records that edge | Open |
+| H10 | Phase 6's names miss modular addition's sum because the sum is held as phases of a few frequencies, which value-by-value descriptions can't name | The sum is named as planted for 23.9% of values, and steering runs at its null's rate, while five frequencies crystallize the write at KL 0.019 (findings 28, 31) | Declare, for each key frequency, the sum's phase in a few bins as a description, and point name-this-direction at it | Open |
 
 ## Ideas to explore
 
@@ -271,6 +381,9 @@ Things worth building or trying, roughly in order of payoff.
 | Feature sets, not single latents | Done in feasibility: the top 4 swap 91.0% and 96.5%, against 5.9% and 7.8% for one (finding 9) | Phase 6: a name is a set |
 | Model seed 1 | Does the dictionary follow `b` to block 1 in model seed 1, where patching found it (D36)? That separates the model from the tool (D34). Dictionary seeds are done: names transfer, ids don't (finding 15) | Any time; cheap |
 | Wider reference dictionaries | Is the reference run's 41% edge density the model, or its dictionaries' 6% to 22% unexplained variance? | Later |
+| Names for distributed codes | Modular addition's sum is held in five frequencies, which no value's set of four latents carries (finding 31) | After Phase 7 (H10) |
+| Crystallize through a dictionary | Write a name's sets at their mean codes instead of a table, so a crystallization speaks in the gestures' terms | After Phase 7 |
+| Crystallize the reference run's block 0 by the current token | Block 0's latents are named `token(p)` for 30.1% of those sampled (finding 22); a table by the current token would say how much of block 0 is a lookup | After Phase 7, recorded only (D44) |
 
 ## What these results don't show yet
 
@@ -298,15 +411,19 @@ The biggest lesson: a latent's identity showed up in its effect, not in its cont
 - **A carry looks like an edge:** the residual stream passes a swapped set on, even on random weights (finding 18). Freeze the blocks between before calling it an edge.
 - **A copy made twice hides from a single swap:** swapping one copy's source leaves the other copy in place (finding 19). A failed swap isn't a missing edge until every route is covered.
 - **Match across dictionary seeds by name, never by id:** names come back at F1 0.75 to 0.83, in latents whose decoders have a cosine of only about 0.4 with seed 0's (finding 15).
+- **Judge a crystallization by the model's prediction, not the answer:** a table keyed by the answer can beat a model that hasn't learned (finding 24).
+- **Part the function from the answer:** where the two agree on every ordinary window, only a counterfactual says which the component computes (finding 26).
+- **Draw the component where the function holds:** modular addition's MLP alone isn't a function of the sum; the block's write is (finding 27).
 
 ## Where the evidence lives
 
 Everything above can be rebuilt from the repo; the views live only on the Mac.
 
 - **Rulings:** `docs/decisions.md`, especially D39 (the lens finding) and D41 to D46.
-- **Reports:** `reports/phase4/` and `reports/phase5/`, with `reports/phase5/summary.md` as the overview.
+- **Reports:** `reports/phase4/` to `reports/phase6/`, each phase's `summary.md` its overview.
 - **Features payloads:** `runs/phase5/views/<run>/features-<dictionary>-site-<n>.json`. `runs/` isn't in git; G5.6 rebuilds it byte-identically.
 - **Phase 6 feasibility:** `runs/feasibility/gestures-round1-20261019-230631/`, `runs/feasibility/gestures-round2-20261019-232218/` and `runs/feasibility/gestures-round3-20261020-171131/` on the Mac, each with a `SUMMARY.txt` and one JSON per model. The scripts are in `~/nf-feasibility/`, not in the repo.
+- **Phase 7 feasibility:** the cloud workspace, on 2026-10-23. The scripts ship beside the Phase 7 spec delta for `~/nf-feasibility/phase7/`, not the repo: `modadd.py`, `train_modadd.py`, `analyze_modadd.py`, `analyze_induction.py`, `analyze_counterfactual.py`, `names_modadd.py`, `hop_two_hop.py` and `hop_envelope.py`, with round 1's `round1_findings.md`.
 
 To open a latent in the viewer, serve the repo root with `python3 -m http.server`, then change `seq` (window) and `latent` in this address:
 
@@ -335,6 +452,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-23 | Phase 7 feasibility, rounds 1 and 2: findings 23 to 32; H10 added, H6 evidence added; ideas, lessons and where the evidence lives; "Where things stand" brought to H6 |
 | 2026-10-20 | Phase 6 feasibility, round 3: findings 17 to 22; H8 refuted, H9 added, H2 evidence added; lessons and the reference run's names |
 | 2026-10-20 | Phase 6 feasibility, rounds 1 and 2: findings 9 to 16; H1 and H3 supported, H4 refuted, H2 stronger; H6 to H8 added; ideas and lessons updated |
 | 2026-10-18 | Started after H5 (D46), from the Phase 5 reports and apolloh0's viewer session on windows 0 and 3 |
