@@ -245,6 +245,67 @@
 //   to three decimals, as values elsewhere on the page.
 // * The fragment gains features=<dictionary>-<site> and latent=<n>. Choosing another payload
 //   clears the latent, since a latent's number names another latent in another dictionary.
+// * Phase 6's units: parts read as an integer, or to one decimal where the value is a half; any
+//   other fraction of a part is shown as the file holds it and marked. A span must be a pair of
+//   integer steps, a flag true or false and a label a string; anything else is shown as held and
+//   marked. A null reads "none", in any unit, only in a badge of Phase 6's subjects (name, edge,
+//   open, generalize, dsteer), as views/gesture_badges.py says; in Phase 4's and Phase 5's badges a
+//   null is a value that isn't a number in a numeric unit, so it is shown as held and marked, as
+//   their contract says. A badge's `sources` is
+//   accepted and not shown. Without `?badges=` the page still reads Phase 4's file; G6.7 prints
+//   addresses naming runs/phase6/badges.json.
+// * A dsteer edit reads "move dictionary <hash>'s latents at <tap>, <positions>, removing rows
+//   <hash> and adding rows <hash> at amounts <hash>".
+// * The gestures panel sits below the features panel. `?gestures=` is a relative folder, as
+//   `?views=` is. A panel.json that is missing, unreadable or not {"run", "records", "names"} shows
+//   the panel with the error. An entry isn't listed, and the panel says which and why, unless it
+//   has a 64-hex key, its file is exactly gesture-<key>.json (so no other path is ever fetched), a
+//   64-hex sha256, a kind of the four, a request of that kind and a meter holding its kind's keys;
+//   a repeated key isn't listed either. A panel whose run isn't the view index's says so in red.
+// * Each kind is a group, open, with its count; entries keep the panel's order within it. An
+//   entry is a button: its meter in words on the first line, then its request in words (target,
+//   dictionaries and sites with hashes shortened, class, step, instances and seed). The filter
+//   keeps the entries containing every word typed, anywhere in the entry's text, its kind's
+//   name or its key, case aside.
+// * A chosen record's file is fetched from the folder, hashed, and drawn only when its SHA-256
+//   is the entry's, it is JSON with the entry's key, and its request equals the entry's as a
+//   value (keys in any order). Its check counts in the header's hash checks. Without Web Crypto
+//   the record reads "hash not checked" and isn't drawn. Any mismatch is a red row naming both
+//   values, outlines the panel in red, and the record isn't drawn. Its meter in words heads the
+//   meter rows; its kind's badge sits above them. A section whose entry the results lack says so
+//   in that section alone.
+// * Shares read as percentages to one decimal, F1, KL, kept and cosine to three decimals,
+//   attributions and effects signed, ranks 0-based in the record as #n counted from 1, and every
+//   value of a description, a variable's included, as a token in the index's vocab with its id on
+//   hover; the record's own value is on every number's hover. A null reads "none", or "not
+//   within 128" for a reading.
+// * A name shows its coverage as one table, the set's and the pointed latent's own side by side,
+//   in the record's order of descriptions; steering as one table, the swap's row over the null's,
+//   with ablated changed in the swap's row only; the set's effect and the latent's own each as
+//   top and bottom tables, the value's row outlined when it is listed. A non-causal steering's
+//   examples follow its KL table, one row each in the record's order: its window and position,
+//   w as a token, and the unsteered and steered passes' top tokens, best first, each decoded with
+//   its id on hover. Examples that aren't a list say so in place of the table; an example that
+//   isn't {"window", "position", "w", "unsteered", "steered"} is a row showing it as held, marked.
+// * An edge shows follows and kept as a table, the swap over the null; its label beside the
+//   frozen and unfrozen follows and the frozen output; the output's share; the sets beside each
+//   name's best latent; and its pairs and instances as counts.
+// * Open-this-up's error curve is drawn on a linear scale from 0 to the larger of 1 and its
+//   largest error, each order with its own dash, so orders that agree stay visible. The measured
+//   instances are shown one at a time with buttons, each with its readings in the three orders
+//   beside its window and position. The instance shown isn't in the fragment.
+// * A generalize-this record adds rows to the timeline, below the index's: for a name, F1,
+//   follows, the null's follows, the probe and the accuracy; for an edge, follows, kept, the
+//   null's follows and the null's kept. Points at steps the views' index lacks are drawn as dots
+//   on the line; only the index's checkpoints are clickable markers. The envelope's runs are
+//   shaded on those rows, at least a marker's width; the gap's steps are ▼ on the step axis. A
+//   note under the timeline says which rows are the record's. The rows leave when another record
+//   is chosen.
+// * Features link to names only while the gestures panel has loaded: the active latents gain a
+//   "name records" column, each record a button reading its label and name; the chosen latent
+//   lists them under "Name records", or says it has none, or that no gestures panel is open.
+//   Choosing one opens it in the gestures panel and scrolls there.
+// * The fragment gains gesture=<key>; a key the panel doesn't list says so in the panel.
 "use strict";
 
 (() => {
@@ -324,6 +385,8 @@
   // Model-level badges (D38): a file, not a folder.
   const BADGES_NAMED = !!new URLSearchParams(location.search).get("badges");
   const BADGES_PATH = new URLSearchParams(location.search).get("badges") || "../runs/phase4/badges.json";
+  // A run's gesture records (D47): only when ?gestures= names their folder.
+  const GESTURES_DIR = new URLSearchParams(location.search).get("gestures") ? dirParam("gestures", "") : null;
 
   // Resolves a relative path against the page; refuses anything that leaves its origin.
   function localUrl(path) {
@@ -674,6 +737,11 @@
     // aren't listed, the chosen one as `${dictionary}-${site}`, the chosen latent, and loaded
     // payloads by file name.
     features: { entries: null, problems: [], chosen: null, latent: null, payloads: new Map() },
+    // Gestures (D47): the panel's status ("loading", "ok" or "error"), its well-formed entries and
+    // why any others aren't listed, its names, the chosen record's key, the measured instance shown
+    // in an open-this-up record, loaded records by key, and a generalize-this record's timeline rows.
+    gestures: { status: null, error: null, panel: null, entries: [], byKey: new Map(), problems: [], names: {},
+      chosen: null, instance: 0, records: new Map(), timeline: null },
   };
 
   const step = () => state.index.steps[state.stepIndex];
@@ -698,11 +766,13 @@
     const compare = values.get("compare");
     const features = values.get("features");
     const latent = int("latent");
+    const gesture = values.get("gesture");
     return {
       step: int("step"), seq: int("seq"), pos: int("pos"), layer: int("layer"), head: int("head"),
       compare: compare && /^[0-9a-f]{64}-(0|[1-9]\d*)$/.test(compare) ? compare : null,
       features: features && /^[0-9a-f]{64}-(0|[1-9]\d*)$/.test(features) ? features : null,
       latent: latent !== null && latent >= 0 ? latent : null,
+      gesture: gesture && /^[0-9a-f]{64}$/.test(gesture) ? gesture : null,
     };
   }
 
@@ -711,6 +781,7 @@
     if (state.compare.chosen) values.set("compare", state.compare.chosen);
     if (state.features.chosen) values.set("features", state.features.chosen);
     if (state.features.chosen && Number.isInteger(state.features.latent)) values.set("latent", state.features.latent);
+    if (state.gestures.chosen) values.set("gesture", state.gestures.chosen);
     history.replaceState(null, "", `${location.pathname}${location.search}#${values}`);
   }
 
@@ -763,6 +834,12 @@
       parts.push(el("span", { title: modelBadgeReportsTitle() }, "model-level badges: ", el("code", { text: BADGES_PATH })));
     } else if (mb.status === "error") {
       parts.push(el("span", { class: "error", text: `model-level badges: ${mb.error}` }));
+    }
+    const g = state.gestures;
+    if (g.status === "ok") {
+      parts.push(el("span", { title: `${GESTURES_DIR}panel.json` }, `gestures: ${g.entries.length} records`));
+    } else if (g.status === "error") {
+      parts.push(el("span", { class: "error", text: `gestures: ${g.error}` }));
     }
     const checks = el("span", {}, "hash checks: ",
       el("span", { style: { color: "var(--good-text)", fontWeight: 600 }, text: `${tally.ok} ✓` }), " · ",
@@ -831,6 +908,8 @@
         });
       }
     }
+    // A chosen generalize-this record's checkpoints join the timeline, below the index's own rows.
+    if (state.gestures.timeline) rows.push(...state.gestures.timeline.rows);
     return { rows, problems };
   }
 
@@ -905,6 +984,15 @@
           svg("text", { x: m.l - 6, y: y(t) + 4, "text-anchor": "end" }, fmt(t, 2)));
       }
       root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: p1, y2: p1 }));
+      // A generalize-this record's envelope: each run of checkpoints where the name holds, shaded.
+      if (row.gesture) {
+        for (const [first, last] of state.gestures.timeline.runs) {
+          const x0 = Math.max(m.l, Math.min(x(first), x(last)) - 4);
+          const x1 = Math.min(width - m.r, Math.max(x(first), x(last)) + 4);
+          root.append(svg("rect", { class: "envelope", x: x0, y: p0, width: x1 - x0, height: plotH, "pointer-events": "none" },
+            svg("title", {}, `the envelope's run from step ${first} to step ${last}, where the name holds`)));
+        }
+      }
       if (!values.length) {
         root.append(svg("text", { x: (m.l + width - m.r) / 2, y: (p0 + p1) / 2 + 4, "text-anchor": "middle" }, "every value in this curve is null"));
       }
@@ -917,9 +1005,9 @@
         pen = true;
         // A point with no finite neighbour draws no line, so it gets a dot.
         const alone = !finiteValue(row.points[k - 1]?.value) && !finiteValue(row.points[k + 1]?.value);
-        if (alone && !steps.includes(p.step)) {
+        if ((alone || row.gesture) && !steps.includes(p.step)) {
           root.append(svg("circle", { cx: x(p.step), cy: y(p.value), r: 2.5, fill: colour },
-            svg("title", {}, `${row.name} · step ${p.step}: ${fmt(p.value, 4)} ${row.unit}`)));
+            svg("title", {}, `${row.name} · step ${p.step}: ${fmt(p.value, 4)} ${row.unit}${row.gesture ? " (a step the views' index doesn't have)" : ""}`)));
         }
       });
       if (d) root.append(svg("path", { d, fill: "none", stroke: colour, "stroke-width": 2, "stroke-linejoin": "round" }));
@@ -942,9 +1030,17 @@
     }
     root.append(svg("text", { x: width - m.r, y: height - 2, "text-anchor": "end" }, "training step (log scale)"));
     steps.forEach((s, i) => root.append(marker(s, i, x(s), axisY, `step ${s} (checkpoint ${i + 1} of ${steps.length})`, true)));
+    // The gap's checkpoints, where the probe reads the description but the name doesn't hold.
+    const gesture = state.gestures.timeline;
+    for (const g of gesture ? gesture.gap : []) {
+      const gx = x(g);
+      root.append(svg("path", { class: "gap", d: `M${gx - 5},${axisY - 13}L${gx + 5},${axisY - 13}L${gx},${axisY - 5}Z` },
+        svg("title", {}, `step ${g}: in the record's gap, where the probe reads the description but the name doesn't hold`)));
+    }
 
     clear(box, root);
     if (!rows.length) box.append(el("div", { class: "note", text: "The index has neither curves nor a validation-loss curve; checkpoints are shown on the step axis." }));
+    if (gesture) box.append(el("div", { class: "note" }, gesture.note));
     for (const problem of problems) box.append(errorBox(problem));
     const val = (idx.val_loss_curve || []).find((p) => p && p.step === current);
     const v = val ? val.loss : undefined;
@@ -1637,6 +1733,7 @@
       renderFacts();
       report(renderCompare(), "compare-meter");
       report(renderFeatures(), "features-meter");
+      renderGestureBadge();
     };
     if (!BADGES_NAMED) {
       let head;
@@ -1690,11 +1787,27 @@
     return bad === -1 ? null : `fact ${bad} isn't {"label", "value", "unit", "gate", "path"}`;
   }
 
+  // The subjects G6.7 writes, whose nulls read as none (views/gesture_badges.py).
+  const PHASE6_SUBJECTS = ["name", "edge", "open", "generalize", "dsteer"];
+
   // A fact's value in its unit, as {text, odd}: odd when the file's value doesn't fit the unit,
   // in which case the text is the value as the file holds it. Display only; nothing is computed.
-  function factValue(fact, facts) {
+  function factValue(subject, fact, facts) {
     const v = fact.value;
     const asHeld = (why) => ({ text: `${JSON.stringify(v)} ${fact.unit}`, odd: why });
+    // Phase 6: a null reads as none in any unit, on Phase 6's subjects only; three units aren't numbers.
+    if (v === null && PHASE6_SUBJECTS.includes(subject)) return { text: "none" };
+    switch (fact.unit) {
+      case "span":
+        return Array.isArray(v) && v.length === 2 && v.every(Number.isInteger) ? { text: `${v[0]} to ${v[1]}` }
+          : asHeld("not a [first, last] pair of steps");
+      case "flag":
+        return typeof v === "boolean" ? { text: v ? "yes" : "no" } : asHeld("not true or false");
+      case "label":
+        return typeof v === "string" ? { text: v } : asHeld("not a string");
+      default:
+        break;
+    }
     if (typeof v !== "number" || !Number.isFinite(v)) return asHeld(`not a number, in a badge whose unit is ${fact.unit}`);
     switch (fact.unit) {
       case "fraction":
@@ -1718,6 +1831,9 @@
         return Number.isInteger(v) ? { text: String(v) } : asHeld("not a whole number of edges");
       case "count":
         return Number.isInteger(v) ? { text: String(v) } : asHeld("not a whole count");
+      case "parts":
+        if (Number.isInteger(v)) return { text: String(v) };
+        return Number.isInteger(2 * v) ? { text: v.toFixed(1) } : asHeld("neither a whole number of parts nor a median between two");
       default:
         return asHeld(`a unit the viewer doesn't know, ${JSON.stringify(fact.unit)}`);
     }
@@ -1743,7 +1859,7 @@
     const [kind, statusText, statusTitle] = BADGE_STATUS[b.status] || ["bad", `unknown status ${JSON.stringify(b.status)}`, "a status badges.py doesn't write"];
     const reports = mb.reports || {};
     const facts = b.facts.map((fact) => {
-      const { text, odd } = factValue(fact, b.facts);
+      const { text, odd } = factValue(subject, fact, b.facts);
       const gateTitle = `${fact.gate}'s measurements at ${JSON.stringify(fact.path)}\n${fact.gate} report: ${reportProvenance(reports[fact.gate])}`;
       return el("li", {},
         `${fact.label}: `,
@@ -1927,6 +2043,9 @@
       case "dpatch":
         return ["patch through dictionary ", hashCode(args.dictionary), "'s code from batch ", hashCode(args.source), " at ",
           tapCode(e.tap), `, ${at}`, latentsText(args)];
+      case "dsteer":
+        return ["move dictionary ", hashCode(args.dictionary), "'s latents at ", tapCode(e.tap), `, ${at}, removing rows `,
+          hashCode(args.remove), " and adding rows ", hashCode(args.add), " at amounts ", hashCode(args.amounts)];
       default:
         return [el("span", { class: "error", text: `unknown operation ${JSON.stringify(e.op)}: ` }), tapCode(String(e.tap)), ` at ${at}, arguments ${JSON.stringify(args)}`];
     }
@@ -2439,6 +2558,7 @@
     const ids = latents[seq][pos];
     const codes = data.probe.values[seq][pos];
     if (!ids.length) return [heading, el("div", { class: "note", text: `No latent is active here: every one of the ${data.width} codes is 0.` })];
+    const linking = state.gestures.status === "ok";
     const rows = ids.map((id, i) => el("tr", {
       class: id === state.features.latent ? "chosen" : null,
       title: `latent ${id}: choose it to see its contexts and its effect`,
@@ -2448,7 +2568,8 @@
     el("td", { class: "num", title: `code ${codes[i]}`, text: fmt(codes[i]) }),
     el("td", { class: "num", title: `frequency ${data.frequency[id]}`, text: fmtShare(data.frequency[id]) }),
     el("td", {}, data.effect.top[id].slice(0, 3).map(([token, value], j) => [j ? " " : null,
-      el("span", { class: "eff", title: `“${tokenText(token)}” (id ${token}): ${value}`, text: tokenText(token) })]))));
+      el("span", { class: "eff", title: `“${tokenText(token)}” (id ${token}): ${value}`, text: tokenText(token) })])),
+    linking ? el("td", { class: "vs" }, nameLinks(data, id)) : null));
     return [
       heading,
       el("div", { class: "note", text: `${ids.length} of the site's ${data.width} latents are active here (k = ${data.k}), largest code first. Choose one to see its contexts and its effect.` }),
@@ -2457,7 +2578,8 @@
           el("th", { class: "num", text: "latent" }),
           el("th", { class: "num", text: "code" }),
           el("th", { class: "num", title: "the share of held-out positions at which it is active", text: "frequency" }),
-          el("th", { title: "its three largest direct effects on the logits, largest first (see the effect's label below)", text: "largest effect tokens" }))),
+          el("th", { title: "its three largest direct effects on the logits, largest first (see the effect's label below)", text: "largest effect tokens" }),
+          linking ? el("th", { class: "vs", title: "the gestures panel's name records of this latent, each by its label and its name; choose one to open it there", text: "name records" }) : null)),
         el("tbody", {}, rows))),
     ];
   }
@@ -2516,12 +2638,685 @@
                 el("th", { class: names.length ? "vs" : null, text: "context" }))),
             el("tbody", {}, ctxRows)))]
         : el("div", { class: "note", text: "It never fires on the held-out windows, so it has no contexts." }),
+      el("h3", { text: "Name records" }),
+      latentNames(data, latent),
       el("h3", { text: "Direct effect on the logits" }),
       el("div", { class: "note effect-label", text: data.effect.label }),
       el("div", { class: "effects" },
         effectTable(`top ${data.effect.top[latent].length}`, data.effect.top[latent]),
         effectTable(`bottom ${data.effect.bottom[latent].length}`, data.effect.bottom[latent])),
     ];
+  }
+
+  // ---------------------------------------------------------------- gestures (Phase 6, D47)
+
+  const GESTURE_KINDS = ["name", "edge", "open", "generalize"];
+  const GESTURE_TITLES = { name: "name-this-direction", edge: "assert-this-edge", open: "open-this-up", generalize: "generalize-this" };
+  // Each kind's meter keys, as src/nablaframe/views/gestures.py's METER_KEYS lists them.
+  const GESTURE_METER_KEYS = {
+    name: ["label", "description", "value", "f1", "set_f1", "coverage", "causal", "instances", "follows", "null_follows",
+      "unchanged", "null_unchanged", "ablated_changed", "kl", "null_kl", "rank_from_top", "rank_from_bottom"],
+    edge: ["relation", "judged", "instances", "follows", "null_follows", "kept", "null_kept", "label", "residual_alone",
+      "follows_unfrozen", "output_follows", "output_null_follows"],
+    open: ["class", "target", "candidates", "instances", "measured", "no_span", "parts", "reading", "within",
+      "signed_within", "random_within", "error_median"],
+    generalize: ["form", "relation", "description", "class", "values", "envelope", "slices_f1", "slices_follows", "seeds", "final"],
+  };
+  const HEX64 = /^[0-9a-f]{64}$/;
+
+  // Display only: a share as a percentage, a score or ratio to three decimals, a number of parts as
+  // an integer or to one decimal where a median falls between two; null reads as none. A value that
+  // doesn't fit is shown as the record holds it. Each comes with the record's own value on hover.
+  function shown(v, text) {
+    return el("span", { class: "gv", title: JSON.stringify(v), text });
+  }
+  const asHeld = (v) => el("span", { class: "gv odd", title: "not a value of the kind this place holds", text: JSON.stringify(v) });
+  const gShare = (v) => (v === null ? shown(v, "none") : isNumber(v) ? shown(v, `${(100 * v).toFixed(1)}%`) : asHeld(v));
+  const gScore = (v) => (v === null ? shown(v, "none") : isNumber(v) ? shown(v, fmt(v)) : asHeld(v));
+  const gCount = (v) => (v === null ? shown(v, "none") : Number.isInteger(v) ? shown(v, String(v)) : asHeld(v));
+  function gParts(v, nullText = "none") {
+    if (v === null) return shown(v, nullText);
+    if (Number.isInteger(v)) return shown(v, `${v} parts`);
+    return isNumber(v) && Number.isInteger(2 * v) ? shown(v, `${v.toFixed(1)} parts`) : asHeld(v);
+  }
+  const gSigned = (v) => (isNumber(v) ? shown(v, `${v >= 0 ? "+" : ""}${fmt(v)}`) : asHeld(v));
+  // A 0-based rank as #n counted from 1.
+  const gRank = (v, of) => (Number.isInteger(v) ? shown(v, `#${v + 1}${of === undefined ? "" : ` of ${of}`}`) : v === null ? shown(v, "none") : asHeld(v));
+  // A value of a description, which every run declares as a token: decoded with the index's vocab.
+  const gToken = (v) => (Number.isInteger(v) ? el("span", { class: "gv", title: `token id ${v}`, text: `“${tokenText(v)}”` }) : v === null ? shown(v, "none") : asHeld(v));
+  const nameOf = (description, value) => [el("code", { text: String(description) }), " = ", gToken(value)];
+  const steps2 = (pair) => (Array.isArray(pair) && pair.length === 2 ? `${JSON.stringify(pair[0])} to ${JSON.stringify(pair[1])}` : JSON.stringify(pair));
+  const range2 = (pair, f) => (pair === null ? shown(pair, "none") : Array.isArray(pair) && pair.length === 2 ? [f(pair[0]), " to ", f(pair[1])] : asHeld(pair));
+
+  // Why a panel entry doesn't follow views/gestures.py's form, or null when it does.
+  function gestureEntryProblem(e) {
+    if (!isMapping(e)) return "it isn't an object";
+    if (typeof e.key !== "string" || !HEX64.test(e.key)) return "its key isn't 64 hex characters";
+    if (e.file !== `gesture-${e.key}.json`) return `its file isn't gesture-<its key>.json, so it isn't read`;
+    if (typeof e.sha256 !== "string" || !HEX64.test(e.sha256)) return "its sha256 isn't 64 hex characters";
+    if (!GESTURE_KINDS.includes(e.kind)) return `its kind ${JSON.stringify(e.kind)} isn't one of ${GESTURE_KINDS.join(", ")}`;
+    const r = e.request;
+    if (!isMapping(r) || r.kind !== e.kind || !isMapping(r.args) || typeof r.run !== "string" || !isInt(r.step)
+      || !isInt(r.instances) || !isInt(r.seed)) return 'its request isn\'t {"kind", "run", "step", "args", "instances", "seed"} of its kind';
+    if (!isMapping(e.meter)) return "its meter isn't an object";
+    const missing = GESTURE_METER_KEYS[e.kind].filter((k) => !(k in e.meter));
+    return missing.length ? `its meter has no ${missing.join(", ")}` : null;
+  }
+
+  // Reads the gestures panel, when ?gestures= names a records folder; without it the panel stays hidden.
+  async function loadGestures() {
+    if (!GESTURES_DIR) return;
+    const g = state.gestures;
+    g.status = "loading";
+    $("gestures-panel").hidden = false;
+    $("gestures-sub").textContent = `from ${GESTURES_DIR}`;
+    clear($("gestures-panel-meter"), meterRow("info", "loading the gestures panel…", ""));
+    const path = `${GESTURES_DIR}panel.json`;
+    const fail = (why) => {
+      g.status = "error";
+      g.error = why;
+      clear($("gestures-panel-meter"), meterRow("bad", "gestures panel unavailable", why));
+      setPanelBad("gestures-panel", true);
+      renderFacts();
+    };
+    let panel;
+    try {
+      panel = await fetchJSON(path, "gestures panel");
+    } catch (error) {
+      fail(`${path} is missing or unreadable (${error.message})`);
+      return;
+    }
+    if (!isMapping(panel) || !Array.isArray(panel.records) || !isMapping(panel.names) || !(panel.run === null || typeof panel.run === "string")) {
+      fail(`${path} isn't {"run", "records", "names"}, the form views/gestures.py writes`);
+      return;
+    }
+    g.panel = panel;
+    panel.records.forEach((e, i) => {
+      const why = gestureEntryProblem(e) ?? (g.byKey.has(e.key) ? "it repeats an earlier entry's key" : null);
+      if (why) g.problems.push(`record ${i}${isMapping(e) && typeof e.key === "string" ? ` (${short(e.key)})` : ""} isn't listed: ${why}`);
+      else {
+        g.entries.push(e);
+        g.byKey.set(e.key, e);
+      }
+    });
+    g.names = panel.names;
+    g.status = "ok";
+    renderGesturePanelMeter();
+    renderGestureList();
+    renderFacts();
+    report(renderFeatures(), "features-meter");
+    await renderGesture();
+  }
+
+  function renderGesturePanelMeter() {
+    const g = state.gestures;
+    const run = g.panel.run;
+    const id = state.index.run_id;
+    const rows = [meterRow("info", "gestures panel",
+      `${g.entries.length} ${g.entries.length === 1 ? "record" : "records"} of run ${run === null ? "none (the index lists no record)" : short(run)}, each listed with its meter first; a chosen record is drawn from its own file once its SHA-256, key and request are its entry's`,
+      `${GESTURES_DIR}panel.json\nrun ${run}`)];
+    if (run !== null && !(run.startsWith(id) || id.startsWith(run))) {
+      rows.push(meterRow("bad", "another run's records", `the panel's records are run ${short(run)}'s, the view index's run is ${short(id)}: their names and steps don't belong to these views`));
+    }
+    clear($("gestures-panel-meter"), rows);
+    setPanelBad("gestures-panel", rows.length > 1);
+  }
+
+  // A record's request in words, with its step, instances and seed.
+  function requestWords(request) {
+    const a = request.args;
+    const site = (hash, at) => ["dictionary ", hashCode(hash), ` site ${JSON.stringify(at)}`];
+    const tail = ` · step ${request.step} · ${request.instances} instances, seed ${request.seed}`;
+    if ("relation" in a) {
+      return [el("code", { text: String(a.relation) }), ": ", site(a.up, a.up_site), " → ", site(a.down, a.down_site), tail];
+    }
+    if (request.kind === "name") return [`latent ${JSON.stringify(a.latent)} of `, site(a.dictionary, a.site), ` at ${a.class}`, tail];
+    if (request.kind === "open") {
+      const target = "latent" in a ? `latent ${JSON.stringify(a.latent)}` : ["the set of ", nameOf(a.description, a.value)];
+      return [target, " of ", site(a.dictionary, a.site), ` at ${a.class}, opened into `, site(a.upstream, a.upstream_site), tail];
+    }
+    return [el("code", { text: String(a.description) }), " over all its values, ", site(a.dictionary, a.site), ` at ${a.class}`, tail];
+  }
+
+  // A record's meter in words: its panel entry's meter, every value as the panel holds it.
+  function meterWords(entry) {
+    const m = entry.meter;
+    const sep = " · ";
+    if (entry.kind === "name") {
+      if (m.label === null) return [el("b", { text: "no name" }), ": it fires on no row of its class"];
+      const steering = m.causal === null ? "no steering instance"
+        : m.causal ? ["follows ", gShare(m.follows), " vs null ", gShare(m.null_follows), sep, "unchanged ", gShare(m.unchanged),
+          " vs null ", gShare(m.null_unchanged), sep, "ablated changed ", gShare(m.ablated_changed), sep, gCount(m.instances), " instances"]
+          : ["KL ", gScore(m.kl), " vs null ", gScore(m.null_kl), " nats, no causal test", sep, gCount(m.instances), " instances"];
+      return [el("b", { class: `label-${m.label}`, text: String(m.label) }), " ", nameOf(m.description, m.value), sep, "F1 ", gScore(m.f1),
+        ", set F1 ", gScore(m.set_f1), sep, "coverage ", gShare(m.coverage), sep, steering, sep, "the value ranks ",
+        gRank(m.rank_from_top), " from the top, ", gRank(m.rank_from_bottom), " from the bottom"];
+    }
+    if (entry.kind === "edge") {
+      return [el("b", { text: String(m.label) }), m.instances === 0 ? " (no instance)" : "", sep, "follows ", gShare(m.follows), " vs null ", gShare(m.null_follows), sep,
+        "kept ", gScore(m.kept), " vs null ", gScore(m.null_kept), sep, "through the residual alone ", gShare(m.residual_alone),
+        " vs unfrozen ", gShare(m.follows_unfrozen), sep, "output follows ", gShare(m.output_follows), " vs null ",
+        gShare(m.output_null_follows), sep, gCount(m.instances), " instances", sep, m.judged ? "judged" : "recorded"];
+    }
+    if (entry.kind === "open") {
+      return ["reading ", gParts(m.reading, "not within 128"), sep, "within 128: ", gShare(m.within), " (signed ", gShare(m.signed_within),
+        ", random ", gShare(m.random_within), ")", sep, gCount(m.measured), " measured of ", gCount(m.instances), " drawn, ",
+        gCount(m.no_span), " with no span, ", gCount(m.candidates), " candidates"];
+    }
+    const f = isMapping(m.final) ? m.final : {};
+    const seeds = Array.isArray(m.seeds) ? m.seeds : [];
+    if (m.form === "edge") {
+      return [el("code", { text: String(m.relation) }), sep, `final step ${f.step}: `, el("b", { text: String(f.label) }), ", follows ",
+        gShare(f.follows), " vs null ", gShare(f.null_follows), ", kept ", gScore(f.kept), " vs null ", gScore(f.null_kept), sep,
+        seeds.length ? seeds.map((r, i) => [i ? ", " : "", `seed ${r.seed}: follows `, gShare(r.follows)]) : "no seed"];
+    }
+    const env = isMapping(m.envelope) ? m.envelope : {};
+    return [el("code", { text: String(m.description) }), ` at ${m.class}, `, gCount(m.values), " values", sep, "envelope's final run ",
+      env.final === null ? shown(null, "none") : shown(env.final, steps2(env.final)), ", the probe reads it from ",
+      env.probe_reads_from === null ? shown(null, "never") : shown(env.probe_reads_from, `step ${env.probe_reads_from}`), sep,
+      "slices' F1 ", range2(m.slices_f1, gScore), ", follows ", range2(m.slices_follows, gShare), sep,
+      seeds.length ? seeds.map((r, i) => [i ? ", " : "", `seed ${r.seed}: F1 `, gScore(r.f1), " cosine ", gScore(r.cosine)]) : "no seed", sep,
+      `final step ${f.step}: F1 `, gScore(f.f1), ", follows ", gShare(f.follows), " vs null ", gShare(f.null_follows), ", probe ",
+      gShare(f.probe), ", accuracy ", gShare(f.accuracy), f.holds ? ", holds" : ", doesn't hold"];
+  }
+
+  // The list, built once: each kind in its own group, in the order name, edge, open, generalize.
+  function renderGestureList() {
+    const g = state.gestures;
+    const groups = GESTURE_KINDS.map((kind) => {
+      const entries = g.entries.filter((e) => e.kind === kind);
+      const items = entries.map((e) => {
+        const item = el("button", {
+          type: "button", class: "gesture-entry", "data-key": e.key, "aria-pressed": String(e.key === g.chosen),
+          title: `${GESTURE_TITLES[kind]} record ${e.key}\n${e.file}, SHA-256 ${e.sha256}`,
+          onclick: () => chooseGesture(e.key),
+        }, el("span", { class: "gm" }, meterWords(e)), el("span", { class: "gr" }, requestWords(e.request)));
+        item.dataset.words = `${GESTURE_TITLES[kind]} ${kind} ${e.key} ${item.textContent}`.toLowerCase();
+        return item;
+      });
+      const count = el("span", { class: "muted", text: "" });
+      return { kind, count, items, node: el("details", { class: "gesture-kind", open: entries.length > 0 },
+        el("summary", {}, el("b", { text: GESTURE_TITLES[kind] }), " ", count),
+        entries.length ? el("div", { class: "gesture-items" }, items) : el("div", { class: "note", text: "no record of this kind" })) };
+    });
+    g.groups = groups;
+    clear($("gestures-list"), groups.map((group) => group.node), g.problems.map((problem) => errorBox(problem)));
+    applyGestureFilter();
+  }
+
+  // Keeps the entries holding every word typed, anywhere in their meter, request, kind or key.
+  function applyGestureFilter() {
+    const g = state.gestures;
+    if (!g.groups) return;
+    const words = $("gestures-filter").value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shownCount = 0;
+    for (const group of g.groups) {
+      let n = 0;
+      for (const item of group.items) {
+        const keep = words.every((w) => item.dataset.words.includes(w));
+        item.hidden = !keep;
+        if (keep) n += 1;
+      }
+      shownCount += n;
+      group.count.textContent = words.length ? `${n} of ${group.items.length} records` : `${group.items.length} ${group.items.length === 1 ? "record" : "records"}`;
+    }
+    $("gestures-count").textContent = words.length ? `${shownCount} of ${g.entries.length} shown` : "";
+  }
+
+  function chooseGesture(key) {
+    const g = state.gestures;
+    if (key !== g.chosen) g.instance = 0;
+    g.chosen = key;
+    writeHash();
+    report(renderGesture(), "gestures-meter");
+  }
+
+  // From the features panel: choose a name record and bring the gestures panel into view.
+  function openGesture(key) {
+    chooseGesture(key);
+    $("gestures-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Fetches a record's file and checks it against its entry: its SHA-256, then its key and request.
+  function gestureRecord(entry) {
+    const g = state.gestures;
+    if (!g.records.has(entry.key)) {
+      const promise = (async () => {
+        const { bytes, load } = await fetchBytes(GESTURES_DIR + entry.file, `${GESTURE_TITLES[entry.kind]} · ${short(entry.key)}`);
+        load.stage("hashing");
+        const computed = await sha256Hex(bytes);
+        const status = computed === null ? "unchecked" : computed === entry.sha256 ? "ok" : "bad";
+        tally[status] += 1;
+        renderFacts();
+        load.done();
+        let data = null;
+        let unreadable = null;
+        try {
+          data = JSON.parse(new TextDecoder().decode(bytes));
+        } catch (error) {
+          unreadable = `it isn't JSON: ${error.message}`;
+        }
+        return { status, computed, data, unreadable };
+      })();
+      promise.catch(() => g.records.delete(entry.key));
+      g.records.set(entry.key, promise);
+      if (g.records.size > 24) g.records.delete(g.records.keys().next().value);
+    }
+    return g.records.get(entry.key);
+  }
+
+  // JSON with every object's keys sorted, so two requests compare as values.
+  function canonical(value) {
+    if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+    if (isMapping(value)) return `{${Object.keys(value).sort().map((k) => `${JSON.stringify(k)}:${canonical(value[k])}`).join(",")}}`;
+    return JSON.stringify(value);
+  }
+
+  // The meter rows of a fetched record: whether it is its entry's; and whether it may be drawn.
+  function recordCheckRows(entry, loaded) {
+    const { status, computed, data, unreadable } = loaded;
+    const rows = [];
+    const title = `${entry.file}\npanel sha256 ${entry.sha256}\nfile sha256 ${computed ?? "not computed"}`;
+    if (status === "ok") rows.push(meterRow("ok", "hash check passed", `SHA-256 of ${entry.file} equals the panel's ${short(entry.sha256)}`, title));
+    else if (status === "bad") rows.push(meterRow("bad", "HASH MISMATCH", `${entry.file} hashes to ${short(computed)}, the panel records ${short(entry.sha256)}: it isn't the record the panel lists, so it isn't drawn`, title));
+    else rows.push(meterRow("warn", "hash not checked", "this browser has no Web Crypto here, so the record can't be checked against the panel and isn't drawn; open the page through localhost", title));
+    let drawable = status === "ok";
+    if (unreadable) {
+      rows.push(meterRow("bad", "record unreadable", `${entry.file}: ${unreadable}`));
+      drawable = false;
+    } else if (!isMapping(data) || data.key !== entry.key) {
+      rows.push(meterRow("bad", "KEY MISMATCH", `${entry.file} holds key ${short(isMapping(data) ? data.key : undefined)}, the panel lists ${short(entry.key)}`));
+      drawable = false;
+    } else if (canonical(data.request) !== canonical(entry.request)) {
+      rows.push(meterRow("bad", "REQUEST MISMATCH", `${entry.file} holds the request ${JSON.stringify(data.request)}, the panel lists ${JSON.stringify(entry.request)}`));
+      drawable = false;
+    } else if (!isMapping(data.results)) {
+      rows.push(meterRow("bad", "record unreadable", `${entry.file} holds no results`));
+      drawable = false;
+    }
+    return { rows, drawable, bad: status === "bad" || (status === "ok" && !drawable) };
+  }
+
+  function renderGestureBadge() {
+    const entry = state.gestures.byKey.get(state.gestures.chosen);
+    clear($("gestures-model-badge"), entry ? modelBadgeBox(entry.kind) : null);
+  }
+
+  function setGestureTimeline(timeline) {
+    const before = state.gestures.timeline;
+    state.gestures.timeline = timeline;
+    if (before !== timeline && state.index) renderTimeline();
+  }
+
+  async function renderGesture() {
+    const g = state.gestures;
+    if (g.status !== "ok") return;
+    for (const item of document.querySelectorAll("#gestures-list .gesture-entry")) item.setAttribute("aria-pressed", String(item.dataset.key === g.chosen));
+    const meter = $("gestures-meter");
+    const body = $("gestures-body");
+    const entry = g.byKey.get(g.chosen);
+    renderGestureBadge();
+    if (!entry) {
+      setGestureTimeline(null);
+      clear(meter, g.chosen ? meterRow("warn", "not in the panel", `the address names record ${short(g.chosen)}, which the panel doesn't list`) : null);
+      clear(body, g.entries.length ? el("div", { class: "note", text: "Choose a record to see it, its kind's badge above it." }) : el("div", { class: "note", text: "The panel lists no records." }));
+      return;
+    }
+    const { chosen } = g;
+    clear(meter, meterRow("info", "loading the record…", ""));
+    clear(body);
+    let loaded;
+    try {
+      loaded = await gestureRecord(entry);
+    } catch (error) {
+      if (chosen !== g.chosen) return;
+      setGestureTimeline(null);
+      clear(meter, meterRow("bad", "record unavailable", error.message));
+      setPanelBad("gestures-panel", true);
+      return;
+    }
+    if (chosen !== g.chosen) return;
+    const { rows, drawable, bad } = recordCheckRows(entry, loaded);
+    rows.unshift(meterRow("info", `${GESTURE_TITLES[entry.kind]}'s meter`, meterWords(entry), `copied from the record's results by views/gestures.py\nrecord ${entry.key}`));
+    clear(meter, rows);
+    setPanelBad("gestures-panel", bad || $("gestures-panel-meter").querySelector(".bad") !== null);
+    if (!drawable) {
+      setGestureTimeline(null);
+      clear(body, el("div", { class: "mismatch", text: "The record isn't drawn: the file isn't shown unless it is the record the panel lists." }));
+      return;
+    }
+    const r = loaded.data.results;
+    clear(body,
+      el("div", { class: "note" }, el("b", { text: GESTURE_TITLES[entry.kind] }), " of ", requestWords(entry.request)),
+      gestureSections(entry, r));
+  }
+
+  // One section of a record, or an error box naming what it couldn't read: a record that lacks an
+  // entry a section reads loses that section, not the panel.
+  function section(title, build) {
+    let content;
+    try {
+      content = build();
+    } catch (error) {
+      content = errorBox(`The record's results don't hold what this section reads (${error.message}).`);
+    }
+    return [title ? el("h3", { text: title }) : null, content];
+  }
+
+  function gestureSections(entry, r) {
+    if (entry.kind === "name") {
+      setGestureTimeline(null);
+      return nameSections(entry, r);
+    }
+    if (entry.kind === "edge") {
+      setGestureTimeline(null);
+      return edgeSections(r);
+    }
+    if (entry.kind === "open") {
+      setGestureTimeline(null);
+      return openSections(r);
+    }
+    setGestureTimeline(generalizeTimeline(entry, r));
+    return generalizeSections(entry, r);
+  }
+
+  const table = (cls, head, rows) => el("div", { class: "scrollx" }, el("table", { class: `gesture ${cls}` },
+    el("thead", {}, el("tr", {}, head.map((h) => (h instanceof Node ? h : el("th", { class: "num", text: h }))))),
+    el("tbody", {}, rows)));
+  const td = (...content) => el("td", { class: "num" }, content);
+  const tdText = (...content) => el("td", {}, content);
+
+  // ---- a name
+
+  function nameSections(entry, r) {
+    const latent = entry.request.args.latent;
+    if (r.name === null) {
+      return section(null, () => el("div", { class: "note" }, `Latent ${latent} fires on no row of its class `, el("code", { text: String(r.class) }),
+        `, across the ${r.rows} rows of the ${r.windows} held-out windows, so it has no name and no candidate.`));
+    }
+    const n = r.name;
+    return [
+      section(null, () => el("div", { class: "name-head" },
+        el("span", { class: `name-label label-${n.label}`, text: n.label }), " ", nameOf(n.description, n.value),
+        el("span", { class: "muted" }, ` · latent ${latent} at ${r.class}, over ${r.rows} rows of ${r.windows} held-out windows`))),
+      section("Steering", () => steeringBlock(r.steering)),
+      section("F1", () => el("div", { class: "note" }, "The name's F1 ", el("b", {}, gScore(n.f1)), ", latent ", String(latent),
+        "'s own; the set's ", el("b", {}, gScore(r.set.name_f1)), ", the highest among its latents (D49).")),
+      section("Coverage at every description", () => {
+        const set = r.coverage.set;
+        const own = r.coverage.latent;
+        return [el("div", { class: "note", text: `The share of the codes' sum over every held-out position that falls where each description is “${tokenText(n.value)}”, for the set and for latent ${latent} alone.` }),
+          table("coverage", [el("th", { text: "description" }), "the set", el("th", { class: "num", text: `latent ${latent} alone` })],
+            Object.keys(set).map((d) => el("tr", { class: d === n.description ? "chosen" : null },
+              tdText(el("code", { text: d })), td(gShare(set[d])), td(gShare(own[d]))))),
+        ];
+      }),
+      section("The set", () => {
+        const s = r.set;
+        return [
+          el("div", { class: "note" }, `Latent ${latent} ranks `, el("b", {}, gRank(s.pointed_rank)), ` by its F1 for `, nameOf(n.description, n.value),
+            s.in_set ? ", so it is in the set." : ", outside the set's first four."),
+          table("set", ["latent", "F1"], s.latents.map((l, i) => el("tr", { class: l === latent ? "chosen" : null }, td(String(l)), td(gScore(s.f1[i]))))),
+        ];
+      }),
+      section("Effect on the logits", () => {
+        const e = r.effect;
+        const ends = (title, side) => el("div", { class: "effect-side" },
+          el("div", { class: "note" }, el("b", { text: title }), ": ", tokenText(n.value), " ranks ", gRank(side.rank_from_top, e.vocabulary),
+            " from the top and ", gRank(side.rank_from_bottom, e.vocabulary), " from the bottom"),
+          el("div", { class: "effects" },
+            effectEnd(`top ${side.top.length}`, side.top, n.value),
+            effectEnd(`bottom ${side.bottom.length}`, side.bottom, n.value)));
+        return el("div", { class: "effects" },
+          ends("The set's effect", e.set),
+          ends(`Latent ${e.latent.latent}'s own effect, not the name's`, e.latent));
+      }),
+      section("Top candidates", () => table("candidates", ["", el("th", { text: "description" }), el("th", { text: "value" }), "F1"],
+        r.candidates.map((c, i) => el("tr", { class: i === 0 ? "chosen" : null }, td(`#${i + 1}`), tdText(el("code", { text: c.description })),
+          tdText(gToken(c.value)), td(gScore(c.f1)))))),
+    ];
+  }
+
+  function effectEnd(heading, pairs, value) {
+    return el("table", { class: "effect" },
+      el("thead", {}, el("tr", {}, el("th", { text: heading }), el("th", { class: "num", text: "logit" }))),
+      el("tbody", {}, pairs.map(([token, v]) => el("tr", { class: token === value ? "chosen" : null },
+        el("td", { title: `id ${token}`, text: tokenText(token) }), td(gSigned(v))))));
+  }
+
+  function steeringBlock(s) {
+    if (s === null) return el("div", { class: "note", text: "No steering instance: no position where the name holds had another value to move to, so steering didn't run." });
+    if (s.causal) {
+      return [
+        el("div", { class: "note" }, "Over ", gCount(s.instances), " instances, each pass's output at the predicted position: the swap's beside the null's."),
+        table("steering", ["", "follows", "unchanged", "ablated: changed"], [
+          el("tr", {}, tdText(el("b", { text: "the swap" })), td(gShare(s.follows)), td(gShare(s.unchanged)), td(gShare(s.ablated_changed))),
+          el("tr", {}, tdText("the null"), td(gShare(s.null_follows)), td(gShare(s.null_unchanged)), el("td"))]),
+      ];
+    }
+    return [
+      el("div", { class: "note" }, "Over ", gCount(s.instances), " instances, the KL from the unintervened prediction at each instance's position."),
+      table("steering", ["", "KL (nats)"], [
+        el("tr", {}, tdText(el("b", { text: "the swap" })), td(gScore(s.kl))),
+        el("tr", {}, tdText("the null"), td(gScore(s.null_kl)))]),
+      el("div", { class: "note record-note", text: String(s.note) }),
+      steeringExamples(s.examples),
+    ];
+  }
+
+  // A non-causal steering's examples: each pass's top tokens at the instance's position (D49).
+  function steeringExamples(examples) {
+    if (!Array.isArray(examples)) return el("div", { class: "note" }, "The record's examples aren't a list: ", asHeld(examples));
+    if (!examples.length) return el("div", { class: "note", text: "The record has no example." });
+    const tokens = (ids) => (Array.isArray(ids) && ids.every(Number.isInteger) ? ids.map((id, i) => [i ? " " : null, gToken(id)]) : asHeld(ids));
+    const KEYS = ["window", "position", "w", "unsteered", "steered"];
+    return [
+      el("div", { class: "note", text: `Its first ${examples.length} ${examples.length === 1 ? "instance" : "instances"}: at each instance's window and position, the unsteered pass's top tokens and the steered pass's, with the set swapped for w's, best first.` }),
+      table("examples", ["window", "position", el("th", { text: "w" }), el("th", { text: "unsteered" }), el("th", { text: "steered" })],
+        examples.map((x) => (isMapping(x) && KEYS.every((k) => k in x)
+          ? el("tr", {}, td(gCount(x.window)), td(gCount(x.position)), tdText(gToken(x.w)), tdText(tokens(x.unsteered)), tdText(tokens(x.steered)))
+          : el("tr", {}, el("td", { colspan: 5 }, asHeld(x)))))),
+    ];
+  }
+
+  // ---- an edge
+
+  const placeText = (p) => [el("code", { text: String(p.description) }), ` after block ${p.block} at ${p.class} (site ${p.site}, `, tapCode(p.tap), ")"];
+
+  function edgeSections(r) {
+    return [
+      section(null, () => el("div", { class: "name-head" }, el("code", { text: String(r.relation) }), r.judged ? " (judged)" : " (recorded)",
+        ": ", placeText(r.up), " → ", placeText(r.down))),
+      r.instances === 0 ? el("div", { class: "note", text: "No instance: no pair had a value to swap, so nothing below was measured." }) : null,
+      section("Follows and kept, beside their nulls", () => table("edge", ["", "follows", "kept"], [
+        el("tr", {}, tdText(el("b", { text: "the swap / ablation" })), td(gShare(r.follows)), td(gScore(r.kept))),
+        el("tr", {}, tdText("the null"), td(gShare(r.null_follows)), td(gScore(r.null_kept)))])),
+      section("The label", () => {
+        const a = r.residual_alone;
+        return el("div", { class: "note" }, el("span", { class: "name-label", text: String(r.label) }), " ",
+          a === null ? "No instance has its two places at one position, so the swap isn't run through the residual stream alone; an edge across positions is computed."
+            : ["Through the residual stream alone, with blocks ", a.blocks.join(", "), " frozen, the swap follows ", el("b", {}, gShare(a.follows)),
+              " beside ", el("b", {}, gShare(a.follows_unfrozen)), " unfrozen, over ", gCount(a.instances), " instances; its output follows ",
+              gShare(a.output_follows), ". Carried where the first is at least half the second."]);
+      }),
+      section("The output", () => (r.output === null ? el("div", { class: "note", text: "No instance has a prediction, so the output isn't read." })
+        : el("div", { class: "note" }, "Over ", gCount(r.output.instances), " instances with a prediction, the output follows ",
+          el("b", {}, gShare(r.output.follows)), " after the swap, beside ", el("b", {}, gShare(r.output.null_follows)), " after the null's."))),
+      section("The single latents beside the sets", () => table("edge", ["", "follows", "kept"], [
+        el("tr", {}, tdText("the sets"), td(gShare(r.follows)), td(gScore(r.kept))),
+        el("tr", {}, tdText("each name's best latent"), td(gShare(r.single.follows)), td(gScore(r.single.kept)))])),
+      section("Pairs and instances", () => el("div", { class: "note" }, gCount(r.pairs), " pairs over every held-out window, ",
+        gCount(r.instances), " instances measured.")),
+    ];
+  }
+
+  // ---- open-this-up
+
+  const ORDERS = ["absolute", "signed", "random"];
+  const DASHES = ["", "6 3", "2 3"];
+
+  function openSections(r) {
+    const t = r.target;
+    return [
+      section(null, () => el("div", { class: "name-head" }, "Target: ",
+        t.latent !== null ? `latent ${t.latent}` : ["the set of ", nameOf(t.description, t.value), `, latents ${t.latents.join(", ")}`],
+        ` at ${r.class}, read at site ${r.down.site} (`, tapCode(r.down.tap), "), opened into site ", String(r.up.site), " (", tapCode(r.up.tap), ")")),
+      section(null, () => el("div", { class: "note" }, gCount(r.candidates), " places where it fires, ", gCount(r.instances), " drawn, ",
+        gCount(r.no_span), " left out with no span, ", gCount(r.measured), ` measured, with ${r.steps} integrated-gradient steps.`)),
+      section("Error by number of parts", () => errorCurve(r)),
+      section("Readings", () => table("readings", [el("th", { text: "order" }), "median reading", "within 128 parts"],
+        ORDERS.map((o) => el("tr", {}, tdText(o), td(gParts(r.orders[o].reading_median, "not within 128")), td(gShare(r.orders[o].within)))))),
+      section("Measured instances", () => openInstance(r)),
+    ];
+  }
+
+  // The median error at each number of parts, one line per order, on a log-scaled axis of parts.
+  function errorCurve(r) {
+    const parts = r.parts;
+    const curves = ORDERS.map((o) => ({ order: o, values: r.orders[o].error_median }));
+    if (curves.every((c) => c.values === null)) return el("div", { class: "note", text: "No instance was measured, so there is no error curve." });
+    const width = 460;
+    const height = 220;
+    const m = { l: 48, r: 32, t: 10, b: 34 };
+    const finite = curves.flatMap((c) => (c.values || []).filter(isNumber));
+    const hi = Math.max(1, ...finite);
+    const lo = Math.log2(parts[0]);
+    const span = Math.log2(parts[parts.length - 1]) - lo || 1;
+    const x = (k) => m.l + (width - m.l - m.r) * ((Math.log2(k) - lo) / span);
+    const y = (v) => m.t + (height - m.t - m.b) * (1 - v / hi);
+    const root = svg("svg", { width, height, role: "img", "aria-label": "median error against the number of parts kept, for the absolute, signed and random orders" });
+    for (const tick of niceTicks(0, hi, 4)) {
+      root.append(svg("line", { class: "gridline", x1: m.l, x2: width - m.r, y1: y(tick), y2: y(tick) }),
+        svg("text", { x: m.l - 6, y: y(tick) + 4, "text-anchor": "end" }, fmt(tick, 2)));
+    }
+    root.append(svg("line", { class: "bar-line", x1: m.l, x2: width - m.r, y1: y(0.1), y2: y(0.1) }),
+      svg("text", { x: width - m.r + 4, y: y(0.1) + 4, class: "bar-text" }, "0.1"));
+    for (const k of parts) root.append(svg("text", { x: x(k), y: height - m.b + 16, "text-anchor": "middle" }, String(k)));
+    root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: height - m.b, y2: height - m.b }),
+      svg("text", { x: (m.l + width - m.r) / 2, y: height - 2, "text-anchor": "middle" }, "parts kept (log scale)"));
+    const colours = SERIES();
+    curves.forEach((c, i) => {
+      if (!Array.isArray(c.values)) return;
+      let d = "";
+      c.values.forEach((v, j) => {
+        if (!isNumber(v)) return;
+        d += `${d ? "L" : "M"}${x(parts[j]).toFixed(1)},${y(v).toFixed(1)}`;
+        root.append(svg("circle", { cx: x(parts[j]), cy: y(v), r: 3, fill: colours[i] }, svg("title", {}, `${c.order}, ${parts[j]} parts: median error ${v}`)));
+      });
+      // Orders often agree, so each has its own dash and width: a line under another still shows.
+      root.append(svg("path", { d, fill: "none", stroke: colours[i], "stroke-width": [4, 2, 2][i], "stroke-dasharray": DASHES[i] || null, "stroke-opacity": i ? 1 : 0.55 }));
+    });
+    return [el("div", { class: "note", text: "The median error over measured instances, |kept − full| / |full − none|, keeping each order's first parts; the dashed line marks 0.1, the bar a reading needs." }),
+      root,
+      el("div", { class: "legend" }, curves.map((c, i) => el("span", {},
+        svg("svg", { width: 26, height: 10, "aria-hidden": "true" }, svg("line", { x1: 0, x2: 26, y1: 5, y2: 5, stroke: colours[i],
+          "stroke-width": [4, 2, 2][i], "stroke-dasharray": DASHES[i] || null, "stroke-opacity": i ? 1 : 0.55 })), ` ${c.order}`)))];
+  }
+
+  function openInstance(r) {
+    const n = r.windows.length;
+    if (!n) return el("div", { class: "note", text: "No instance was measured." });
+    const g = state.gestures;
+    const i = Math.min(g.instance, n - 1);
+    const [w, p] = r.windows[i];
+    const move = (to) => { g.instance = to; report(renderGesture(), "gestures-meter"); };
+    return [
+      el("div", { class: "controls" },
+        el("button", { type: "button", text: "◀", title: "previous instance", disabled: i === 0, onclick: () => move(i - 1) }),
+        el("span", { text: `instance ${i + 1} of ${n}: window ${w}, position ${p}` }),
+        el("button", { type: "button", text: "▶", title: "next instance", disabled: i === n - 1, onclick: () => move(i + 1) }),
+        el("span", { class: "muted" }, "readings: ", ORDERS.map((o, j) => [j ? ", " : "", `${o} `, gParts(r.orders[o].readings[i], "not within 128")]))),
+      table("parts", ["", "position", "latent", "attribution", el("th", { text: "name" })],
+        r.top_parts[i].map((part, k) => el("tr", {}, td(`#${k + 1}`), td(gCount(part.position)), td(gCount(part.latent)), td(gSigned(part.attribution)),
+          tdText(part.name === null ? shown(null, "none: it fires on no row of its class")
+            : [el("span", { class: `name-label label-${part.name.label}`, text: part.name.label }), " ", nameOf(part.name.description, part.name.value),
+              el("span", { class: "muted" }, ", F1 "), gScore(part.name.f1)])))),
+      el("div", { class: "note", text: "Its first parts by absolute attribution; each part's name is its latent's top candidate at the class of its position." }),
+    ];
+  }
+
+  // ---- generalize-this
+
+  // The rows a generalize-this record adds to the timeline, its envelope's runs and its gap.
+  function generalizeTimeline(entry, r) {
+    const rows = Array.isArray(r.checkpoints) ? r.checkpoints : [];
+    const series = (name, unit, key) => ({ gesture: true, name: `generalize-this: ${name}`, unit,
+      points: rows.filter((row) => isMapping(row) && Number.isInteger(row.step))
+        .map((row) => ({ step: row.step, value: isNumber(row[key]) ? row[key] : null })).sort((a, b) => a.step - b.step) });
+    if (entry.meter.form === "edge") {
+      return { rows: [series("follows", "fraction", "follows"), series("kept", "ratio", "kept"), series("null's follows", "fraction", "null_follows"),
+        series("null's kept", "ratio", "null_kept")], runs: [], gap: [],
+      note: `The last four rows are the chosen generalize-this record's checkpoints, edge ${entry.request.args.relation}; an edge has no envelope.` };
+    }
+    const env = isMapping(r.envelope) ? r.envelope : {};
+    const runs = Array.isArray(env.runs) ? env.runs.filter((run) => Array.isArray(run) && run.length === 2 && run.every(Number.isInteger)) : [];
+    const gap = Array.isArray(env.gap) ? env.gap.filter(Number.isInteger) : [];
+    return { rows: [series("F1", "score", "f1"), series("follows", "fraction", "follows"), series("null's follows", "fraction", "null_follows"),
+      series("probe", "accuracy", "probe"), series("accuracy", "fraction", "accuracy")], runs, gap,
+    note: [`The last five rows are the chosen generalize-this record's checkpoints, ${r.description} at ${r.class}: shaded where its envelope's runs hold (`,
+      runs.length ? runs.map((run) => `${run[0]} to ${run[1]}`).join(", ") : "none", "), ▼ on the step axis at its gap's checkpoints (",
+      gap.length ? gap.join(", ") : "none", "), where the probe reads it but the name doesn't hold."] };
+  }
+
+  function generalizeSections(entry, r) {
+    if (entry.meter.form === "edge") {
+      const cols = ["instances", "follows", "null's follows", "kept", "null's kept", el("th", { text: "label" })];
+      const cells = (row) => [td(gCount(row.instances)), td(gShare(row.follows)), td(gShare(row.null_follows)), td(gScore(row.kept)),
+        td(gScore(row.null_kept)), tdText(String(row.label))];
+      return [
+        el("div", { class: "note" }, "Edge ", el("code", { text: String(r.relation) }), ". Its checkpoints are rows on the timeline above while it is chosen."),
+        section("Slices of the held-out windows", () => table("slices", ["slice", "windows", ...cols],
+          r.slices.map((row, i) => el("tr", {}, td(String(i)), td(gCount(row.windows)), cells(row))))),
+        section("Dictionary seeds", () => (r.seeds.length ? table("seeds", ["seed", ...cols], r.seeds.map((row) => el("tr", {}, td(gCount(row.seed)), cells(row))))
+          : el("div", { class: "note", text: "No other dictionary seed was read." }))),
+      ];
+    }
+    const env = r.envelope;
+    return [
+      el("div", { class: "note" }, el("code", { text: String(r.description) }), ` at ${r.class}, site ${r.site} (`, tapCode(r.tap), "), over ",
+        gCount(r.values), " values. Its envelope's final run ", env.final === null ? shown(null, "none") : shown(env.final, steps2(env.final)),
+        "; the probe reads it from ", env.probe_reads_from === null ? shown(null, "no checkpoint") : shown(env.probe_reads_from, `step ${env.probe_reads_from}`),
+        ". Its checkpoints are rows on the timeline above while it is chosen."),
+      section("Slices of the held-out windows", () => [
+        el("div", { class: "note" }, "F1 from ", range2(r.slices.f1, gScore), ", follows from ", range2(r.slices.follows, gShare), ", over the slices that have one."),
+        table("slices", ["slice", "windows", "F1", "follows", "null's follows"],
+          r.slices.rows.map((row, i) => el("tr", {}, td(String(i)), td(gCount(row.windows)), td(gScore(row.f1)), td(gShare(row.follows)), td(gShare(row.null_follows)))))]),
+      section("Dictionary seeds", () => (r.seeds.length
+        ? table("seeds", ["seed", "F1", "follows", "null's follows", "cosine"],
+          r.seeds.map((row) => el("tr", {}, td(gCount(row.seed)), td(gScore(row.f1)), td(gShare(row.follows)), td(gShare(row.null_follows)), td(gScore(row.cosine)))))
+        : el("div", { class: "note", text: "No other dictionary seed was read." }))),
+    ];
+  }
+
+  // ---- the features panel's links to names
+
+  // The name records of a latent of the features payload's dictionary and site, as buttons.
+  function nameRecordKeys(data, latent) {
+    const place = state.gestures.names[`${data.dictionary}-${data.site}`];
+    const keys = isMapping(place) ? place[String(latent)] : undefined;
+    return Array.isArray(keys) ? keys : [];
+  }
+
+  function nameLinks(data, latent) {
+    return nameRecordKeys(data, latent).map((key, i) => {
+      const entry = state.gestures.byKey.get(key);
+      const m = entry && entry.kind === "name" ? entry.meter : null;
+      return [i ? " " : null, el("button", {
+        type: "button", class: "name-link",
+        title: `open name record ${key} in the gestures panel${entry ? `\nstep ${entry.request.step}, class ${entry.request.args.class}` : ""}`,
+        onclick: (event) => { event.stopPropagation(); openGesture(key); },
+      }, m === null ? el("span", { class: "error", text: `${short(key)} (not listed)` })
+        : m.label === null ? "no name" : [el("span", { class: `label-${m.label}`, text: m.label }), " ", nameOf(m.description, m.value)])];
+    });
+  }
+
+  function latentNames(data, latent) {
+    const g = state.gestures;
+    if (!GESTURES_DIR) return el("div", { class: "note", text: "No gestures panel is open (the address names no ?gestures= folder), so its name records can't be listed." });
+    if (g.status !== "ok") return el("div", { class: "note", text: g.status === "error" ? "The gestures panel couldn't be read, so its name records can't be listed." : "Loading the gestures panel…" });
+    const links = nameLinks(data, latent);
+    return links.length ? el("div", { class: "controls" }, links)
+      : el("div", { class: "note", text: `The gestures panel has no name record of latent ${latent} of this dictionary's site ${data.site}.` });
   }
 
   // ---------------------------------------------------------------- orchestration
@@ -2598,6 +3393,7 @@
     $("attn-head").value = String(state.head);
     $("attn-head").addEventListener("change", (event) => { state.head = Number(event.target.value); changed({ headChanged: true }); });
     $("attn-sqrt").addEventListener("change", () => changed({ headChanged: true }));
+    $("gestures-filter").addEventListener("input", applyGestureFilter);
     $("features-latent").addEventListener("change", (event) => {
       const text = event.target.value.trim();
       chooseLatent(text === "" ? null : /^\d+$/.test(text) ? Number(text) : text);
@@ -2631,6 +3427,8 @@
     state.compare.chosen = saved.compare;
     state.features.chosen = saved.features;
     state.features.latent = saved.features ? saved.latent : null;
+    if (saved.gesture !== state.gestures.chosen) state.gestures.instance = 0;
+    state.gestures.chosen = saved.gesture;
     return saved.step === null ? -1 : index.steps.indexOf(saved.step);
   }
 
@@ -2696,9 +3494,11 @@
       $("attn-head").value = String(state.head);
       state.started = false;
       selectStep(at >= 0 ? at : state.stepIndex);
+      report(renderGesture(), "gestures-meter");
     });
     report(loadLayerStructure(), "layers-meter");
     report(loadInterventions(), "compare-meter");
+    report(loadGestures(), "gestures-panel-meter");
     loadModelBadges().catch((error) => console.error(error));
   }
 

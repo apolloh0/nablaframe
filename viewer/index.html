@@ -245,6 +245,36 @@
     .effects { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: flex-start; }
     table.effect { width: auto; min-width: 160px; }
     .effect-label { font-style: italic; }
+    button.name-link { font-size: 12px; padding: 0 6px; margin: 1px 0; }
+
+    /* Gestures (Phase 6) */
+    #gestures-filter { width: 22em; background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
+    .gesture-kind { margin: 4px 0; }
+    .gesture-kind summary { cursor: pointer; }
+    .gesture-items { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; margin: 4px 0 6px; }
+    button.gesture-entry {
+      display: block; width: 100%; text-align: left; padding: 3px 8px; font-size: 12.5px; line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+    button.gesture-entry .gm { color: var(--text-primary); }
+    button.gesture-entry .gr { display: block; color: var(--text-secondary); font-size: 12px; }
+    button.gesture-entry[aria-pressed="true"] .gr, button.gesture-entry[aria-pressed="true"] .gm { color: #fff; }
+    button.gesture-entry[aria-pressed="true"] code { color: #fff; }
+    .gv { font-variant-numeric: tabular-nums; }
+    .gv.odd { color: var(--critical-text); }
+    .name-head { font-size: 15px; margin: 6px 0; }
+    .name-label { font-weight: 700; border: 1px solid var(--border); border-radius: 4px; padding: 0 6px; }
+    .label-named { color: var(--good-text); }
+    .label-weak { color: var(--warning-text); }
+    table.gesture { width: auto; }
+    table.gesture tr.chosen td { background: var(--surface-2); font-weight: 700; }
+    table.effect tr.chosen td { outline: 2px solid var(--text-primary); outline-offset: -2px; font-weight: 700; }
+    .effect-side { min-width: 260px; }
+    .record-note { font-style: italic; }
+    svg .bar-line { stroke: var(--text-secondary); stroke-dasharray: 4 3; }
+    svg .bar-text { font-weight: 600; }
+    svg .envelope { fill: var(--accent); opacity: 0.14; }
+    svg .gap { fill: var(--warning); stroke: var(--warning-text); stroke-width: 0.5; }
   </style>
 </head>
 <body>
@@ -293,6 +323,19 @@
         </div>
         <div id="features-latent-body"></div>
       </div>
+    </section>
+
+    <section class="panel" id="gestures-panel" hidden>
+      <h2>Gestures: a run's records <span class="sub" id="gestures-sub"></span></h2>
+      <div class="meter" id="gestures-panel-meter"></div>
+      <div class="controls">
+        <label>Filter <input type="search" id="gestures-filter" placeholder="any word of an entry" autocomplete="off"></label>
+        <span class="muted" id="gestures-count"></span>
+      </div>
+      <div id="gestures-list"></div>
+      <div id="gestures-model-badge"></div>
+      <div class="meter" id="gestures-meter"></div>
+      <div id="gestures-body"></div>
     </section>
 
     <div class="grid2">
