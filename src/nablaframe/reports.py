@@ -270,14 +270,15 @@ PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
 PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5", "G4.6")
 PHASE5_GATE_IDS: tuple[str, ...] = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5", "G5.6")
 PHASE6_GATE_IDS: tuple[str, ...] = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6", "G6.7")
+PHASE7_GATE_IDS: tuple[str, ...] = ("G7.1", "G7.2", "G7.3", "G7.4")
 _ALL_GATE_IDS: tuple[str, ...] = (
     GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS + PHASE5_GATE_IDS
-    + PHASE6_GATE_IDS
+    + PHASE6_GATE_IDS + PHASE7_GATE_IDS
 )
 # Gates written from Phase 1 on, which must use schema version 2.
 _V2_ONLY_GATE_IDS: tuple[str, ...] = (
     PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS + PHASE5_GATE_IDS
-    + PHASE6_GATE_IDS
+    + PHASE6_GATE_IDS + PHASE7_GATE_IDS
 )
 STATUSES: tuple[str, ...] = ("pass", "conditional_pass", "fail")
 ENV_NAMES: tuple[str, ...] = ("nf-jax", "nf-metal", "nf-torch")
@@ -403,9 +404,23 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
     ),
     "G6.6": ("blocks", "seconds"),
     "G6.7": ("badges", "subjects_missing", "records", "builds_identical", "external_urls", "reports_match"),
+    "G7.1": (
+        "recompute_identical", "checkpoints_written", "checkpoints_scheduled", "events_recorded", "events_expected",
+        "held_accuracy", "train_accuracy", "control_accuracy", "twin_accuracy", "chance", "frequencies", "energy",
+        "twin_frequencies", "logit_r2",
+    ),
+    "G7.2": ("fvu", "twin_fvu", "names", "records", "seconds"),
+    "G7.3": (
+        "identities_checked", "identities_exact", "identities_by_run", "request_hashes_checked",
+        "request_hashes_distinct", "request_hashes_stable", "records_identical", "records_by_form",
+    ),
+    "G7.4": (
+        "crystallizations", "kl_max", "ablation_min", "wrong_min", "reads_agreement_min", "answer_agreement_max",
+        "twin_within_max", "envelope_ok",
+    ),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
-_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4", "G5.5", "G6.6")
+_ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4", "G5.5", "G6.6", "G7.2")
 # Gates whose three final-state hashes must agree with ``identical`` under every status.
 _HASH_GATES: tuple[str, ...] = ("G0.2", "G1.3")
 
@@ -718,6 +733,22 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
         ("G6.7", "pass"): [
             is_("builds_identical", True), equals("external_urls", 0), equals("subjects_missing", 0),
             is_("reports_match", True),
+        ],
+        ("G7.1", "pass"): [
+            is_("recompute_identical", True), equals_key("checkpoints_written", "checkpoints_scheduled"),
+            equals_key("events_recorded", "events_expected"), at_least("held_accuracy", 0.99),
+            at_most_times_key("control_accuracy", 2, "chance"), at_most_times_key("twin_accuracy", 2, "chance"),
+            at_most("frequencies", 8), at_least("logit_r2", 0.8),
+        ],
+        ("G7.3", "pass"): [
+            at_least("identities_checked", 1), equals_key("identities_exact", "identities_checked"),
+            is_("request_hashes_distinct", True), is_("request_hashes_stable", True),
+            is_("records_identical", True),
+        ],
+        ("G7.4", "pass"): [
+            at_most("kl_max", 0.25), at_least("ablation_min", 1), at_least("wrong_min", 1),
+            at_least("reads_agreement_min", 0.8), at_most("answer_agreement_max", 0.1),
+            at_most("twin_within_max", 0.05), is_("envelope_ok", True),
         ],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]
