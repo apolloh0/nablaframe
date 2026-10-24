@@ -137,12 +137,12 @@ import numpy as np
 
 from ..data.corpus import batch_hash
 from ..zoo import declarations
-from . import declare, edge, generalize, name, records, sets
+from . import crystallize, declare, edge, generalize, name, records, sets
 from . import open as opening
 
 READ_CHUNK = 256
 OPEN_CHUNK = 32
-RUNS = ("induction", "reference", "two_hop")
+RUNS = ("induction", "modular_addition", "reference", "two_hop")
 
 _COMMON = ("nablaframe.gestures.cli", "nablaframe.gestures.declare", "nablaframe.gestures.sets",
            "nablaframe.zoo.declarations")
@@ -151,6 +151,7 @@ MODULES = {
     "edge": _COMMON + ("nablaframe.gestures.edge",),
     "open": _COMMON + ("nablaframe.gestures.name", "nablaframe.gestures.open"),
     "generalize": _COMMON + ("nablaframe.gestures.name", "nablaframe.gestures.edge", "nablaframe.gestures.generalize"),
+    "crystallize": _COMMON + ("nablaframe.gestures.crystallize", "nablaframe.zoo.functions"),
 }
 
 _HASH = re.compile(r"[0-9a-f]{64}")
@@ -170,15 +171,31 @@ class Context:
     windows: np.ndarray
     dictionary: Callable[[str], Any]
     seeds: Mapping[int, Mapping[str, str]]
+    fit_windows: np.ndarray | None = None
+    functions: Any = None
+    twin: Any = None
+    twin_state: str | None = None
+    cited: Callable[[str], records.GestureRecord] | None = None
+
+
+_CRYSTALLIZE_FIELDS = ("fit_windows", "functions", "twin", "twin_state", "cited")
+
+
+def _task(run: str) -> Any:
+    """The zoo run's task at its defaults, as G4.1 and G7.1 trained it; None for another run."""
+    from ..zoo.tasks import InductionTask, ModularAdditionTask, TwoHopTask
+
+    tasks = {"induction": InductionTask, "modular_addition": ModularAdditionTask, "two_hop": TwoHopTask}
+    return tasks[run]() if run in tasks else None
 
 
 def declaration_for(run: str, config: Any) -> declare.Declaration:
-    from ..zoo.tasks import InductionTask, TwoHopTask
-
     if run == "two_hop":
-        declaration = declarations.two_hop(TwoHopTask())
+        declaration = declarations.two_hop(_task(run))
     elif run == "induction":
-        declaration = declarations.induction(InductionTask())
+        declaration = declarations.induction(_task(run))
+    elif run == "modular_addition":
+        declaration = declarations.modular_addition(_task(run))
     elif run == "reference":
         declaration = declare.reference(config.seq)
     else:
@@ -186,6 +203,16 @@ def declaration_for(run: str, config: Any) -> declare.Declaration:
     if declaration.seq != config.seq:
         raise ValueError(f"the {run} run reads {declaration.seq} tokens, but the config's seq is {config.seq}")
     return declaration
+
+
+def functions_for(run: str) -> Any:
+    from ..zoo import functions
+
+    if run == "reference":
+        raise ValueError("the reference run declares no functions")
+    if run not in RUNS:
+        raise ValueError(f"run must be one of {RUNS}, got {run!r}")
+    return functions.for_run(run, _task(run))
 
 
 def code(kind: str) -> dict[str, str]:
@@ -197,6 +224,8 @@ def code(kind: str) -> dict[str, str]:
 def _named(request: records.GestureRequest) -> list[tuple[str, int]]:
     """The (dictionary, site) pairs the request reads, in the order its gesture takes them."""
     args = request.args
+    if request.kind == "crystallize":
+        return []
     if "relation" in args:
         return [(args["up"], args["up_site"]), (args["down"], args["down_site"])]
     if request.kind == "open":
@@ -212,12 +241,8 @@ def _check(request: records.GestureRequest, context: Context) -> None:
         raise ValueError(f"the request is for run {request.run}, but the context holds run {context.run}")
     if request.step not in context.steps:
         raise ValueError(f"step {request.step} isn't one of the run's checkpoints {list(context.steps)}")
-    windows = np.asarray(context.windows)
     seq = context.declaration.seq
-    if (windows.ndim != 2 or windows.shape[0] < 1 or windows.shape[1] != seq + 1
-            or not np.issubdtype(windows.dtype, np.integer)):
-        raise ValueError(f"the windows must be an integer array (B, {seq + 1}) with B at least 1, got "
-                         f"{windows.dtype} {windows.shape}")
+    _check_windows(context.windows, seq, "the windows")
     args, declaration = request.args, context.declaration
     for digest, site in _named(request):
         dictionary = context.dictionary(digest)  # ValueError for one the context doesn't hold
@@ -244,10 +269,57 @@ def _check(request: records.GestureRequest, context: Context) -> None:
                 if digest not in context.seeds[s]:
                     raise ValueError(f"dictionary seed {s} has no counterpart of dictionary {digest}")
                 context.dictionary(context.seeds[s][digest])
+    if request.kind == "crystallize":
+        _check_crystallize(request, context)
+
+
+def _check_windows(windows: Any, seq: int, what: str) -> None:
+    windows = np.asarray(windows)
+    if (windows.ndim != 2 or windows.shape[0] < 1 or windows.shape[1] != seq + 1
+            or not np.issubdtype(windows.dtype, np.integer)):
+        raise ValueError(f"{what} must be an integer array (B, {seq + 1}) with B at least 1, got "
+                         f"{windows.dtype} {windows.shape}")
+
+
+def _check_crystallize(request: records.GestureRequest, context: Context) -> None:
+    """crystallize-this's own refusals: the context's five fields, the function, the instances and the citations."""
+    missing = [field for field in _CRYSTALLIZE_FIELDS if getattr(context, field) is None]
+    if missing:
+        raise ValueError(f"crystallize-this needs a context with {', '.join(missing)}")
+    _check_windows(context.fit_windows, context.declaration.seq, "the fitting windows")
+    args, functions = request.args, context.functions
+    if functions.run != context.declaration.run:
+        raise ValueError(f"the context's functions are run {functions.run!r}'s, but its declaration is run "
+                         f"{context.declaration.run!r}'s")
+    if args["function"] not in functions.functions:
+        raise ValueError(f"run {functions.run!r} declares no function {args['function']!r}; it declares "
+                         f"{list(functions.functions)}")
+    f = functions.functions[args["function"]]
+    if args["part"] not in crystallize.PARTS:
+        raise ValueError(f"part must be one of {crystallize.PARTS}, got {args['part']!r}")
+    if (args["block"], args["class"]) != (f.block, f.cls):
+        raise ValueError(f"function {f.name!r} replaces a part of block {f.block} at class {f.cls!r}, not block "
+                         f"{args['block']} at class {args['class']!r}")
+    if args["form"] not in f.forms:
+        raise ValueError(f"function {f.name!r} admits the forms {list(f.forms)}, not {args['form']!r}")
+    held = len(np.asarray(context.windows))
+    if request.instances != held:
+        raise ValueError(f"crystallize-this reads every held-out window: instances must be {held}, got "
+                         f"{request.instances}")
+    for key in args["cites"]:
+        cited = context.cited(key)  # ValueError for a key the context doesn't hold
+        if not isinstance(cited, records.GestureRecord):
+            raise ValueError(f"cited record {key} isn't a gesture record")
+        if cited.request.run != context.run:
+            raise ValueError(f"cited record {key} is run {cited.request.run}'s, not the request's run {context.run}")
 
 
 def inputs(request: records.GestureRequest, context: Context) -> dict[str, Any]:
     _check(request, context)
+    if request.kind == "crystallize":
+        states = {str(step): context.state_at(step) for step in context.steps} | {"twin": context.twin_state}
+        windows = sorted({batch_hash(context.fit_windows), batch_hash(context.windows)})
+        return {"states": states, "dictionaries": [], "windows": windows}
     steps = context.steps if request.kind == "generalize" else (request.step,)
     named = {digest for digest, _ in _named(request)}
     if request.kind == "generalize":
@@ -266,6 +338,13 @@ def results(request: records.GestureRequest, context: Context) -> dict[str, Any]
                               chunk=READ_CHUNK)
 
     args, counts = request.args, {"instances": request.instances, "seed": request.seed}
+    if request.kind == "crystallize":
+        return crystallize.crystallize(
+            context.model, params, n_layers=context.n_layers, functions=context.functions,
+            declaration=context.declaration, block=args["block"], part=args["part"], cls=args["class"],
+            function=args["function"], form=args["form"], fit_windows=context.fit_windows,
+            held_windows=context.windows, seed=request.seed, twin=context.twin, steps=context.steps,
+            params_at=context.params_at, cited=[context.cited(key) for key in args["cites"]])
     places = _named(request)
     if request.kind == "name":
         return name.name(read(*places[0]), args["class"], args["latent"], **counts)
@@ -314,11 +393,14 @@ def _arguments(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--checkpoints", type=Path, required=True,
                         help="a folder of step-<n>.safetensors checkpoints with their sidecars")
     parser.add_argument("--windows", type=Path, required=True, help="an integer .npy, the held-out windows")
-    parser.add_argument("--dictionaries", type=Path, required=True,
+    parser.add_argument("--dictionaries", type=Path,
                         help="a folder searched at every depth for <content hash>.safetensors")
     parser.add_argument("--request", type=Path, required=True, help="the request's JSON")
     parser.add_argument("--out", type=Path, required=True, help="the folder of the run's records")
     parser.add_argument("--seeds", type=Path, help='a JSON {"<seed>": {"<content hash>": "<content hash>"}}')
+    parser.add_argument("--fit-windows", type=Path, help="an integer .npy, the fitting windows")
+    parser.add_argument("--records", type=Path, action="append", default=[],
+                        help="a folder of records the request cites, searched after the out folder; repeatable")
     return parser.parse_args(argv)
 
 
@@ -352,10 +434,16 @@ def _sidecars(folder: Path, run: str) -> dict[int, str]:
     return dict(sorted(states.items()))
 
 
-def _dictionaries(folder: Path) -> Callable[[str], Any]:
+def _no_dictionary(digest: str) -> Any:
+    raise ValueError(f"no --dictionaries folder was given, so the context holds no dictionary {digest}")
+
+
+def _dictionaries(folder: Path | None) -> Callable[[str], Any]:
     """The context's ``dictionary``: each one loaded when first named, from the one file of its name."""
     from ..dictionaries.core import load_dictionary
 
+    if folder is None:
+        return _no_dictionary
     if not folder.is_dir():
         raise ValueError(f"{folder} is not a folder")
     found: dict[str, list[Path]] = {}
@@ -378,6 +466,19 @@ def _dictionaries(folder: Path) -> Callable[[str], Any]:
     return dictionary
 
 
+def _cited(folders: list[Path]) -> Callable[[str], records.GestureRecord]:
+    """The context's ``cited``: the record from the first folder whose index holds the key."""
+
+    def cited(key: str) -> records.GestureRecord:
+        for folder in folders:
+            if (folder / records._INDEX).is_file() and any(
+                    entry.get("key") == key for entry in records._read_index(folder)):
+                return records.read_record(folder, key)
+        raise ValueError(f"no records folder holds {key}; searched {', '.join(str(f) for f in folders)}")
+
+    return cited
+
+
 def _seeds(path: Path | None) -> dict[int, dict[str, str]]:
     if path is None:
         return {}
@@ -398,13 +499,14 @@ def _seeds(path: Path | None) -> dict[int, dict[str, str]]:
 def _run(args: argparse.Namespace) -> str:
     """Resolves the context, then writes the record; a failure before the write writes nothing."""
     from ..model.gpt2 import GPT2Config, GPT2Model, init_params
-    from ..train.checkpoint import load_params
+    from ..train.checkpoint import load_params, state_hash
 
     config = GPT2Config(**_json(args.config))
     declaration = declaration_for(args.run, config)
     request = records.request_from_json(_json(args.request))
     states = _sidecars(args.checkpoints, request.run)
     windows = np.load(args.windows, allow_pickle=False)
+    fit_windows = None if args.fit_windows is None else np.load(args.fit_windows, allow_pickle=False)
     if args.out.exists() and not args.out.is_dir():
         raise ValueError(f"{args.out} is not a folder")
     template = init_params(config, seed=0)
@@ -419,9 +521,14 @@ def _run(args: argparse.Namespace) -> str:
             raise ValueError(f"step {step} isn't one of the run's checkpoints {list(states)}")
         return states[step]
 
+    zoo = {}
+    if args.run != "reference":
+        twin = init_params(config, seed=1)  # D30
+        zoo = {"functions": functions_for(args.run), "twin": twin, "twin_state": state_hash(twin)}
     context = Context(run=request.run, declaration=declaration, model=GPT2Model(config), n_layers=config.n_layers,
                       steps=tuple(states), params_at=params_at, state_at=state_at, windows=windows,
-                      dictionary=_dictionaries(args.dictionaries), seeds=_seeds(args.seeds))
+                      dictionary=_dictionaries(args.dictionaries), seeds=_seeds(args.seeds),
+                      fit_windows=fit_windows, cited=_cited([args.out, *args.records]), **zoo)
     return record(args.out, request, context).key
 
 

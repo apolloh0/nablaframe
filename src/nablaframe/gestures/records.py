@@ -94,7 +94,7 @@ import numpy as np
 
 from nablaframe.trace.schema import canonical_json, sha256_hex
 
-KINDS = ("name", "edge", "open", "generalize")
+KINDS = ("name", "edge", "open", "generalize", "crystallize")
 _EDGE = {"relation": "name", "up": "hash", "up_site": "int", "down": "hash", "down_site": "int"}
 FORMS: dict[str, tuple[dict[str, str], ...]] = {
     "name": ({"dictionary": "hash", "site": "int", "class": "name", "latent": "int"},),
@@ -104,6 +104,8 @@ FORMS: dict[str, tuple[dict[str, str], ...]] = {
              {"dictionary": "hash", "site": "int", "class": "name", "upstream": "hash", "upstream_site": "int",
               "description": "name", "value": "int"}),
     "generalize": ({"dictionary": "hash", "site": "int", "class": "name", "description": "name"}, dict(_EDGE)),
+    "crystallize": ({"block": "int", "part": "name", "class": "name", "function": "name", "form": "name",
+                     "cites": "hashes"},),
 }
 
 
@@ -111,6 +113,7 @@ _HASH = re.compile(r"[0-9a-f]{64}")
 _BLOB = re.compile(r"[0-9a-f]{40}")
 _STEP = re.compile(r"0|[1-9][0-9]*")
 _INDEX = "index.json"
+_TWIN = "twin"
 
 
 class _FrozenDict(dict):
@@ -209,6 +212,13 @@ def _check_args(kind: str, args: Any) -> dict[str, Any]:
                 if not _is_hash(value):
                     raise ValueError(f"{kind} argument {name!r} must be 64 lowercase hex characters, got {value!r}")
                 out[name] = value
+            elif type_ == "hashes":
+                if not isinstance(value, (list, tuple)) or not all(_is_hash(h) for h in value):
+                    raise ValueError(f"{kind} argument {name!r} must be a list of 64-character lowercase hex "
+                                     f"hashes, got {value!r}")
+                if len(set(value)) != len(value):
+                    raise ValueError(f"{kind} argument {name!r} must hold distinct hashes, got {value!r}")
+                out[name] = _FrozenList(sorted(value))
             elif type_ == "name":
                 if not _is_name(value):
                     raise ValueError(f"{kind} argument {name!r} must be a non-empty printable ASCII string, "
@@ -248,7 +258,7 @@ class GestureRequest:
 
 
 def request_json(request: GestureRequest) -> dict[str, Any]:
-    return {"kind": request.kind, "run": request.run, "step": request.step, "args": dict(request.args),
+    return {"kind": request.kind, "run": request.run, "step": request.step, "args": _thaw(request.args),
             "instances": request.instances, "seed": request.seed}
 
 
@@ -278,16 +288,22 @@ def code_identity(*modules: ModuleType) -> dict[str, str]:
     return dict(sorted(out.items()))
 
 
-def _check_inputs(inputs: Any) -> Mapping[str, Any]:
+def _check_inputs(inputs: Any, kind: str) -> Mapping[str, Any]:
     if not isinstance(inputs, Mapping) or set(inputs) != {"states", "dictionaries", "windows"}:
         keys = sorted(map(str, inputs)) if isinstance(inputs, Mapping) else type(inputs).__name__
         raise ValueError(f"inputs have exactly the keys states, dictionaries and windows, got {keys}")
     frozen = _freeze(inputs, "inputs")
     states = frozen["states"]
-    if not isinstance(states, Mapping) or not states:
+    if not isinstance(states, Mapping):
+        raise ValueError("inputs['states'] must map at least one step to a state hash")
+    if kind == "crystallize" and _TWIN not in states:
+        raise ValueError(f"a crystallize-this record's inputs['states'] must map {_TWIN!r} to its twin's state hash")
+    if not any(step != _TWIN for step in states):
         raise ValueError("inputs['states'] must map at least one step to a state hash")
     for step, state in states.items():
-        if _STEP.fullmatch(step) is None:
+        if step == _TWIN and kind != "crystallize":
+            raise ValueError(f"only a crystallize-this record's inputs['states'] holds {_TWIN!r}")
+        if step != _TWIN and _STEP.fullmatch(step) is None:
             raise ValueError(f"inputs['states'] key {step!r} must be a decimal step without leading zeros")
         if not _is_hash(state):
             raise ValueError(f"inputs['states'][{step!r}] must be 64 lowercase hex characters, got {state!r}")
@@ -327,7 +343,7 @@ class GestureRecord:
     def __post_init__(self) -> None:
         if not isinstance(self.request, GestureRequest):
             raise ValueError(f"request must be a GestureRequest, got {type(self.request).__name__}")
-        object.__setattr__(self, "inputs", _check_inputs(self.inputs))
+        object.__setattr__(self, "inputs", _check_inputs(self.inputs, self.request.kind))
         object.__setattr__(self, "code", _check_code(self.code))
         object.__setattr__(self, "results", _check_results(self.results))
 
@@ -343,7 +359,8 @@ class GestureRecord:
 
 
 def record_key(request: GestureRequest, inputs: Mapping[str, Any], code: Mapping[str, str]) -> str:
-    body = {"request": request_hash(request), "inputs": _thaw(_check_inputs(inputs)), "code": _thaw(_check_code(code))}
+    body = {"request": request_hash(request), "inputs": _thaw(_check_inputs(inputs, request.kind)),
+            "code": _thaw(_check_code(code))}
     return sha256_hex(canonical_json(body).encode("ascii"))
 
 
