@@ -159,54 +159,483 @@ from typing import Any
 
 import numpy as np
 
+from ..data.corpus import batch_hash
+from ..dictionaries.edges import kl
+from ..interventions.apply import run_intervened
+from ..interventions.spec import InterventionSpec, array_hash, edit
+from ..zoo.functions import FORMS
+from . import sets
+from .declare import DESCRIPTIONS
+from .name import NAMED
+from .records import GestureRecord
+
 PARTS = ("attention", "mlp", "write")
 HOLDS, MISSES, INERT = "holds", "doesn't hold", "inert"
 KL_HOLDS, MOVES, ACCURATE, ENERGY, MAX_FREQUENCIES, NAMES_HOLD, CHUNK = 0.25, 1.0, 0.9, 0.75, 8, 0.7, 256
 NAMES_FALL_SHORT = ("Phase 6's names don't hold this key: they name its description as planted for fewer than 0.7 "
                     "of its values. The crystallization's own tests stand alone (C11).")
 
+def _is_int(x: Any) -> bool:
+    return isinstance(x, (int, np.integer)) and not isinstance(x, (bool, np.bool_))
+
+
+def _value(recorded: Any) -> np.ndarray:
+    return np.asarray(getattr(recorded, "array", recorded))
+
 
 def part_taps(block: int, part: str) -> tuple[str, ...]:
-    raise NotImplementedError
+    if not _is_int(block) or block < 0:
+        raise ValueError(f"block must be a non-negative int, got {block!r}")
+    if part not in PARTS:
+        raise ValueError(f"part must be one of {PARTS}, got {part!r}")
+    attention, mlp = f"blocks.{int(block)}.hook_attn_out", f"blocks.{int(block)}.hook_mlp_out"
+    return {"attention": (attention,), "mlp": (mlp,), "write": (attention, mlp)}[part]
 
 
 def part_edits(block: int, part: str, positions: Any, values: str) -> tuple[Any, ...]:
-    raise NotImplementedError
+    taps = part_taps(block, part)
+    if part == "write":
+        return edit(taps[0], positions, "set", values=values), edit(taps[1], positions, "zero")
+    return (edit(taps[0], positions, "set", values=values),)
 
 
 def label(kl: float, ablation: float) -> str:
-    raise NotImplementedError
+    if ablation < MOVES:
+        return INERT
+    return HOLDS if kl <= KL_HOLDS else MISSES
+
+
+def _shares(embedding: Any, p: Any) -> np.ndarray:
+    """Every frequency's share of the embedding's non-constant energy, frequency ``k`` at index ``k - 1``."""
+    if not _is_int(p) or p < 3 or p % 2 == 0:
+        raise ValueError(f"p must be an odd int of at least 3, got {p!r}")
+    E = np.asarray(embedding, dtype=np.float64)
+    if E.ndim != 2 or E.shape[0] != p:
+        raise ValueError(f"the embedding must be the number tokens' rows, shaped ({p}, d), got {E.shape}")
+    v = np.arange(int(p))
+    energy = []
+    for k in range(1, (int(p) - 1) // 2 + 1):
+        c, s = np.cos(2 * np.pi * k * v / p) @ E, np.sin(2 * np.pi * k * v / p) @ E
+        energy.append(float(c @ c) + float(s @ s))
+    energy = np.asarray(energy)
+    total = energy.sum()
+    if total == 0:
+        raise ValueError("the embedding has no non-constant energy to share")
+    return energy / total
 
 
 def frequencies(embedding: Any, p: int) -> dict[str, Any]:
-    raise NotImplementedError
+    shares = _shares(embedding, p)
+    ranked = sorted(range(len(shares)), key=lambda i: (-shares[i], i))  # largest first, ties to the lower k
+    K: list[int] = []
+    held = 0.0
+    for i in ranked[:MAX_FREQUENCIES]:
+        K.append(i + 1)
+        held += float(shares[i])
+        if held >= ENERGY:
+            break
+    return {"k": K, "shares": [float(shares[k - 1]) for k in K], "held": float(sum(shares[k - 1] for k in K))}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class Fitted:
+    form: str
+    n_values: tuple[int, ...]
+    weights: np.ndarray
+    seen: tuple[np.ndarray, ...]
+    frequencies: tuple[int, ...] | None
+
     def value(self, keys: Any) -> np.ndarray:
-        raise NotImplementedError
+        keys = _keys(keys, self.n_values)
+        if self.form == "table":
+            return self.weights[keys[:, 0]]
+        if self.form == "additive":
+            offsets = np.cumsum((0,) + self.n_values[:-1])
+            return sum(self.weights[offsets[j] + keys[:, j]] for j in range(len(self.n_values)))
+        return _fourier_design(keys[:, 0], self.frequencies, self.n_values[0]) @ self.weights
+
+
+def _keys(keys: Any, n_values: tuple[int, ...]) -> np.ndarray:
+    keys = np.asarray(keys)
+    if keys.ndim != 2 or keys.shape[1] != len(n_values) or not np.issubdtype(keys.dtype, np.integer):
+        raise ValueError(f"keys must be an int array (n, {len(n_values)}), got {keys.dtype} {keys.shape}")
+    keys = keys.astype(np.int64)
+    for j, n in enumerate(n_values):
+        if len(keys) and (keys[:, j].min() < 0 or keys[:, j].max() >= n):
+            raise ValueError(f"key {j} has a value outside range({n})")
+    return keys
+
+
+def _fourier_design(v: np.ndarray, k: Sequence[int], p: int) -> np.ndarray:
+    columns = [np.ones(len(v))]
+    for f in k:
+        columns += [np.cos(2 * np.pi * f * v / p), np.sin(2 * np.pi * f * v / p)]
+    return np.stack(columns, axis=1)
 
 
 def fit(form: str, keys: Any, Y: Any, n_values: Sequence[int], *, k: Sequence[int] | None = None) -> Fitted:
-    raise NotImplementedError
+    if form not in FORMS:
+        raise ValueError(f"form must be one of {FORMS}, got {form!r}")
+    if isinstance(n_values, (str, bytes)) or not isinstance(n_values, Sequence) or \
+            not all(_is_int(n) and n > 0 for n in n_values):
+        raise ValueError(f"n_values must be positive ints, one per key, got {n_values!r}")
+    n_values = tuple(int(n) for n in n_values)
+    keys = _keys(keys, n_values)
+    Y = np.asarray(Y)
+    if Y.ndim != 2 or not np.issubdtype(Y.dtype, np.floating):
+        raise ValueError(f"Y must be a float array (n, d), got {Y.dtype} {Y.shape}")
+    Y = Y.astype(np.float64)
+    if len(keys) != len(Y) or not len(keys):
+        raise ValueError(f"keys and Y must share at least one row, got {len(keys)} and {len(Y)}")
+    J = len(n_values)
+    if (form == "additive") != (J >= 2) or (form != "additive" and J != 1):
+        raise ValueError(f"the {form} form can't take {J} key(s)")
+    if (form == "fourier") != (k is not None):
+        raise ValueError("k is the fourier form's frequencies: given for it, and only for it")
+    seen = []
+    for j, n in enumerate(n_values):
+        shown = np.zeros(n, dtype=bool)
+        shown[keys[:, j]] = True
+        seen.append(shown)
+    if form == "table":
+        T = np.tile(Y.mean(axis=0), (n_values[0], 1))  # a value no row shows gets the mean over every row
+        for v in np.flatnonzero(seen[0]):
+            T[v] = Y[keys[:, 0] == v].mean(axis=0)
+        return Fitted(form, n_values, T, tuple(seen), None)
+    if form == "additive":
+        X = np.concatenate([np.eye(n)[keys[:, j]] for j, n in enumerate(n_values)], axis=1)
+        W = np.linalg.lstsq(X, Y, rcond=None)[0]  # minimum norm: a value no row shows gets 0
+        return Fitted(form, n_values, W, tuple(seen), None)
+    p = n_values[0]
+    k = k.tolist() if isinstance(k, np.ndarray) else k
+    if isinstance(k, (str, bytes)) or not isinstance(k, Sequence) or not k or \
+            not all(_is_int(f) and 1 <= f <= (p - 1) // 2 for f in k) or len(set(int(f) for f in k)) != len(k):
+        raise ValueError(f"k must be distinct frequencies from 1 to {(p - 1) // 2}, got {k!r}")
+    k = tuple(int(f) for f in k)
+    W = np.linalg.lstsq(_fourier_design(keys[:, 0], k, p), Y, rcond=None)[0]
+    return Fitted(form, n_values, W, tuple(seen), k)
 
 
 def envelope(rows: Sequence[Any]) -> dict[str, Any]:
-    raise NotImplementedError
+    steps = [int(r["step"]) for r in rows]
+    holds = [r["label"] == HOLDS for r in rows]
+    accurate = [r["accuracy"] is not None and r["accuracy"] >= ACCURATE for r in rows]
+    runs: list[list[int]] = []
+    for i, step in enumerate(steps):
+        if holds[i]:
+            if i and holds[i - 1]:
+                runs[-1][1] = step
+            else:
+                runs.append([step, step])
+    accurate_from = next((step for step, a in zip(steps, accurate) if a), None)
+    return {"steps": [s for s, h in zip(steps, holds) if h], "runs": runs,
+            "final": runs[-1] if holds and holds[-1] else None,
+            "gap": [s for s, h, a in zip(steps, holds, accurate) if a and not h], "accurate_from": accurate_from,
+            "before": [s for s, h in zip(steps, holds) if h and (accurate_from is None or s < accurate_from)]}
+
+
+def _function(functions: Any, function: Any) -> Any:
+    if not isinstance(function, str) or function not in functions.functions:
+        raise ValueError(f"run {functions.run!r} declares no function {function!r}")
+    return functions.functions[function]
 
 
 def describes(declaration: Any, functions: Any, function: str, windows: Any) -> tuple[str | None, ...]:
-    raise NotImplementedError
+    f = _function(functions, function)
+    positions = list(declaration.classes[f.cls])
+    described = declaration.describe(windows)
+    order = list(DESCRIPTIONS) + list(declaration.variables)
+    out: list[str | None] = []
+    for key in f.keys:
+        values = functions.keys[key].values(windows)[:, positions]
+        defined = values >= 0
+        out.append(None if not defined.any() else next(
+            (d for d in order if np.array_equal(described[d][:, positions][defined], values[defined])), None))
+    return tuple(out)
+
+
+def _one_run(records: Any) -> list[GestureRecord]:
+    records = list(records)
+    for r in records:
+        if not isinstance(r, GestureRecord):
+            raise ValueError(f"cited records must be GestureRecords, got {type(r).__name__}")
+    if len({r.request.run for r in records}) > 1:
+        raise ValueError("cited records must all be of one run")
+    return records
+
+
+def _naming(record: GestureRecord) -> Any:
+    """The name a name record's results give, or None."""
+    return record.results.get("name") if record.request.kind == "name" else None
 
 
 def cite(records: Any, *, cls: str, descriptions: Sequence[str | None], dictionary: str, site: int,
          relation: str | None) -> dict[str, list[str]]:
-    raise NotImplementedError
+    records = _one_run(records)
+    wanted = {d for d in descriptions if d is not None}
+    names, edges = [], []
+    for r in records:
+        args = r.request.args
+        if r.request.kind == "name" and (args["dictionary"], args["site"], args["class"]) == (dictionary, site, cls):
+            named = _naming(r)
+            if named is not None and named["description"] in wanted:
+                names.append(r.key)
+        elif r.request.kind == "edge" and relation is not None and \
+                (args["relation"], args["down"], args["down_site"]) == (relation, dictionary, site):
+            edges.append(r.key)
+    return {"names": sorted(names), "edges": sorted(edges)}
+
+
+def _windows(windows: Any, seq: int, what: str) -> np.ndarray:
+    arr = np.asarray(windows)
+    if arr.ndim != 2 or arr.shape[1] != seq + 1 or not np.issubdtype(arr.dtype, np.integer):
+        raise ValueError(f"{what} must be an integer array (B, {seq + 1}), got {arr.dtype} {arr.shape}")
+    if arr.size and arr.min() < 0:
+        raise ValueError(f"{what} must hold non-negative tokens")
+    return arr.astype(np.int64)
+
+
+def _rows(functions: Any, names: Sequence[str], positions: np.ndarray, windows: np.ndarray) -> tuple[np.ndarray, ...]:
+    """The rows, (n, 2) ``[window, position]``, where every key in ``names`` is defined, and their keys (n, J)."""
+    at = np.stack([functions.keys[n].values(windows)[:, positions] for n in names], axis=-1)
+    w, j = np.nonzero((at >= 0).all(axis=-1))  # window by window, each window's positions in the class's order
+    return np.stack([w, positions[j]], axis=1), at[w, j]
+
+
+class _Passes:
+    """A model's passes over windows, ``CHUNK`` windows at a time, each giving its logits and the part's output."""
+
+    def __init__(self, model: Any, n_layers: int, seq: int, block: int, part: str, positions: np.ndarray) -> None:
+        self.model, self.n_layers, self.seq, self.block, self.part = model, n_layers, seq, block, part
+        self.positions, self.taps = positions, part_taps(block, part)
+
+    def output(self, recorded: dict[str, np.ndarray]) -> np.ndarray:
+        """The part's output, float64 (B, seq, d): its tap, or for ``write`` the two summed."""
+        return sum(recorded[t].astype(np.float64) for t in self.taps)
+
+    def run(self, params: Any, windows: np.ndarray, values: np.ndarray | None = None,
+            patch: tuple[str, int, np.ndarray] | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """``(logits, the part's output)``. Unintervened with neither ``values`` nor ``patch``; otherwise through
+        ``run_intervened``: the patch first, then the part put to ``values``, (B, the class's positions, d)."""
+        tokens = np.ascontiguousarray(windows[:, :self.seq], dtype=np.int32)
+        logits, recorded = [], {t: [] for t in self.taps}
+        for start in range(0, len(tokens), CHUNK):
+            chunk = tokens[start:start + CHUNK]
+            if values is None and patch is None:
+                out, rec = self.model.instrumented(params, chunk, list(self.taps))
+            else:
+                store: dict[str, np.ndarray] = {}
+                edits: list[Any] = []
+                if patch is not None:
+                    tap, position, sources = patch
+                    source = np.ascontiguousarray(np.asarray(sources)[start:start + CHUNK, :self.seq], dtype=np.int32)
+                    store[batch_hash(source)] = source
+                    edits.append(edit(tap, [int(position)], "patch", source=batch_hash(source)))
+                if values is not None:
+                    v = np.ascontiguousarray(values[start:start + CHUNK], dtype=np.float32)
+                    store[array_hash(v)] = v
+                    edits.extend(part_edits(self.block, self.part, [int(p) for p in self.positions], array_hash(v)))
+                out, rec = run_intervened(self.model, params, chunk, InterventionSpec(tuple(edits)),
+                                          n_layers=self.n_layers, resolve=store.__getitem__, taps=self.taps)
+            logits.append(_value(out))
+            for t in self.taps:
+                recorded[t].append(_value(rec[t]))
+        return np.concatenate(logits), self.output({t: np.concatenate(v) for t, v in recorded.items()})
+
+    def values(self, own: np.ndarray, rows: np.ndarray, at_rows: np.ndarray) -> np.ndarray:
+        """The values that put the part to ``at_rows`` at ``rows`` and keep ``own`` at the class's other positions."""
+        out = own[:, self.positions].copy()
+        out[rows[:, 0], np.searchsorted(self.positions, rows[:, 1])] = at_rows
+        return out.astype(np.float32)
+
+
+def _log_softmax(x: np.ndarray) -> np.ndarray:
+    x = np.asarray(x, dtype=np.float64)
+    peak = x.max(axis=-1, keepdims=True)
+    return x - peak - np.log(np.exp(x - peak).sum(axis=-1, keepdims=True))
+
+
+def _loss(logits: np.ndarray, target: np.ndarray) -> float:
+    return float(-_log_softmax(logits)[np.arange(len(target)), target].mean())
+
+
+def _agreement(logits: np.ndarray, base: np.ndarray) -> float:
+    return float(np.mean(sets.argmax(logits) == sets.argmax(base)))
 
 
 def crystallize(model: Any, params: Any, *, n_layers: int, functions: Any, declaration: Any, block: int, part: str,
                 cls: str, function: str, form: str, fit_windows: Any, held_windows: Any, seed: int, twin: Any = None,
                 steps: Sequence[int] | None = None, params_at: Callable[[int], Any] | None = None,
                 cited: Sequence[Any] | None = None) -> dict[str, Any]:
-    raise NotImplementedError
+    if part not in PARTS:
+        raise ValueError(f"part must be one of {PARTS}, got {part!r}")
+    f = _function(functions, function)
+    if not _is_int(block) or block != f.block:
+        raise ValueError(f"function {function!r} replaces a part of block {f.block}, not {block!r}")
+    if cls != f.cls:
+        raise ValueError(f"function {function!r} is at class {f.cls!r}, not {cls!r}")
+    if form not in f.forms:
+        raise ValueError(f"function {function!r} admits the forms {f.forms}, not {form!r}")
+    if functions.run != declaration.run:
+        raise ValueError(f"the functions are run {functions.run!r}'s and the declaration run {declaration.run!r}'s")
+    seq = declaration.seq
+    fit_windows = _windows(fit_windows, seq, "fit_windows")
+    held_windows = _windows(held_windows, seq, "held_windows")
+    if not _is_int(seed) or seed < 0:
+        raise ValueError(f"seed must be a non-negative int, got {seed!r}")
+    if steps is not None:
+        if params_at is None:
+            raise ValueError("steps need params_at")
+        steps = steps.tolist() if isinstance(steps, np.ndarray) else steps
+        if isinstance(steps, (str, bytes)) or not isinstance(steps, Sequence) or not steps or \
+                not all(_is_int(s) and s >= 0 for s in steps) or any(a >= b for a, b in zip(steps, steps[1:])):
+            raise ValueError(f"steps must be non-empty, strictly ascending non-negative ints, got {steps!r}")
+
+    positions = np.asarray(declaration.classes[cls], dtype=np.int64)
+    fit_rows, fit_keys = _rows(functions, f.keys, positions, fit_windows)
+    held_rows, held_keys = _rows(functions, f.keys, positions, held_windows)
+    if not len(fit_rows) or not len(held_rows):
+        raise ValueError(f"the windows give no rows: {len(fit_rows)} to fit and {len(held_rows)} held out")
+    n_values = tuple(functions.keys[n].n_values for n in f.keys)
+    held_target = held_windows[held_rows[:, 0], held_rows[:, 1] + 1]
+    described = describes(declaration, functions, function, held_windows)
+
+    # Each wrong key alone, on the same rows; refused where it is undefined or only relabels the keys (D58).
+    wrong_keys = {}
+    for name in f.wrong:
+        key = functions.keys[name]
+        on_fit = key.values(fit_windows)[fit_rows[:, 0], fit_rows[:, 1]]
+        on_held = key.values(held_windows)[held_rows[:, 0], held_rows[:, 1]]
+        if (on_fit < 0).any() or (on_held < 0).any():
+            raise ValueError(f"wrong key {name!r} isn't defined at every row")
+        pairs = np.unique(np.concatenate([on_fit[:, None], fit_keys], axis=1), axis=0)
+        if len(pairs) == len(np.unique(on_fit)) == len(np.unique(fit_keys, axis=0)):
+            raise ValueError(f"wrong key {name!r} only relabels the function's keys on the fitting rows (D58)")
+        wrong_keys[name] = (on_fit[:, None], on_held[:, None], (key.n_values,))
+
+    def draw() -> Any:
+        if f.counterfactual is None:
+            return None
+        case = functions.counterfactuals[f.counterfactual](held_windows, np.random.default_rng(seed))
+        rows = np.asarray(case.rows, dtype=np.int64)
+        if not np.isin(rows[:, 1], positions).all():
+            raise ValueError(f"counterfactual {f.counterfactual!r} has a row outside class {cls!r}'s positions")
+        return case
+
+    case = draw()
+    if cited is not None:
+        cited = _one_run(cited)
+        for r in cited:
+            named = _naming(r)
+            is_name = named is not None and named["description"] in {d for d in described if d is not None}
+            is_edge = r.request.kind == "edge" and f.relation is not None and r.request.args["relation"] == f.relation
+            if not (is_name or is_edge):
+                raise ValueError(f"cited record {r.key[:12]}... is neither a name record naming one of {described} "
+                                 f"nor an edge record of relation {f.relation!r}")
+    K = None
+    if form == "fourier":
+        K = frequencies(np.asarray(params.wte, dtype=np.float64)[:n_values[0]], n_values[0])["k"]
+
+    passes = _Passes(model, n_layers, seq, block, part, positions)
+
+    def fitted(params_now: Any) -> tuple[Fitted, np.ndarray, np.ndarray, np.ndarray]:
+        """The form fitted at ``params_now``, the fitting rows' output, and the held-out logits and output."""
+        _, own_fit = passes.run(params_now, fit_windows)
+        Y = own_fit[fit_rows[:, 0], fit_rows[:, 1]]
+        logits, own = passes.run(params_now, held_windows)
+        return fit(form, fit_keys, Y, n_values, k=K), Y, logits, own
+
+    def put(params_now: Any, own: np.ndarray, at_rows: np.ndarray) -> np.ndarray:
+        logits, _ = passes.run(params_now, held_windows, passes.values(own, held_rows, at_rows))
+        return logits[held_rows[:, 0], held_rows[:, 1]]
+
+    def meter(params_now: Any) -> tuple[Any, ...]:
+        F, Y, logits, own = fitted(params_now)
+        base = logits[held_rows[:, 0], held_rows[:, 1]]
+        crystal = put(params_now, own, F.value(held_keys))
+        ablated = put(params_now, own, np.broadcast_to(Y.mean(axis=0), (len(held_rows), Y.shape[1])))
+        divergence, ablation = kl(base, crystal), kl(base, ablated)
+        loss = {"model": _loss(base, held_target), "crystallized": _loss(crystal, held_target)}
+        accuracy = {"model": float(np.mean(sets.argmax(base) == held_target)),
+                    "crystallized": float(np.mean(sets.argmax(crystal) == held_target))}
+        m = {"label": label(divergence, ablation), "kl": divergence, "ablation": ablation,
+             "removed": None if ablation == 0 else 1 - divergence / ablation,
+             "agreement": _agreement(crystal, base), "loss_delta": loss["crystallized"] - loss["model"]}
+        return m, {"loss": loss, "accuracy": accuracy}, (F, Y, base, own)
+
+    def measured(params_now: Any, case_now: Any) -> dict[str, Any]:
+        m, scores, (F, Y, base, own) = meter(params_now)
+        Yh, Fh = own[held_rows[:, 0], held_rows[:, 1]], F.value(held_keys)
+        spread = float(((Yh - Yh.mean(axis=0)) ** 2).sum())
+        out = {"meter": m, **scores, "r2": None if spread == 0 else 1 - float(((Yh - Fh) ** 2).sum()) / spread,
+               "values": {"seen": [int(s.sum()) for s in F.seen],
+                          "unseen": int((~np.stack([s[held_keys[:, j]] for j, s in enumerate(F.seen)],
+                                                   axis=1).all(axis=1)).sum())}}
+        out["frequencies"] = None
+        if form == "fourier":
+            shares = _shares(np.asarray(params_now.wte, dtype=np.float64)[:n_values[0]], n_values[0])
+            mass = np.array([float((F.weights[1 + 2 * i] ** 2).sum() + (F.weights[2 + 2 * i] ** 2).sum())
+                             for i in range(len(K))])
+            out["frequencies"] = {"k": list(K), "embedding": [float(shares[k - 1]) for k in K],
+                                  "coefficients": [float(x) for x in (mass / mass.sum() if mass.sum() else mass)]}
+        out["wrong"] = []
+        for name, (on_fit, on_held, n) in wrong_keys.items():
+            W = fit("table" if form == "additive" else form, on_fit, Y, n, k=K if form == "fourier" else None)
+            logits = put(params_now, own, W.value(on_held))
+            out["wrong"].append({"key": name, "kl": kl(base, logits), "agreement": _agreement(logits, base)})
+        out["counterfactual"] = None if case_now is None else counterfactual(params_now, F, case_now)
+        return out
+
+    def counterfactual(params_now: Any, F: Fitted, case_now: Any) -> dict[str, Any]:
+        windows = np.asarray(case_now.windows).astype(np.int64)
+        rows = np.asarray(case_now.rows, dtype=np.int64)
+        logits, own = passes.run(params_now, windows, patch=case_now.patch)
+        base = logits[rows[:, 0], rows[:, 1]]
+        # The class's positions where the case's windows' keys are defined, less the case's rows.
+        defined, keys = _rows(functions, f.keys, positions, windows)
+        is_case = np.zeros(windows.shape[:1] + (seq,), dtype=bool)
+        is_case[rows[:, 0], rows[:, 1]] = True
+        rest = ~is_case[defined[:, 0], defined[:, 1]]
+        out: dict[str, Any] = {"name": f.counterfactual, "rows": len(rows)}
+        for which in ("reads", "answer"):
+            at_case = np.stack([np.asarray(getattr(case_now, which)[n], dtype=np.int64) for n in f.keys], axis=1)
+            at = np.concatenate([defined[rest], rows])
+            values = passes.values(own, at, np.concatenate([F.value(keys[rest]), F.value(at_case)]))
+            changed, _ = passes.run(params_now, windows, values, patch=case_now.patch)
+            moved = changed[rows[:, 0], rows[:, 1]]
+            out[which] = {"kl": kl(base, moved), "agreement": _agreement(moved, base)}
+        return out
+
+    results: dict[str, Any] = {
+        "function": function, "block": int(block), "part": part, "class": cls, "form": form, "keys": list(f.keys),
+        "describes": list(described), "reads": [[r.description, r.where] for r in f.reads], "relation": f.relation,
+        "taps": list(part_taps(block, part)), "rows": {"fit": len(fit_rows), "held": len(held_rows)}}
+    results.update(measured(params, case))
+    results["twin"] = None if twin is None else measured(twin, draw())
+    results["checkpoints"] = results["envelope"] = None
+    if steps is not None:
+        checkpoints = []
+        for step in steps:
+            m, scores, _ = meter(params_at(step))
+            checkpoints.append({"step": int(step), "kl": m["kl"], "ablation": m["ablation"], "label": m["label"],
+                                "accuracy": scores["accuracy"]["model"]})
+        results["checkpoints"], results["envelope"] = checkpoints, envelope(checkpoints)
+    results["cites"] = None if cited is None else _cites(cited, f, described, held_keys)
+    return results
+
+
+def _cites(cited: list[GestureRecord], f: Any, described: Sequence[str | None],
+           held_keys: np.ndarray) -> dict[str, Any]:
+    names = []
+    for j, (key, description) in enumerate(zip(f.keys, described)):
+        if description is None:
+            continue
+        naming_it = [r for r in cited if (n := _naming(r)) is not None and n["description"] == description]
+        planted = {int(_naming(r)["value"]) for r in naming_it if _naming(r)["label"] == NAMED}
+        values = np.unique(held_keys[:, j]).tolist()
+        share = sum(v in planted for v in values) / len(values)
+        names.append({"key": key, "description": description, "records": sorted(r.key for r in naming_it),
+                      "values": len(values), "named": share, "note": NAMES_FALL_SHORT if share < NAMES_HOLD else None})
+    edges = [{"key": r.key, "relation": r.request.args["relation"], "label": r.results["label"]}
+             for r in sorted(cited, key=lambda r: r.key) if r.request.kind == "edge"]
+    return {"names": names, "edges": edges}

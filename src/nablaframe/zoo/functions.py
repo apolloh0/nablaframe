@@ -378,8 +378,7 @@ def modular_addition(task: Any) -> RunFunctions:
             return out
         return compute
 
-    formulas = {"sum": lambda a, b: a + b, "difference": lambda a, b: a - b, "shifted": lambda a, b: a + b + 1,
-                "a": lambda a, b: a, "b": lambda a, b: b}
+    formulas = {"sum": lambda a, b: a + b, "difference": lambda a, b: a - b, "a": lambda a, b: a, "b": lambda a, b: b}
     keys = {name: _key(name, p, seq, at_answer(formula)) for name, formula in formulas.items()}
 
     def attention_patched(windows: np.ndarray, rng: np.random.Generator) -> Case:
@@ -398,7 +397,7 @@ def modular_addition(task: Any) -> RunFunctions:
     across = (Read("token(p-2)", "across"), Read("token(p-1)", "across"))
     same = (Read("token(p-2)", "same"), Read("token(p-1)", "same"))
     functions = {
-        "sum": Function("sum", 0, "answer", ("sum",), across, None, ("difference", "shifted", "a", "b"), None,
+        "sum": Function("sum", 0, "answer", ("sum",), across, None, ("difference", "a", "b"), None,
                         ("table", "fourier"), True),
         "sum and operands": Function("sum and operands", 0, "answer", ("sum", "a", "b"), same, None, (),
                                      "attention patched", ("additive",), False),
