@@ -316,3 +316,312 @@ def judged(checks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "twin_within_max": greatest(over("twin_within")),
         "envelope_ok": all(c["final_holds"] is True and c["step0_outside"] is True for c in checks),
     }
+
+
+# ---------------------------------------------------------------------------
+# Beyond the contract: what the Phase 7 gates share
+# ---------------------------------------------------------------------------
+#
+# * The start checks on earlier reports (``require``, ``start``), the report paths, and Phase 7's working
+#   folders (``fresh_dir``, under RUN_DIR).
+# * The modular-addition run, as G7.1 writes it (``modadd_run``) and as G7.2 to G7.4 read it
+#   (``modadd_model``): its checkpoints, twin, windows, declaration and functions. ``zoo_model`` is Phase 6's
+#   for induction and two-hop, plus their functions and fitting windows.
+# * G7.2's TopK SAE through Phase 5's cache (``dictionary``), and the zoo runs' Phase 5 TopK SAEs through
+#   Phase 6's ``topk``.
+# * Each run's ``cli.Context`` (``context``), with ``params_at`` announcing every checkpoint it loads, and the
+#   records a crystallization cites (``folder_records``, ``citations``).
+#
+# Paths are read from this module's globals, and those of ``p6`` and the earlier phases, when a function runs,
+# never bound at import, so everything here can be pointed at a scratch folder.
+
+VERSIONS = p6.VERSIONS
+RUN_NAME = "modular_addition"
+CHUNK = crystallize.CHUNK  # sequences per pass when collecting activations, as crystallize-this reads its windows
+REPORTS = {
+    "G6.3": ("phase6", "g63_edges.json", "G6.3 wrote the zoo runs' edge records, which the crystallizations cite"),
+    "G6.7": ("phase6", "g67_records_panel.json",
+             "G6.7 wrote the zoo runs' name records, which the crystallizations cite"),
+    "G7.1": ("phase7", "g71_specimen.json", "nothing is measured on a modular-addition specimen that missed its bars"),
+    "G7.2": ("phase7", "g72_names.json", "G7.2 trained the dictionary and wrote the name records the gates cite"),
+    "G7.3": ("phase7", "g73_determinism.json",
+             "no crystallization is judged before set, the requests and the records pass their determinism checks"),
+}
+
+say, number, show = p6.say, p6.number, p6.show
+
+
+def report_relative(name: str) -> str:
+    """``reports/phase7/<name>``, as Phase 1's ``start`` takes it."""
+    return str((Path(REPORT_DIR) / name).relative_to(p1.REPO_ROOT))
+
+
+def require(gate_id: str) -> dict[str, Any]:
+    """The report a Phase 7 gate builds on, once it exists, passes ``validate_report`` and says ``pass``."""
+    if gate_id not in REPORTS:
+        return p6.require(gate_id)  # G4.1, G5.2 and G5.3
+    phase, name, why = REPORTS[gate_id]
+    folder = p6.REPORT_DIR if phase == "phase6" else REPORT_DIR
+    return p5._require(gate_id, Path(folder) / name, why=why)
+
+
+def start(args: Any, report_name: str, needs: Sequence[str]) -> tuple[Path, dict[str, dict[str, Any]]]:
+    """Phase 1's start checks, then every report in ``needs``: ``(the report's path, {gate id: report})``."""
+    report = p1.start(args, report_relative(report_name))
+    return report, {gate_id: require(gate_id) for gate_id in needs}
+
+
+def fresh_dir(path: Path, *, overwrite: bool) -> Path:
+    """An empty working folder under RUN_DIR. An existing one is removed only with ``overwrite``."""
+    import shutil
+
+    if Path(RUN_DIR).resolve() not in Path(path).resolve().parents:
+        raise ValueError(f"refusing to manage {path}: Phase 7 working folders live under {RUN_DIR}")
+    if Path(path).exists():
+        if not overwrite:
+            raise SystemExit(f"{p1.rel(path)} exists. Pass --overwrite to start it over.")
+        shutil.rmtree(path)
+    Path(path).mkdir(parents=True)
+    return Path(path)
+
+
+def run_dir() -> Path:
+    """``runs/phase7/modular_addition/``: the specimen's run, as G7.1 writes it."""
+    return Path(RUN_DIR) / RUN_NAME
+
+
+def dictionary_dir() -> Path:
+    """``runs/phase7/dictionaries/``: G7.2's dictionaries, through Phase 5's cache."""
+    return Path(RUN_DIR) / "dictionaries"
+
+
+def record_dir(run: str) -> Path:
+    """``runs/phase7/gestures/<run>/``: a run's Phase 7 records."""
+    return Path(RECORD_DIR) / run
+
+
+def task() -> Any:
+    """The specimen's task at its defaults (D54)."""
+    return ModularAdditionTask()
+
+
+def tokens(windows: Any) -> np.ndarray:
+    """What the specimen reads of windows: each one's first ``seq`` tokens, int32."""
+    return p4.tokens(task(), windows)
+
+
+# ---------------------------------------------------------------------------
+# The runs, as G7.2 to G7.4 read them
+# ---------------------------------------------------------------------------
+
+
+def modadd_run(g71: Mapping[str, Any]) -> Any:
+    """G7.1's run: manifest, config, model, steps and a params loader, as Phase 4's ``zoo_run`` reads a zoo run.
+
+    Checks, before anything is measured, that the manifest is the run G7.1's report names, that its model and
+    schedule are this module's, and that every checkpoint's sidecar names it. Raises SystemExit otherwise.
+    ``params_for(step)`` loads each checkpoint once.
+    """
+    import json
+    from types import SimpleNamespace
+
+    from nablaframe.model.gpt2 import GPT2Model, init_params
+    from nablaframe.train.checkpoint import load_params
+    from nablaframe.trace.schema import RunManifest
+
+    folder = run_dir()
+    path = folder / "manifest.json"
+    if not path.exists():
+        raise SystemExit(f"{p1.rel(path)} is missing. Run G7.1 first. No report written.")
+    manifest = RunManifest.from_json(path.read_text(encoding="utf-8"))
+    named = g71["measurements"].get("run_id")
+    if manifest.run_id != named:
+        raise SystemExit(f"{p1.rel(path)} is run {manifest.run_id}, but G7.1's report names {named}. Run G7.1 again."
+                         " No report written.")
+    config, train_config = configs()
+    if p1.config_from_manifest(manifest) != config or list(manifest.checkpoint_schedule) != checkpoint_steps():
+        raise SystemExit(f"{p1.rel(path)} doesn't hold the specimen's model and checkpoint schedule. No report"
+                         " written.")
+    steps = tuple(int(s) for s in manifest.checkpoint_schedule)
+    paths = {step: p4.checkpoint(folder / "checkpoints", manifest.run_id, step) for step in steps}
+    like = init_params(config, 0)
+    loaded: dict[int, Any] = {}
+
+    def params_for(step: int) -> Any:
+        if step not in paths:
+            raise ValueError(f"step {step} is not one of the specimen's checkpoints")
+        if step not in loaded:
+            loaded[step] = load_params(paths[step], like=like)
+        return loaded[step]
+
+    def state_sha256(step: int) -> str:
+        return json.loads(paths[step].with_suffix(".json").read_text(encoding="utf-8"))["state_sha256"]
+
+    return SimpleNamespace(name=RUN_NAME, task=task(), manifest=manifest, run_id=manifest.run_id, config=config,
+                           train_config=train_config, model=GPT2Model(config), steps=steps, final=steps[-1],
+                           folder=folder, store=folder / "store", like=like, params_for=params_for,
+                           state_sha256=state_sha256)
+
+
+def modadd_model(g71: Mapping[str, Any]) -> Any:
+    """G7.1's run at its final checkpoint, with its twin, as the Phase 7 gates read it, shaped as Phase 5's
+    ``zoo_model``: its training pairs are ``fit`` and the windows its dictionary trains on, its held-out pairs
+    ``held_out``."""
+    from types import SimpleNamespace
+
+    from nablaframe.gestures import cli
+    from nablaframe.zoo.ground_truth import TWIN_SEED, twin_params
+
+    run = modadd_run(g71)
+    params = run.params_for(run.final)
+    twin = twin_params(run.config)
+    fit, held_out = run.task.training(), run.task.held_out()
+    return SimpleNamespace(
+        name=RUN_NAME, run=run, task=run.task, model=run.model, config=run.config, n_layers=run.config.n_layers,
+        d_model=run.config.d_model, step=run.final, run_id=run.run_id, params=params, twin=twin,
+        state=run.state_sha256(run.final), twin_state=p5.twin_state(twin), twin_seed=TWIN_SEED,
+        declaration=cli.declaration_for(RUN_NAME, run.config), functions=cli.functions_for(RUN_NAME),
+        fit=fit, held_out=held_out, held_tokens=tokens(held_out), train_tokens=lambda seed=p5.DICT_SEED: tokens(fit),
+        chunk=CHUNK, train_seconds={})
+
+
+def zoo_model(name: str, g41: Mapping[str, Any]) -> Any:
+    """Phase 6's ``zoo_model``, G4.1's run at its final checkpoint with its twin and declaration, plus its
+    ``functions`` and ``fit``, Phase 5's training windows (``zoo_windows``), which crystallize-this fits on."""
+    from nablaframe.gestures import cli
+
+    m = p6.zoo_model(name, dict(g41))
+    m.functions = cli.functions_for(name)
+    m.fit = p5.zoo_windows(m.task, name, "train")
+    return m
+
+
+# ---------------------------------------------------------------------------
+# G7.2's dictionary
+# ---------------------------------------------------------------------------
+
+
+def dictionary_spec(m: Any, *, twin: bool = False) -> tuple[list[tuple[str, str]], Any, str]:
+    """``(sites, settings, key)`` of G7.2's TopK SAE at block 0's ``hook_resid_post`` of the specimen (or its twin):
+    Phase 5's settings with ``DICTIONARY``'s steps and batch, keyed by ``p5.dictionary_key`` of the model's state,
+    the site, the settings and the tokens the model reads of the training pairs."""
+    from nablaframe.dictionaries.core import Settings
+
+    sites = p5.sites("topk", m.n_layers, 0)
+    settings = Settings("topk", p5.WIDTH_FACTOR * m.d_model, p5.K, DICTIONARY["steps"], DICTIONARY["batch"],
+                        lr=p5.LR, seed=p5.DICT_SEED, jac_batch=p5.JAC_BATCH)
+    state = m.twin_state if twin else m.state
+    return sites, settings, p5.dictionary_key(state, sites, settings, m.train_tokens())
+
+
+def dictionary(m: Any, *, twin: bool = False, train: bool = False) -> tuple[Any, float | None]:
+    """G7.2's TopK SAE of the specimen (or its twin) from the cache under ``dictionary_dir()``, and the seconds it
+    took to train, None from the cache. Only G7.2 trains it (``train``); for the others a missing one stops the
+    gate."""
+    from nablaframe.dictionaries import core
+
+    sites, settings, key = dictionary_spec(m, twin=twin)
+    label = f"{'twin' if twin else 'trained'} TopK SAE after block 0"
+    params = m.twin if twin else m.params
+
+    def make() -> Any:
+        if not train:
+            raise SystemExit(f"{m.name}: the cache holds no {label}, key {key}, in"
+                             f" {p1.rel(dictionary_dir() / key)}. Run G7.2 first. No report written.")
+        return p5.train_dictionary(m.model, params, m.train_tokens(), settings, sites, key=key, chunk=m.chunk,
+                                   label=f"{m.name}: training the {label}, key {key[:12]}")
+
+    made, seconds = p5.cached(dictionary_dir(), key, make)
+    say(f"{m.name}: {label} {'from the cache' if seconds is None else 'trained in ' + p1._duration(seconds)}, key"
+        f" {key[:12]}, content {core.content_hash(made)[:12]}")
+    return made, seconds
+
+
+# ---------------------------------------------------------------------------
+# Contexts and citations
+# ---------------------------------------------------------------------------
+
+
+def announced(params_at: Any, label: str, steps: Sequence[int]) -> Any:
+    """``params_at``, printing a line each time a checkpoint is loaded: the request's checkpoint first, as
+    ``cli.results`` takes it, then one line per checkpoint as crystallize-this refits across training."""
+    steps = [int(s) for s in steps]
+    calls = [0]
+
+    def load(step: int) -> Any:
+        calls[0] += 1
+        if calls[0] == 1:
+            say(f"{label}: step {step:,}, the request's checkpoint: measuring on it and on the twin")
+        else:
+            at = steps.index(step) + 1 if step in steps else "?"
+            say(f"{label}: across training, step {step:,}, checkpoint {at} of {len(steps)}")
+        return params_at(step)
+
+    return load
+
+
+def records_reader(folder: Path) -> Any:
+    """A context's ``cited``: the record a records folder holds under a key, ValueError for one it doesn't."""
+    def cited(key: str) -> Any:
+        return records.read_record(folder, key)
+
+    return cited
+
+
+def context(m: Any, *, steps: Sequence[int] | None = None, dictionaries: Sequence[Any] = (),
+            cited: Path | None = None) -> Any:
+    """The run's ``cli.Context``: its held-out windows, ``steps`` (every checkpoint by default), ``dictionaries``,
+    and, where ``cited`` names the records folder its crystallizations cite, everything crystallize-this needs:
+    the fitting windows, the run's functions, its twin and its state.
+
+    ``params_at`` is the run's own loader, so the final checkpoint's params are ``m.params``, the object every
+    reading the gate makes shares.
+    """
+    from nablaframe.gestures import cli
+
+    run = m.run
+    steps = tuple(int(s) for s in (run.steps if steps is None else steps))
+    extra = {}
+    if cited is not None:
+        extra = {"fit_windows": m.fit, "functions": m.functions, "twin": m.twin, "twin_state": m.twin_state,
+                 "cited": records_reader(Path(cited))}
+    return cli.Context(run=m.run_id, declaration=m.declaration, model=m.model, n_layers=m.n_layers, steps=steps,
+                       params_at=run.params_for, state_at=run.state_sha256, windows=m.held_out,
+                       dictionary=p6.held(dictionaries), seeds={}, **extra)
+
+
+def folder_records(folder: Path) -> list[Any]:
+    """Every record a records folder holds, by its ``index.json``. SystemExit for a folder without one: the
+    records a gate cites must have been written before it runs."""
+    folder = Path(folder)
+    if not (folder / records._INDEX).is_file():
+        raise SystemExit(f"{p1.rel(folder)} holds no {records._INDEX}, so it holds no records to cite. No report"
+                         " written.")
+    return [records.read_record(folder, entry["key"]) for entry in records._read_index(folder)]
+
+
+def citations(m: Any, held: Sequence[Any], function: str, dictionary_hash: str) -> list[str]:
+    """The keys a crystallization of ``function`` cites: ``crystallize.cite`` of ``held``, every record of the
+    folder its context reads, with the function's class, ``describes`` of the run's held-out windows, the
+    dictionary at its part's output site, site 0, and the function's relation; names, then edges."""
+    f = m.functions.functions[function]
+    chosen = crystallize.cite(held, cls=f.cls,
+                              descriptions=crystallize.describes(m.declaration, m.functions, function, m.held_out),
+                              dictionary=dictionary_hash, site=0, relation=f.relation)
+    return sorted(chosen["names"] + chosen["edges"])
+
+
+def crystallize_request(m: Any, entry: Sequence[Any], cites: Sequence[str], *, step: int | None = None) -> Any:
+    """A crystallize-this request for one of ``JUDGED`` or ``RECORDED`` on run ``m``: at ``step`` (the final
+    checkpoint by default), every held-out window, ``SEED``, citing ``cites``."""
+    _, block, part, cls, function, form = entry
+    args = {"block": int(block), "part": part, "class": cls, "function": function, "form": form,
+            "cites": list(cites)}
+    return records.GestureRequest("crystallize", m.run_id, int(m.step if step is None else step), args,
+                                  len(m.held_out), SEED)
+
+
+def crystallization_name(entry: Sequence[Any]) -> str:
+    """A crystallization as the reports name it, ``"<run> <part> <function> <form>"``."""
+    run, _, part, _, function, form = entry
+    return f"{run} {part} {function} {form}"
