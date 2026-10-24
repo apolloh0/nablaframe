@@ -272,7 +272,7 @@ PHASE3_GATE_IDS: tuple[str, ...] = ("G3.1", "G3.2", "G3.3", "G3.4", "G3.5")
 PHASE4_GATE_IDS: tuple[str, ...] = ("G4.1", "G4.2", "G4.3", "G4.4", "G4.5", "G4.6")
 PHASE5_GATE_IDS: tuple[str, ...] = ("G5.1", "G5.2", "G5.3", "G5.4", "G5.5", "G5.6")
 PHASE6_GATE_IDS: tuple[str, ...] = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6", "G6.7")
-PHASE7_GATE_IDS: tuple[str, ...] = ("G7.1", "G7.2", "G7.3", "G7.4")
+PHASE7_GATE_IDS: tuple[str, ...] = ("G7.1", "G7.2", "G7.3", "G7.4", "G7.5")
 _ALL_GATE_IDS: tuple[str, ...] = (
     GATE_IDS + PHASE1_GATE_IDS + PHASE2_GATE_IDS + PHASE3_GATE_IDS + PHASE4_GATE_IDS + PHASE5_GATE_IDS
     + PHASE6_GATE_IDS + PHASE7_GATE_IDS
@@ -420,6 +420,7 @@ REQUIRED_MEASUREMENTS: dict[str, tuple[str, ...]] = {
         "crystallizations", "kl_max", "ablation_min", "wrong_min", "reads_agreement_min", "answer_agreement_max",
         "twin_within_max", "envelope_ok",
     ),
+    "G7.5": ("badges", "subjects_missing", "records", "builds_identical", "external_urls", "reports_match"),
 }
 # Gates whose status is always "pass": their measurements set a policy rather than test one.
 _ALWAYS_PASS_GATES: tuple[str, ...] = ("G0.6", "G2.5", "G3.3", "G3.4", "G4.4", "G5.5", "G6.6", "G7.2")
@@ -751,6 +752,10 @@ def _status_problems(gate_id: str, status: str, m: Mapping[str, Any]) -> list[st
             at_most("kl_max", 0.25), at_least("ablation_min", 1), at_least("wrong_min", 1),
             at_least("reads_agreement_min", 0.8), at_most("answer_agreement_max", 0.1),
             at_most("twin_within_max", 0.05), is_("envelope_ok", True),
+        ],
+        ("G7.5", "pass"): [
+            is_("builds_identical", True), equals("external_urls", 0), equals("subjects_missing", 0),
+            is_("reports_match", True),
         ],
     }[(gate_id, status)]
     return [f"{gate_id} {status} requires {rule}, got {got}" for ok, rule, got in rules if not ok]

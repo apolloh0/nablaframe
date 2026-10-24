@@ -72,7 +72,7 @@ EFFECT_TOKENS = 5
 EFFECT_LABEL = ("Direct effect on the logits through the unembedding: the latent's decoder row, times the site's "
                 "scale, centred and multiplied by the final layer norm's gain, then unembedded, with the layer "
                 "norm's divisor held at 1. It is not a name for the latent.")
-METER_GATES = ("G5.2", "G5.3", "G5.5")
+METER_GATES = ("G5.2", "G5.3", "G5.5", "G7.2")
 
 
 _ROWS = 65536  # rows per call into the dictionary's kernels: bounds memory, and each row is independent
