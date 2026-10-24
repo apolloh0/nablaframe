@@ -3,7 +3,7 @@
 Spec: docs/specs/phase-6.md, D47. Nothing here runs a model; the gesture modules do, and hand
 their results here to be recorded.
 
-* ``KINDS = ("name", "edge", "open", "generalize")``.
+* ``KINDS = ("name", "edge", "open", "generalize", "crystallize")``.
 * ``FORMS``: each kind's argument forms, as ``{kind: (form, ...)}``, each form a mapping from an
   argument's name to its type. A request's ``args`` must match one form exactly, no key missing
   and none extra:
@@ -15,9 +15,13 @@ their results here to be recorded.
     and either ``latent`` (int) or both ``description`` (name) and ``value`` (int)
   - ``generalize``: either ``dictionary``, ``site``, ``class`` and ``description``, a name read
     over all its values, or ``edge``'s five arguments
+  - ``crystallize``: ``block`` (int), ``part`` (name), ``class`` (name), ``function`` (name),
+    ``form`` (name) and ``cites`` (hashes), the keys of the records it cites (D56, D57)
 
-  A hash is 64 lowercase hex characters. An int is a non-negative int, never a bool. A name is a
-  non-empty string of printable ASCII characters (codes 32 to 126).
+  A hash is 64 lowercase hex characters. Hashes are a list or tuple of distinct hashes, possibly
+  empty, stored as a sorted read-only list, so requests listing the same hashes in another order
+  are equal. An int is a non-negative int, never a bool. A name is a non-empty string of
+  printable ASCII characters (codes 32 to 126).
 * ``GestureRequest(kind, run, step, args, instances, seed)``: a frozen dataclass. ``kind`` is
   one of ``KINDS``; ``run`` a run id (a hash); ``step`` the checkpoint the gesture reads, a
   non-negative int; ``args`` as above; ``instances`` how many instances it measures, a positive
@@ -37,7 +41,8 @@ their results here to be recorded.
   - ``request``: a ``GestureRequest``.
   - ``inputs``: exactly ``{"states", "dictionaries", "windows"}``. ``states`` maps each
     checkpoint read, its step as a decimal string without leading zeros, to its state hash, and
-    holds at least one;
+    holds at least one; a crystallize-this record's ``states`` must also map ``"twin"`` to the
+    state hash of its run's twin (D30), and no other kind's may;
     ``dictionaries`` and ``windows`` are lists of content hashes and batch hashes, sorted, with no
     repeats. Every hash is 64 lowercase hex characters.
   - ``code``: a non-empty mapping from module names, each a name as above, to 40-character

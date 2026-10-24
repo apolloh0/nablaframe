@@ -26,7 +26,7 @@ RUN = "a" * 64
 def args_for(kind, form=0):
     values = {"dictionary": H[0], "site": 2, "class": "query", "latent": 867, "relation": "hop", "up": H[1],
               "up_site": 0, "down": H[2], "down_site": 0, "upstream": H[3], "upstream_site": 0, "description": "b",
-              "value": 12}
+              "value": 12, "block": 3, "part": "write", "function": "hop", "form": "table", "cites": [H[7]]}
     return {k: values[k] for k in FORMS[kind][form]}
 
 
@@ -43,7 +43,7 @@ RESULTS = {"follows": 0.939, "null": {"follows": 0.008}, "reading": None, "top":
 
 
 def test_requests_round_trip_and_hash():
-    assert KINDS == ("name", "edge", "open", "generalize")
+    assert KINDS == ("name", "edge", "open", "generalize", "crystallize")
     hashes = set()
     for kind in KINDS:
         for form in range(len(FORMS[kind])):
@@ -74,7 +74,7 @@ def test_requests_round_trip_and_hash():
 def test_request_refusals():
     good = args_for("name")
     bad = [
-        dict(kind="crystallize"), dict(kind=None), dict(run="A" * 64), dict(run="a" * 63), dict(run=7),
+        dict(kind="steer"), dict(kind=None), dict(run="A" * 64), dict(run="a" * 63), dict(run=7),
         dict(step=-1), dict(step=True), dict(step=1.0), dict(instances=0), dict(instances=False), dict(seed=-1),
         dict(args={k: v for k, v in good.items() if k != "latent"}), dict(args=good | {"value": 3}),
         dict(args=good | {"site": True}), dict(args=good | {"site": 2.0}), dict(args=good | {"latent": -1}),

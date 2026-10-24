@@ -1,8 +1,8 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes"; docs/deltas/phase-6-delta-5.md, "Contract changes".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes"; docs/deltas/phase-6-delta-5.md, "Contract changes"; docs/specs/phase-7.md, "Gates"; docs/deltas/phase-7-delta-3.md, "Contract changes".
 
-Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/``, ``reports/phase5/`` or ``reports/phase6/``. The Phase 0
+Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/``, ``reports/phase5/``, ``reports/phase6/`` or ``reports/phase7/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
 status must agree with its own measurements.
 
@@ -10,7 +10,7 @@ Report fields, all required, no others allowed (version 2 adds two; see below):
 
 ==================  =============================================================
 schema_version      1 or 2
-gate_id             one of GATE_IDS and PHASE1_GATE_IDS to PHASE6_GATE_IDS
+gate_id             one of GATE_IDS and PHASE1_GATE_IDS to PHASE7_GATE_IDS
 status              one of STATUSES; see STATUS RULES below
 measurements        JSON object containing at least REQUIRED_MEASUREMENTS[gate_id];
                     every number finite
@@ -36,6 +36,8 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE6_GATE_IDS = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")`. The validator accepts them, and a Phase 6 report must use schema version 2. `PHASE6_GATE_IDS` gains G6.7.
 
+`PHASE7_GATE_IDS = ("G7.1", "G7.2", "G7.3", "G7.4")`. The validator accepts them, and a Phase 7 report must use schema version 2.
+
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
 * G0.1 pass requires nonfinite_seen is False, loss_drop_fraction >= 0.30 and steps >= 1000.
@@ -46,7 +48,7 @@ STATUS RULES (a report whose status contradicts its measurements is invalid):
 * G0.4 pass     requires max_abs_logit_diff <= 1e-3 and top1_agreement == 1.0
 * G0.5 pass     requires runs is True and max_rel_loss_diff <= 0.02
 * G0.6          status is always "pass"; the measurements set the oracle policy
-* fail is allowed for any gate except G0.6, G2.5, G3.3, G3.4, G4.4, G5.5 and G6.6
+* fail is allowed for any gate except G0.6, G2.5, G3.3, G3.4, G4.4, G5.5, G6.6 and G7.2
 
 Status rules for Phase 1:
 
@@ -155,6 +157,27 @@ Status rules for Phase 6:
 * G6.6's status is always `pass`: it records, not judges (D44).
 * G6.7 pass requires `builds_identical` true, `external_urls == 0`, `subjects_missing == 0` and `reports_match` true.
 
+Status rules for Phase 7:
+
+* G7.1 pass requires:
+  * `recompute_identical` true
+  * `checkpoints_written == checkpoints_scheduled`
+  * `events_recorded == events_expected`
+  * `held_accuracy >= 0.99`
+  * `control_accuracy` and `twin_accuracy` each `<= 2 * chance`
+  * `frequencies <= 8`
+  * `logit_r2 >= 0.8`
+* G7.2's status is always `pass`: it records, not judges (C11).
+* G7.3 pass requires `identities_checked >= 1`, `identities_exact == identities_checked`, `request_hashes_distinct` true, `request_hashes_stable` true and `records_identical` true.
+* G7.4 pass requires:
+  * `kl_max <= 0.25`
+  * `ablation_min >= 1`
+  * `wrong_min >= 1`
+  * `reads_agreement_min >= 0.8`
+  * `answer_agreement_max <= 0.1`
+  * `twin_within_max <= 0.05`
+  * `envelope_ok` true
+
 Measurements:
 
 Null is allowed for anything a gate could not measure; every number must be finite. Values must be plain JSON types: convert numpy scalars with int(), float() or bool().
@@ -216,6 +239,13 @@ Required measurements for Phase 6:
 * G6.5: `names`, `slice_f1_min`, `slice_follows_min`, `seed_f1_min`, `seed_follows_min`, `step0_outside`, `one_final_run`, `start_offset_max`
 * G6.6: `blocks`, `seconds`
 * G6.7: `badges`, `subjects_missing`, `records`, `builds_identical`, `external_urls`, `reports_match`
+
+Required measurements for Phase 7:
+
+* G7.1: `recompute_identical`, `checkpoints_written`, `checkpoints_scheduled`, `events_recorded`, `events_expected`, `held_accuracy`, `train_accuracy`, `control_accuracy`, `twin_accuracy`, `chance`, `frequencies`, `energy`, `twin_frequencies`, `logit_r2`
+* G7.2: `fvu`, `twin_fvu`, `names`, `records`, `seconds`
+* G7.3: `identities_checked`, `identities_exact`, `identities_by_run`, `request_hashes_checked`, `request_hashes_distinct`, `request_hashes_stable`, `records_identical`, `records_by_form`
+* G7.4: `crystallizations`, `kl_max`, `ablation_min`, `wrong_min`, `reads_agreement_min`, `answer_agreement_max`, `twin_within_max`, `envelope_ok`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """

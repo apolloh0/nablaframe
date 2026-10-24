@@ -261,7 +261,7 @@ Written with the stubs, delta by delta:
 
 - **Delta 1 (D54, D55):** `test_modadd_vocab_split_and_windows`, `test_modadd_batches_are_seeded_training_pairs`, `test_modadd_declaration`, `test_functions_keys_and_reads`, `test_functions_wrong_and_counterfactual`, `test_set_arguments`, `test_set_identities_are_exact`, `test_set_moves_only_its_positions`, `test_set_refusals`
 - **Delta 2 (D56):** `test_table_form`, `test_unseen_keys`, `test_additive_form`, `test_fourier_form_and_its_frequencies`, `test_write_is_attention_set_and_mlp_zeroed`, `test_kl_and_the_ablation`, `test_loss_delta_is_recorded`, `test_wrong_functions`, `test_counterfactuals`, `test_labels`, `test_envelope_and_gap`, `test_citations`
-- **Delta 3 (the gates):** `test_crystallize_requests_round_trip_and_hash`, `test_records_are_cached_and_repeatable`, `test_the_command_line`, `test_settings_and_bars_are_fixed`, `test_phase7_gate_ids`, `test_phase7_status_rules`
+- **Delta 3 (the records, the command line and the gates):** `test_crystallize_requests_round_trip_and_hash`, `test_crystallize_records_are_written_and_read`, `test_crystallize_runs_and_code`, `test_crystallize_inputs_and_build`, `test_records_are_cached_and_repeatable`, `test_crystallize_refusals`, `test_the_command_line`, `test_the_command_line_refuses`, `test_settings_and_bars_are_fixed`, `test_configs_checkpoints_and_probe`, `test_fewest_frequencies`, `test_logit_r2`, `test_set_identities`, `test_requests_and_their_hashes`, `test_crystal_checks_and_judged`, `test_phase7_gate_ids`, `test_phase7_status_rules`
 - **Delta 4 (panel and badges):** `test_crystallize_payloads`, `test_crystallize_badges_cite_the_reports`, `test_open_badge_twin_line`, `test_g75_status_rules`
 
 ## Out of scope

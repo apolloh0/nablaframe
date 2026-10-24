@@ -99,8 +99,8 @@ def test_declarations_for_runs():
     with pytest.raises(ValueError):
         cli.declaration_for("two_hop", F.config(2))  # the toy reads 6 tokens, two-hop 26
     with pytest.raises(ValueError):
-        cli.declaration_for("modular_addition", F.config(2))
-    assert cli.READ_CHUNK == 256 and cli.OPEN_CHUNK == 32 and cli.RUNS == ("induction", "reference", "two_hop")
+        cli.declaration_for("addition", F.config(2))
+    assert cli.READ_CHUNK == 256 and cli.OPEN_CHUNK == 32 and cli.RUNS == ("induction", "modular_addition", "reference", "two_hop")
 
 
 def test_code_and_inputs(toy):
@@ -118,7 +118,7 @@ def test_code_and_inputs(toy):
     want = records.code_identity(cli, declare, sets, z_mod, e_mod)
     assert cli.code("edge") == want, "the blob hash of each module, as code_identity gives it"
     with pytest.raises(ValueError):
-        cli.code("crystallize")
+        cli.code("steer")
 
     named = request(w, "name", {"dictionary": w.h[0], "site": 0, "class": "every", "latent": F.latent(3)})
     assert cli.inputs(named, w.context) == {"states": {"3": state_hash(w.at[3])}, "dictionaries": [w.h[0]],

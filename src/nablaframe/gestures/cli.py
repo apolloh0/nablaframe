@@ -9,11 +9,15 @@ the functions that need it, so this module imports without it.
 * ``READ_CHUNK = 256`` and ``OPEN_CHUNK = 32``: the windows per pass when a site is read, and
   the targets per pass in open-this-up. They are fixed here because open-this-up's results
   depend on its chunk at the 1e-7 level (PR #79), and a record's key doesn't hold them.
-* ``RUNS = ("induction", "reference", "two_hop")``. ``declaration_for(run, config)``: the run's
-  declaration. ``"two_hop"`` and ``"induction"`` are ``zoo.declarations.two_hop`` and
-  ``induction`` of the task at its defaults (``TwoHopTask()``, ``InductionTask()``), as G4.1
-  trained them; ``"reference"`` is ``declare.reference(config.seq)``. ValueError for another
-  run, or where the declaration's ``seq`` isn't ``config.seq``.
+* ``RUNS = ("induction", "modular_addition", "reference", "two_hop")``.
+  ``declaration_for(run, config)``: the run's declaration. ``"two_hop"``, ``"induction"`` and
+  ``"modular_addition"`` are ``zoo.declarations.two_hop``, ``induction`` and
+  ``modular_addition`` of the task at its defaults (``TwoHopTask()``, ``InductionTask()``,
+  ``ModularAdditionTask()``), as G4.1 and G7.1 trained them; ``"reference"`` is
+  ``declare.reference(config.seq)``. ValueError for another run, or where the declaration's
+  ``seq`` isn't ``config.seq``. ``functions_for(run)``: ``zoo.functions.for_run`` of a zoo run
+  and the same task; ValueError for ``"reference"``, which declares no functions, or another
+  run.
 * ``Context``: a frozen dataclass, everything a request names, resolved:
 
   - ``run``: the run id, 64 lowercase hex characters
@@ -26,18 +30,29 @@ the functions that need it, so this module imports without it.
   - ``seeds``: ``{seed: {content hash: content hash}}``, for each dictionary seed beside seed 0
     (D41's robustness seeds), the dictionary that seed trained in place of each seed-0 dictionary.
     Only generalize-this reads it; it may be empty.
+  - Only crystallize-this reads the rest, and each is None by default:
+
+    - ``fit_windows``: the fitting windows, an integer array (B, seq + 1)
+    - ``functions``: the run's ``RunFunctions``
+    - ``twin``: its twin's params (D30); ``twin_state``: their state hash
+    - ``cited(key)``: the run's record with that key; it raises ValueError for one the context
+      doesn't hold
 
 * ``MODULES``: ``{kind: module names}``, the modules whose code identity a record of each kind
   carries (D18): ``nablaframe.gestures.cli``, ``declare``, ``sets`` and
   ``nablaframe.zoo.declarations`` for every kind, and the gesture's own: ``name`` for a name;
   ``edge`` for an edge; ``name`` and ``open`` for open-this-up; ``name``, ``edge`` and
-  ``generalize`` for generalize-this. ``code(kind)``: ``records.code_identity`` of those
-  modules.
+  ``generalize`` for generalize-this; ``nablaframe.gestures.crystallize`` and
+  ``nablaframe.zoo.functions`` for crystallize-this. ``code(kind)``: ``records.code_identity`` of
+  those modules.
 * ``inputs(request, context)``: the record's inputs. ``states``: the state hash at
   ``request.step``, and for generalize-this at every step in ``context.steps``, each keyed by
   its step as a decimal string. ``dictionaries``: the content hashes the request names, and for
   generalize-this each seed's counterparts of them, sorted, with no repeats. ``windows``:
-  ``[batch_hash(context.windows)]``.
+  ``[batch_hash(context.windows)]``. For crystallize-this, ``states`` holds every step in
+  ``context.steps`` and ``"twin"``, ``context.twin_state``; ``dictionaries`` is empty; and
+  ``windows`` holds the batch hashes of ``context.fit_windows`` and ``context.windows``, sorted,
+  with no repeats.
 * ``results(request, context)``: the gesture's results. Every site is read with
   ``sets.read_site(context.model, params, n_layers=context.n_layers,
   declaration=context.declaration, dictionary=..., site=..., windows=context.windows,
@@ -59,6 +74,11 @@ the functions that need it, so this module imports without it.
   - **generalize, an edge:** ``generalize.generalize_edge(up, down, relation, instances=,
     seed=, steps=context.steps, params_at=context.params_at, seed_readings=)``, each seed's
     ``(up, down)`` read at its counterparts of ``up`` and ``down``
+  - **crystallize:** ``crystallize.crystallize(context.model, params, n_layers=, functions=
+    context.functions, declaration=, block=, part=, cls=class, function=, form=,
+    fit_windows=context.fit_windows, held_windows=context.windows, seed=, twin=context.twin,
+    steps=context.steps, params_at=context.params_at, cited=)``, ``cited`` being
+    ``context.cited`` of each of ``cites``, in order. It reads no site.
 
 * ``build(request, context)``: the ``records.GestureRecord`` of ``request``,
   ``inputs(request, context)``, ``code(request.kind)`` and ``results(request, context)``,
@@ -67,7 +87,11 @@ the functions that need it, so this module imports without it.
 * ``inputs``, ``results``, ``build`` and ``record`` raise ValueError, before anything runs, for
   a request whose ``run`` isn't ``context.run``, whose ``step`` isn't one of ``context.steps``,
   that names a dictionary the context doesn't hold, or, for generalize-this, where a seed in
-  ``context.seeds`` has no counterpart of one of the request's dictionaries.
+  ``context.seeds`` has no counterpart of one of the request's dictionaries. For
+  crystallize-this they also raise it for a context without ``fit_windows``, ``functions``,
+  ``twin``, ``twin_state`` or ``cited``, or fitting windows of another width; a function the
+  run doesn't declare; ``instances`` other than the held-out windows' count; and a cited key
+  the context doesn't hold, or whose record is another run's.
 * ``main(argv)``: the command line. Arguments:
 
   - ``--run``: one of ``RUNS``, which picks the declaration
@@ -76,13 +100,22 @@ the functions that need it, so this module imports without it.
     ``steps`` is every one of them, and ``state_at`` reads each sidecar's ``state_sha256``.
     Every sidecar must name the request's run; ``run`` is that run id.
   - ``--windows``: an integer ``.npy``, the held-out windows (B, seq + 1)
-  - ``--dictionaries``: a folder searched at every depth for ``<content hash>.safetensors``,
-    loaded with ``core.load_dictionary`` when a request names it. More than one file of that
-    name is refused.
+  - ``--dictionaries``, optional: a folder searched at every depth for
+    ``<content hash>.safetensors``, loaded with ``core.load_dictionary`` when a request names
+    it. More than one file of that name is refused. Without it the context holds no dictionary.
   - ``--request``: the request's JSON, as ``records.request_json`` writes it
   - ``--out``: the folder of the run's records
   - ``--seeds``, optional: a JSON ``{"<seed>": {"<content hash>": "<content hash>"}}``, the
     context's ``seeds``
+  - ``--fit-windows``, optional: an integer ``.npy``, the context's ``fit_windows``
+  - ``--records``, optional and repeatable: a folder of records with its ``index.json``.
+    ``cited(key)`` is ``records.read_record`` from the first folder whose index holds ``key``:
+    the out folder first, then these, in order. A folder without an ``index.json`` holds no
+    record.
+
+  For a zoo run, the context's ``functions`` is ``functions_for(run)``, its ``twin``
+  ``init_params(config, seed=1)`` (D30), and its ``twin_state`` that twin's
+  ``train.checkpoint.state_hash``.
 
   It writes the record with ``record`` and prints its key. Returns 0. Any error prints one line
   starting ``error:`` and returns 1, having written nothing.
