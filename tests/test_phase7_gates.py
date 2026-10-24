@@ -36,7 +36,7 @@ def test_settings_and_bars_are_fixed():
     assert c.MODEL == {"vocab": 114, "d_model": 32, "n_layers": 1, "n_heads": 4, "d_mlp": 128, "seq": 3}
     assert c.TRAINING == {"batch": 512, "seq": 3, "lr": 1e-3, "warmup_steps": 10, "total_steps": 10000,
                           "min_lr_ratio": 0.1, "weight_decay": 1.0, "data_seed": 0, "param_seed": 0}
-    assert (c.EVAL_SEED, c.PROBE_WINDOWS) == (2, 8)
+    assert (c.EVAL_SEED, c.PROBE_WINDOWS) == (2, 64)
     assert c.DICTIONARY == {"steps": 3000, "batch": 4096}
     assert c.NAMES == ("token(p+1)", "token(p-2)", "token(p-1)")
     assert c.SEED == 50 and c.IDENTITY_WINDOWS == 64
@@ -61,16 +61,32 @@ def test_configs_checkpoints_and_probe():
     steps = c.checkpoint_steps()
     assert steps == list(range(0, 3001, 100)) + list(range(3500, 10001, 500)) and len(steps) == 45
     assert all(type(s) is int for s in steps)
-    for task in (ModularAdditionTask(), ModularAdditionTask(p=11, train_fraction=0.5)):
+    for task in (ModularAdditionTask(), ModularAdditionTask(p=11)):
         held = task.held_out()
         got = c.probe(task)
-        want = held[np.random.default_rng(2).choice(len(held), 8, replace=False)]
-        assert got.shape == (8, 4) and np.array_equal(got, want), "the held-out pairs D54 draws, in that order"
+        want = held[np.random.default_rng(2).choice(len(held), 64, replace=False)]
+        assert got.shape == (64, 4) and np.array_equal(got, want), "the held-out pairs D54 draws, in that order"
     pytest.importorskip("jax")
     model, train = c.configs()
     assert {k: getattr(model, k) for k in c.MODEL} == c.MODEL
     assert {k: getattr(train, k) for k in c.TRAINING} == c.TRAINING
     assert (train.betas, train.eps, train.clip) == ((0.9, 0.95), 1e-8, 1.0), "every other field at its default"
+
+
+def test_probe_passes_the_bitwise_oracle():
+    """D60: G7.1's trace checks the probe with D6's bitwise oracle first, so the probe must pass it at the specimen's size."""
+    pytest.importorskip("jax")
+    c = _common()
+    from nablaframe.model.gpt2 import GPT2Model, init_params
+    from nablaframe.oracle.mode_equality import check_mode_equality
+    from nablaframe.trace.registry import tap_names
+    from nablaframe.zoo.tasks import ModularAdditionTask
+
+    config, _ = c.configs()
+    tokens = np.ascontiguousarray(c.probe(ModularAdditionTask())[:, :config.seq], dtype=np.int32)
+    for seed in (0, 1):
+        result = check_mode_equality(GPT2Model(config), init_params(config, seed=seed), tokens, tap_names(1), "bitwise")
+        assert result.passed, f"seed {seed}: {result.reason}"
 
 
 def _embedding(p, columns, rng, d_extra=2):

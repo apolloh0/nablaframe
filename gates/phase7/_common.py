@@ -24,7 +24,8 @@ The settings are the spec's (D54):
   ``TrainConfig``, importing JAX inside.
 * ``checkpoint_steps()``: every 100 steps from 0 through 3,000, then every 500 through 10,000:
   45 steps, as a list of ints.
-* ``EVAL_SEED = 2``, Phase 4's, and ``PROBE_WINDOWS = 8``. ``probe(task)``: the held-out windows
+* ``EVAL_SEED = 2``, Phase 4's, and ``PROBE_WINDOWS = 64`` (D60: at 8, the trace's bitwise oracle refuses
+  this model). ``probe(task)``: the held-out windows
   ``task.held_out()`` at ``numpy.random.default_rng(EVAL_SEED).choice(len(held), PROBE_WINDOWS,
   replace=False)``, in that order, which every checkpoint's trace records.
 * ``DICTIONARY = {"steps": 3000, "batch": 4096}``: G7.2's TopK SAE at block 0's
@@ -113,7 +114,7 @@ from nablaframe.zoo.tasks import ModularAdditionTask
 MODEL = {"vocab": 114, "d_model": 32, "n_layers": 1, "n_heads": 4, "d_mlp": 128, "seq": 3}
 TRAINING = {"batch": 512, "seq": 3, "lr": 1e-3, "warmup_steps": 10, "total_steps": 10000, "min_lr_ratio": 0.1,
             "weight_decay": 1.0, "data_seed": 0, "param_seed": 0}
-EVAL_SEED, PROBE_WINDOWS = 2, 8
+EVAL_SEED, PROBE_WINDOWS = 2, 64
 DICTIONARY = {"steps": 3000, "batch": 4096}
 NAMES = ("token(p+1)", "token(p-2)", "token(p-1)")
 SEED = 50
