@@ -102,6 +102,14 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
+from nablaframe.gestures import crystallize, records
+from nablaframe.interventions.apply import editable_taps, run_intervened
+from nablaframe.interventions.spec import InterventionSpec, array_hash, edit
+from nablaframe.trace.registry import tap_names
+from nablaframe.zoo.tasks import ModularAdditionTask
+
 MODEL = {"vocab": 114, "d_model": 32, "n_layers": 1, "n_heads": 4, "d_mlp": 128, "seq": 3}
 TRAINING = {"batch": 512, "seq": 3, "lr": 1e-3, "warmup_steps": 10, "total_steps": 10000, "min_lr_ratio": 0.1,
             "weight_decay": 1.0, "data_seed": 0, "param_seed": 0}
@@ -145,38 +153,165 @@ least, greatest = p6.least, p6.greatest
 request_hashes = p6.request_hashes
 
 
+# ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
+
+
 def configs() -> tuple[Any, Any]:
-    raise NotImplementedError
+    from nablaframe.model.gpt2 import GPT2Config
+    from nablaframe.train.loop import TrainConfig
+
+    return GPT2Config(**MODEL), TrainConfig(**TRAINING)
 
 
 def checkpoint_steps() -> list[int]:
-    raise NotImplementedError
+    return list(range(0, 3001, 100)) + list(range(3500, 10001, 500))
 
 
-def probe(task: Any) -> Any:
-    raise NotImplementedError
+def probe(task: Any) -> np.ndarray:
+    held = task.held_out()
+    return held[np.random.default_rng(EVAL_SEED).choice(len(held), PROBE_WINDOWS, replace=False)]
+
+
+# ---------------------------------------------------------------------------
+# The clock (G7.1)
+# ---------------------------------------------------------------------------
 
 
 def fewest_frequencies(embedding: Any, p: int) -> dict[str, Any]:
-    raise NotImplementedError
+    shares = crystallize._shares(embedding, p)  # the shares crystallize.frequencies ranks, with its refusals
+    ranked = sorted(range(len(shares)), key=lambda i: (-shares[i], i))  # largest first, ties to the lower k
+    count, held = 0, 0.0
+    for i in ranked:  # no cut at MAX_FREQUENCIES
+        count += 1
+        held += float(shares[i])
+        if held >= crystallize.ENERGY:
+            break
+    return {"count": count, "held": float(sum(shares[i] for i in ranked[:count]))}
+
+
+def _clock(logits: Any, windows: Any, p: int, k: Sequence[int], what: str) -> tuple[np.ndarray, np.ndarray]:
+    """One set of pairs' design over every (pair, c) and its targets, the logits centred over c."""
+    logits, windows = np.asarray(logits), np.asarray(windows)
+    if logits.ndim != 2 or logits.shape[1] < p:
+        raise ValueError(f"the {what} logits must be shaped (B, vocab) with at least p = {p} columns, "
+                         f"got {logits.shape}")
+    if windows.ndim != 2 or windows.shape[1] < 2:
+        raise ValueError(f"the {what} windows must be shaped (B, 4), got {windows.shape}")
+    if len(logits) != len(windows):
+        raise ValueError(f"the {what} logits hold {len(logits)} pairs but their windows {len(windows)}")
+    y = logits[:, :p].astype(np.float64)
+    y = y - y.mean(axis=1, keepdims=True)
+    a, b = windows[:, 0].astype(np.int64), windows[:, 1].astype(np.int64)
+    d = ((a + b)[:, None] - np.arange(p)[None, :]) % p
+    X = np.stack([np.cos(2 * np.pi * int(f) * d / p) for f in k], axis=-1)
+    return X.reshape(-1, len(k)), y.reshape(-1)
 
 
 def logit_r2(fit_logits: Any, fit_windows: Any, held_logits: Any, held_windows: Any, p: int,
              k: Sequence[int]) -> float | None:
-    raise NotImplementedError
+    k = list(k)
+    if not k:
+        raise ValueError("logit_r2 needs at least one frequency")
+    X_fit, y_fit = _clock(fit_logits, fit_windows, p, k, "fitting")
+    X_held, y_held = _clock(held_logits, held_windows, p, k, "held-out")
+    alpha = np.linalg.lstsq(X_fit, y_fit, rcond=None)[0]  # no constant: the targets are centred over c
+    total = float(np.sum((y_held - y_held.mean()) ** 2))
+    if total == 0:
+        return None
+    return float(1.0 - np.sum((y_held - X_held @ alpha) ** 2) / total)
+
+
+# ---------------------------------------------------------------------------
+# set's identities and the requests (G7.3)
+# ---------------------------------------------------------------------------
+
+
+def _numpy(value: Any) -> np.ndarray:
+    return np.asarray(getattr(value, "array", value))
 
 
 def set_identities(model: Any, params: Any, tokens: Any, *, n_layers: int) -> dict[str, bool]:
-    raise NotImplementedError
+    tokens = np.ascontiguousarray(tokens, dtype=np.int32)
+    taps = list(tap_names(n_layers))
+
+    def run(spec: Any, store: Mapping[str, np.ndarray]) -> dict[str, np.ndarray]:
+        logits, recorded = run_intervened(model, params, tokens, spec, n_layers=n_layers,
+                                          resolve=store.__getitem__, taps=taps)
+        return {"logits": _numpy(logits), **{tap: _numpy(value) for tap, value in recorded.items()}}
+
+    plain = run(InterventionSpec(()), {})
+    exact = {}
+    for tap in editable_taps(n_layers):
+        if tap.endswith(".attn.hook_z"):
+            continue
+        values = np.ascontiguousarray(plain[tap], dtype=np.float32)
+        digest = array_hash(values)
+        got = run(InterventionSpec((edit(tap, "all", "set", values=digest),)), {digest: values})
+        exact[tap] = bool(got.keys() == plain.keys() and all(
+            got[name].dtype == want.dtype and got[name].shape == want.shape and np.array_equal(got[name], want)
+            for name, want in plain.items()))
+    return exact
 
 
 def requests(run: str, steps: Sequence[int], cites: Sequence[str]) -> list[Any]:
-    raise NotImplementedError
+    instances = len(ModularAdditionTask().held_out())  # its held-out pairs, 8,938
+    bases = [{"part": "write", "class": "answer", "function": "sum", "form": "table"},
+             {"part": "write", "class": "answer", "function": "sum", "form": "fourier"},
+             {"part": "mlp", "class": "answer", "function": "sum and operands", "form": "additive"},
+             {"part": "attention", "class": "answer", "function": "operands", "form": "additive"}]
+    steps, cites = list(steps), list(cites)
+    return [records.GestureRequest("crystallize", run, step, {**base, "block": block, "cites": cited}, instances,
+                                   seed)
+            for base in bases for step in (steps[0], steps[-1]) for cited in ([], cites)
+            for seed in (SEED, SEED + 1) for block in (0, 1)]
+
+
+# ---------------------------------------------------------------------------
+# Judgements (G7.4)
+# ---------------------------------------------------------------------------
+
+
+def _float(value: Any) -> float | None:
+    return None if value is None else float(value)
 
 
 def crystal_checks(results: Mapping[str, Any]) -> dict[str, Any]:
-    raise NotImplementedError
+    rows, twin = results.get("checkpoints"), results.get("twin")
+    if not rows:
+        raise ValueError("crystal_checks needs the crystallization's checkpoint rows")
+    if twin is None:
+        raise ValueError("crystal_checks needs the crystallization's twin")
+    meter, counterfactual = results["meter"], results.get("counterfactual")
+    twin_kl = float(twin["meter"]["kl"])
+    at_zero = [row for row in rows if row["step"] == 0]
+    return {
+        "kl": _float(meter["kl"]),
+        "ablation": _float(meter["ablation"]),
+        "wrong_min": least([w["kl"] for w in results["wrong"]]),
+        "reads_agreement": None if counterfactual is None else _float(counterfactual["reads"]["agreement"]),
+        "answer_agreement": None if counterfactual is None else _float(counterfactual["answer"]["agreement"]),
+        "twin_within": greatest([abs(float(w["kl"]) - twin_kl) for w in twin["wrong"]]),
+        "final_holds": rows[-1]["label"] == crystallize.HOLDS,
+        "step0_outside": bool(at_zero) and all(row["label"] != crystallize.HOLDS for row in at_zero),
+    }
 
 
 def judged(checks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    raise NotImplementedError
+    checks = list(checks)
+    if not checks:
+        raise ValueError("judged needs at least one crystallization's checks")
+
+    def over(name: str, *, counterfactual: bool = False) -> list[Any]:
+        return [c[name] for c in checks if not counterfactual or c[name] is not None]
+
+    return {
+        "kl_max": greatest(over("kl")),
+        "ablation_min": least(over("ablation")),
+        "wrong_min": least(over("wrong_min")),
+        "reads_agreement_min": least(over("reads_agreement", counterfactual=True)),
+        "answer_agreement_max": greatest(over("answer_agreement", counterfactual=True)),
+        "twin_within_max": greatest(over("twin_within")),
+        "envelope_ok": all(c["final_holds"] is True and c["step0_outside"] is True for c in checks),
+    }
