@@ -1,6 +1,6 @@
 # Phase 7 spec: crystallize-this, with modular addition in the zoo
 
-Status: proposed with C11 and D54 to D57; D58 corrects modular addition's wrong functions. Charter: [../charter.md](../charter.md).
+Status: proposed with C11 and D54 to D57; D58 corrects modular addition's wrong functions, and D59 drops G6.7's rerun. Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
@@ -229,7 +229,7 @@ This is what C11 rules on. The record shows it beside the crystallization.
 - **Badges:**
   - crystallize-this gets a badge of its zoo results, from G7.2's, G7.3's and G7.4's reports, above every record of it (D38)
   - its facts include modular addition's recorded names, with the note that they don't hold the sum
-- **D53's correction:** the open-this-up badge's twin line becomes "most of any judged target". The Phase 7 badges file carries every phase's badges, as G6.7's did, and G6.7 runs again with the correction.
+- **D53's correction:** the open-this-up badge's twin line becomes "most of any judged target". The Phase 7 badges file carries every phase's badges, as G6.7's did, so G7.5 brings the correction to the viewer. G6.7 doesn't run again (D59).
 
 ## Gates
 
@@ -243,7 +243,7 @@ Each runs on the Mac, prints progress while it works, and writes one schema-2 re
 | G7.4 Crystallizations | every judged and recorded crystallization, trained and twin, its counterfactual and its envelope | every bar met | Diagnose the gesture |
 | G7.5 Records, views and badges | modular addition's views; every record above built twice; badges from the reports | byte-identical, no external URL, every subject has a badge, and the records shown are the ones G7.4 measured | Diagnose the build |
 
-G6.7 runs again after the badge correction, before G7.5.
+G6.7 doesn't run again: G7.5's badges file carries the badge correction, and Phase 6's records stay as they are (D59).
 
 ## Work packages
 
