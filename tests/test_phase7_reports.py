@@ -19,6 +19,8 @@ PASSING = {
     "G7.4": {"crystallizations": {}, "kl_max": 0.134, "ablation_min": 4.14, "wrong_min": 4.42,
              "reads_agreement_min": 0.938, "answer_agreement_max": 0.008, "twin_within_max": 0.003,
              "envelope_ok": True},
+    "G7.5": {"badges": {}, "subjects_missing": 0, "records": {}, "builds_identical": True, "external_urls": 0,
+             "reports_match": True},
 }
 
 
@@ -29,7 +31,7 @@ def _g(gate_id: str, status: str = "pass", **measurements) -> dict:
 
 
 def test_phase7_gate_ids():
-    assert reports.PHASE7_GATE_IDS == ("G7.1", "G7.2", "G7.3", "G7.4")
+    assert reports.PHASE7_GATE_IDS == ("G7.1", "G7.2", "G7.3", "G7.4", "G7.5")
     for gate_id in reports.PHASE7_GATE_IDS:
         assert set(reports.REQUIRED_MEASUREMENTS[gate_id]) == set(PASSING[gate_id]), gate_id
         old = _g(gate_id)

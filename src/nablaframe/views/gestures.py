@@ -1,7 +1,8 @@
 """The gestures panel: a run's gesture records as the viewer lists them, each with its meter first (D47).
 
 Spec: docs/specs/phase-6.md, D47 and "Records, the viewer and badges"; contract:
-docs/deltas/phase-6-delta-5.md. The viewer stays a pure decoder (D13, D27): every value here is
+docs/deltas/phase-6-delta-5.md; for crystallize-this, docs/specs/phase-7.md, D56, and
+docs/deltas/phase-7-delta-4.md. The viewer stays a pure decoder (D13, D27): every value here is
 copied from a record's results, never computed, and the viewer reads each record's own file,
 checking it against the SHA-256 its entry holds, as it checks the trace's tensors. Nothing here
 runs a model or imports JAX.
@@ -20,6 +21,7 @@ runs a model or imports JAX.
     "reading", "within", "signed_within", "random_within", "error_median")``
   - ``"generalize"``: ``("form", "relation", "description", "class", "values", "envelope",
     "slices_f1", "slices_follows", "seeds", "final")``
+  - ``"crystallize"``: ``("label", "kl", "ablation", "removed", "agreement", "loss_delta")``
 
 * ``gesture_meter(record)``: a ``records.GestureRecord``'s meter, ``{key: value}`` for its kind's
   ``METER_KEYS`` in order, each value a copy of what its results hold, as plain JSON. A value the
@@ -51,6 +53,9 @@ runs a model or imports JAX.
     ``description``, ``class``, ``values`` and ``envelope``, all ``r``'s, and ``slices_f1`` and
     ``slices_follows``, ``r["slices"]``'s ``f1`` and ``follows``, with ``relation`` None. An edge
     adds ``relation``, ``r``'s, with the other five None.
+  - **crystallize:** each is ``r["meter"]``'s entry of that name, the meter D56 shows first: the
+    label, the KL beside the mean ablation's, the share of it removed, agreement and the loss
+    delta.
 
   ValueError, naming the record's key and the missing entry, where the results don't hold an entry
   this reads.

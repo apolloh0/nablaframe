@@ -14,7 +14,8 @@ On G7.1's run at its final checkpoint, and on its twin:
   ``p5.dictionary_key`` of the run's final state, the site, the settings and the tokens the model
   reads of the training pairs. The twin's is trained the same way on the twin's
   activations, keyed by ``p5.twin_state``. ``fvu`` and ``twin_fvu``: each on the held-out pairs'
-  activations, as Phase 5 measures it.
+  activations, as Phase 5 measures it. ``meters``: ``{"fvu", "twin_fvu"}``, the two again, the
+  mapping modular addition's features payload cites (D38, docs/deltas/phase-7-delta-4.md).
 * **Names:** for each of ``NAMES`` at class ``answer`` on the held-out pairs, Phase 6's
   ``planted_name`` with ``INSTANCES["name"]`` and ``SEEDS["name"]``, trained and twin.
   ``names``: ``{description: {"trained": ..., "twin": ...}}``, each that mapping without its

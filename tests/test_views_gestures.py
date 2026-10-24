@@ -189,6 +189,7 @@ def test_gesture_payloads_are_plain_json_and_repeatable(toy, tmp_path):
                  "signed_within", "random_within", "error_median"),
         "generalize": ("form", "relation", "description", "class", "values", "envelope", "slices_f1",
                        "slices_follows", "seeds", "final"),
+        "crystallize": ("label", "kl", "ablation", "removed", "agreement", "loss_delta"),
     }
     recs = dict(toy.records)
     recs["name no instance"] = edited(recs["name"], lambda r: r.update(steering=None))

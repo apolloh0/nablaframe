@@ -119,6 +119,37 @@
 //   panel's `names`, under the payload's `<dictionary>-<site>`, shows its name records' names and
 //   labels, and so does the chosen latent; choosing one opens it in the gestures panel. A chosen
 //   latent with none says so.
+// * Phase 7 badges: the badges file may also hold `crystallize` and `set`, which G7.5 writes beside
+//   every earlier phase's subjects into `runs/phase7/badges.json`, as
+//   src/nablaframe/views/crystallize_badges.py says. Their units add a KL in nats, read to three
+//   decimals followed by "nats", and a null reads as none in any of their units, as in Phase 6's.
+//   The compare panel shows `set`'s badge for a spec with a set edit, and a set edit reads as
+//   setting its tap at its positions to values <hash>, the hash shortened with the full hash on
+//   hover.
+// * Several records folders: `?gestures=` may name several folders, separated by commas, each with
+//   its own `panel.json`, so a zoo run's Phase 7 records sit beside the Phase 6 records they cite.
+//   The panel lists every folder's records together, each fetched from its own folder. Every
+//   folder's records must be of one run; a key listed twice, or a folder whose panel can't be read,
+//   is shown, never hidden. The features panel's links to names take every folder's `names`.
+// * Crystallize-this: the gestures panel lists crystallize records too, after generalize, each
+//   reading its request in words, its block, part and class, its function and its form, with its
+//   meter first. A chosen one shows, every number being the record's:
+//   - the meter: its label; the KL beside the mean ablation's, with the share removed; agreement;
+//     and the loss delta, beside the model's and the crystallized model's loss and accuracy
+//   - the function: its keys, each with its description; what it reads, each description with
+//     where; its relation; and what it cites: for each key, the name records, each by key, the
+//     share of its values named as planted and the record's note; and each edge record by key,
+//     with its relation and label. A cited key listed in any folder opens that record in the
+//     panel; one that isn't says so.
+//   - the form: for each key, how many of its values the fitting rows show, and how many held-out
+//     rows have a value they don't; for `fourier`, each frequency with its share of the embedding's
+//     energy and its share of the fitted coefficients; and R²
+//   - the controls: each wrong function's KL and agreement; the counterfactual, keyed by what the
+//     component reads and keyed by the answer, each with its KL and agreement, or that the function
+//     declares none; and the twin's meter and wrong functions
+//   - the timeline: while the record is chosen, rows for its KL, the ablation's KL and the model's
+//     accuracy at every checkpoint, with its envelope's runs shaded, its gap's checkpoints marked,
+//     and the checkpoints where it holds before accuracy reaches 0.9 marked apart
 //
 // How this page meets it:
 //

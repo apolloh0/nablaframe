@@ -10,7 +10,8 @@ are copied from a gate report and cite it (D38, D44).
 * ``EFFECT_LABEL = "Direct effect on the logits through the unembedding: the latent's decoder row,
   times the site's scale, centred and multiplied by the final layer norm's gain, then unembedded,
   with the layer norm's divisor held at 1. It is not a name for the latent."``
-* ``METER_GATES = ("G5.2", "G5.3", "G5.5")``: the gates whose reports record dictionaries' meters.
+* ``METER_GATES = ("G5.2", "G5.3", "G5.5", "G7.2")``: the gates whose reports record dictionaries'
+  meters, G7.2's for modular addition's TopK SAE, at ``["meters"]``.
 * ``features_payload(model, params, dictionary, site, probe, held_out, *, step, meters,
   variables=None, chunk=256)``: the payload for site ``site`` of ``dictionary``, on the model with
   ``params``, the parameters at checkpoint ``step``. ``probe`` and ``held_out`` are the tokens the

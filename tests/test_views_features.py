@@ -78,7 +78,7 @@ def _active(row):
 
 def test_features_constants():
     assert f.SHIPPED == ("topk", "staircase", "transcoder")
-    assert f.TOP_CONTEXTS == 8 and f.EFFECT_TOKENS == 5 and f.METER_GATES == ("G5.2", "G5.3", "G5.5")
+    assert f.TOP_CONTEXTS == 8 and f.EFFECT_TOKENS == 5 and f.METER_GATES == ("G5.2", "G5.3", "G5.5", "G7.2")
     assert f.EFFECT_LABEL == ("Direct effect on the logits through the unembedding: the latent's decoder row, times the "
                               "site's scale, centred and multiplied by the final layer norm's gain, then unembedded, with "
                               "the layer norm's divisor held at 1. It is not a name for the latent.")

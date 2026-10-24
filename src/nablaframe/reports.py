@@ -1,6 +1,6 @@
 """Gate reports: the only place a gate result exists.
 
-Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes"; docs/deltas/phase-6-delta-5.md, "Contract changes"; docs/specs/phase-7.md, "Gates"; docs/deltas/phase-7-delta-3.md, "Contract changes".
+Spec: docs/specs/phase-0.md, "Gates"; docs/specs/phase-1.md, "Carried over from Phase 0" and "Gates"; docs/specs/phase-2.md, "Gates"; docs/specs/phase-3.md, "Gates"; docs/specs/phase-4.md, "Gates"; docs/deltas/phase-4-delta-3.md, "Contract changes"; docs/specs/phase-5.md, "Gates"; docs/deltas/phase-5-delta-4.md, "Contract changes"; docs/deltas/phase-5-delta-5.md, "Contract changes"; docs/specs/phase-6.md, "Gates"; docs/deltas/phase-6-delta-4.md, "Contract changes"; docs/deltas/phase-6-delta-5.md, "Contract changes"; docs/specs/phase-7.md, "Gates"; docs/deltas/phase-7-delta-3.md, "Contract changes"; docs/deltas/phase-7-delta-4.md, "Contract changes".
 
 Each gate script writes one JSON report under ``reports/phase0/``, ``reports/phase1/``, ``reports/phase2/``, ``reports/phase3/``, ``reports/phase4/``, ``reports/phase5/``, ``reports/phase6/`` or ``reports/phase7/``. The Phase 0
 summary is generated from those files, never written by hand, and a report's
@@ -36,7 +36,7 @@ Schema version 2 adds two required fields: `git_commit`, 40 lowercase hex charac
 
 `PHASE6_GATE_IDS = ("G6.1", "G6.2", "G6.3", "G6.4", "G6.5", "G6.6")`. The validator accepts them, and a Phase 6 report must use schema version 2. `PHASE6_GATE_IDS` gains G6.7.
 
-`PHASE7_GATE_IDS = ("G7.1", "G7.2", "G7.3", "G7.4")`. The validator accepts them, and a Phase 7 report must use schema version 2.
+`PHASE7_GATE_IDS = ("G7.1", "G7.2", "G7.3", "G7.4")`. The validator accepts them, and a Phase 7 report must use schema version 2. `PHASE7_GATE_IDS` gains G7.5.
 
 STATUS RULES (a report whose status contradicts its measurements is invalid):
 
@@ -177,6 +177,7 @@ Status rules for Phase 7:
   * `answer_agreement_max <= 0.1`
   * `twin_within_max <= 0.05`
   * `envelope_ok` true
+* G7.5 pass requires `builds_identical` true, `external_urls == 0`, `subjects_missing == 0` and `reports_match` true.
 
 Measurements:
 
@@ -246,6 +247,7 @@ Required measurements for Phase 7:
 * G7.2: `fvu`, `twin_fvu`, `names`, `records`, `seconds`
 * G7.3: `identities_checked`, `identities_exact`, `identities_by_run`, `request_hashes_checked`, `request_hashes_distinct`, `request_hashes_stable`, `records_identical`, `records_by_form`
 * G7.4: `crystallizations`, `kl_max`, `ablation_min`, `wrong_min`, `reads_agreement_min`, `answer_agreement_max`, `twin_within_max`, `envelope_ok`
+* G7.5: `badges`, `subjects_missing`, `records`, `builds_identical`, `external_urls`, `reports_match`
 
 G0.4's `top1_agreement` is the fraction of positions whose top-1 token agrees, counted only over positions where the Levanter logits' top-2 margin exceeds 1e-3. `positions_near_tie` counts the positions left out.
 """

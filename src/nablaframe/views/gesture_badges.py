@@ -72,7 +72,9 @@ that there the gestures are recorded, not judged.
     ``edges[place]["trained"]``'s ``["follows"]`` and ``["null_follows"]``, fractions, and
     ``["label"]``, a label, each label saying "(recorded)" where the place's ``judged`` is false
   - ``open``: G6.4's ``reading_ratio_max``, a ratio; ``within_min``, ``planted_top_min``,
-    ``random_within_max`` and ``twin_planted_top_max``, fractions. Then for each of G6.4's places:
+    ``random_within_max`` and ``twin_planted_top_max``, fractions, the last's label ending "most
+    of any judged target", since G6.4 measures it over the judged target only (D53). Then for each
+    of G6.4's places:
     ``targets[place]["trained"]["orders"]["absolute"]["reading_median"]`` and
     ``targets[place]["bar"]``, parts; ``targets[place]["trained"]["orders"]["absolute"]["within"]``
     and ``targets[place]["trained"]["planted"]["top"]``, fractions; and, where the place's
