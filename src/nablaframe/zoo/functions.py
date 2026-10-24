@@ -83,10 +83,11 @@ task-specific code (D29). Numpy only.
 
   - Keys, each with ``n_values = task.p``, defined at position 2 only, with ``a`` and ``b`` the
     window's tokens at 0 and 1: ``"sum"``, ``(a + b) % p``; ``"difference"``, ``(a - b) % p``;
-    ``"shifted"``, ``(a + b + 1) % p``; ``"a"``; ``"b"``.
+    ``"a"``; ``"b"``. No key shifts the sum: refitted on one, a form would be the sum relabelled
+    (D58).
   - ``"sum"``: block 0, class ``"answer"``, keys ``("sum",)``, reads ``(Read("token(p-2)",
-    "across"), Read("token(p-1)", "across"))``, no relation, wrong ``("difference", "shifted",
-    "a", "b")``, no counterfactual, forms ``("table", "fourier")``, judged.
+    "across"), Read("token(p-1)", "across"))``, no relation, wrong ``("difference", "a", "b")``,
+    no counterfactual, forms ``("table", "fourier")``, judged.
   - ``"sum and operands"``: block 0, class ``"answer"``, keys ``("sum", "a", "b")``, reads
     ``(Read("token(p-2)", "same"), Read("token(p-1)", "same"))``: the MLP reads the operands from
     the attention's output at its own position, with no relation to cite, so it is recorded. No

@@ -1,6 +1,6 @@
 # Phase 7 spec: crystallize-this, with modular addition in the zoo
 
-Status: proposed with C11 and D54 to D57. Charter: [../charter.md](../charter.md).
+Status: proposed with C11 and D54 to D57; D58 corrects modular addition's wrong functions. Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
@@ -120,7 +120,7 @@ The functions live with each run's task, in `zoo/functions.py`, as descriptions 
 | --- | --- | --- | --- | --- | --- |
 | Induction | block 1 attention at `mechanism` (32 to 62) | the copied token `w[q − P + 1]`, `P` the window's period | `token(p)` at `q − P + 1`, across positions | the current token `w[q]`, the previous token `w[q − 1]` | broken windows |
 | Two-hop | block 3 write at `query` (25) | the hop's object: the object of `b`'s fact | `b` at 25 after block 2, the same position, through the hop (G6.3, computed); the facts, across positions | `a`, `b` | `b` patched at 25 |
-| Modular addition | block 0 write at `answer` (2) | the sum `(a + b) mod p` | `a` and `b`, across positions | `(a − b) mod p`, `(a + b + 1) mod p`, `a`, `b` | none: the sum is the answer by the task's construction |
+| Modular addition | block 0 write at `answer` (2) | the sum `(a + b) mod p` | `a` and `b`, across positions | `(a − b) mod p`, `a`, `b` (D58) | none: the sum is the answer by the task's construction |
 | Modular addition, recorded | block 0 MLP at `answer` | the sum, `a` and `b`, additive | the attention output at its own position: no edge | none | the attention output patched |
 | Modular addition, recorded | block 0 attention at `answer` | `a` and `b`, additive | `a` and `b`, across positions | none | none |
 | Two-hop, recorded | block 3 attention at `query` | the hop's object | as the write | `a`, `b` | none |
@@ -158,7 +158,7 @@ The bars come from the feasibility rounds, with margin; the measured value follo
 | --- | --- | --- | --- | --- |
 | KL from the model | at most 0.25 | 0.000 | 0.134 | 0.021, 0.019 |
 | The mean ablation's KL | at least 1 | 6.94 | 4.58 | 4.14 |
-| Each wrong function's KL | at least 1 | 6.73 (current token) | 4.61 (`a`), 4.62 (`b`) | 5.90 to 10.16 |
+| Each wrong function's KL | at least 1 | 6.73 (current token) | 4.61 (`a`), 4.62 (`b`) | 5.77 to 5.94 as a table, 4.42 to 4.57 in the fourier form (D58) |
 | Counterfactual, keyed by what it reads: agreement | at least 0.8 | 1.000 | 0.938 | none applies |
 | Counterfactual, keyed by the answer: agreement | at most 0.1 | 0.000 | 0.008 | none applies |
 | On the twin: every wrong function's KL within 0.05 of the right one's | yes | within 0.001 | within 0.001 | within 0.003 |

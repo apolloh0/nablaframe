@@ -82,16 +82,16 @@ def test_functions_keys_and_reads():
 
     ma = functions.modular_addition(MODADD)
     assert ma.run == "modular_addition" and ma.seq == 3
-    assert set(ma.keys) == {"sum", "difference", "shifted", "a", "b"} and all(k.n_values == 113 for k in ma.keys.values())
+    assert set(ma.keys) == {"sum", "difference", "a", "b"} and all(k.n_values == 113 for k in ma.keys.values())
     w = modadd_windows(64)
     got = {name: k.values(w) for name, k in ma.keys.items()}
     a, b = w[:, 0].astype(np.int64), w[:, 1].astype(np.int64)
-    want = {"sum": (a + b) % 113, "difference": (a - b) % 113, "shifted": (a + b + 1) % 113, "a": a, "b": b}
+    want = {"sum": (a + b) % 113, "difference": (a - b) % 113, "a": a, "b": b}
     for name, v in got.items():
         assert v.shape == (64, 3) and (v[:, :2] == -1).all() and np.array_equal(v[:, 2], want[name]), name
     across = (Read("token(p-2)", "across"), Read("token(p-1)", "across"))
     assert ma.functions["sum"] == Function("sum", 0, "answer", ("sum",), across, None,
-                                           ("difference", "shifted", "a", "b"), None, ("table", "fourier"), True)
+                                           ("difference", "a", "b"), None, ("table", "fourier"), True)
     assert ma.functions["sum and operands"] == Function(
         "sum and operands", 0, "answer", ("sum", "a", "b"), (Read("token(p-2)", "same"), Read("token(p-1)", "same")),
         None, (), "attention patched", ("additive",), False), "reads at its own position with no edge: recorded (D53)"

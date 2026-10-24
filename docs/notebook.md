@@ -281,6 +281,7 @@ The KL from the model's own prediction, beside a mean ablation's, catches both c
   - induction's current token: 6.73
   - two-hop's `a`: 4.61; its `b`: 4.62
   - modular addition's `(a − b)`: 10.16; `(a + b + 1)`: 8.31; `a` or `b` alone: 5.90 to 5.94
+  - those for `(a − b)` and `(a + b + 1)` read the sum's own table at those keys. Refitted, as D56 defines a wrong function, `(a − b)` gives 5.77, and `(a + b + 1)` gives 0.02: its table is the sum's, relabelled (D58)
 
 ### 26. Counterfactuals separate what a component reads from the answer
 
@@ -414,6 +415,7 @@ The biggest lesson: a latent's identity showed up in its effect, not in its cont
 - **Judge a crystallization by the model's prediction, not the answer:** a table keyed by the answer can beat a model that hasn't learned (finding 24).
 - **Part the function from the answer:** where the two agree on every ordinary window, only a counterfactual says which the component computes (finding 26).
 - **Draw the component where the function holds:** modular addition's MLP alone isn't a function of the sum; the block's write is (finding 27).
+- **A wrong function must cut the rows another way:** refitted on a key that only relabels the right one, such as the sum shifted by one, a form is the function itself and can't fail (finding 25, D58).
 
 ## Where the evidence lives
 
@@ -452,6 +454,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-23 | Phase 7 delta 2: finding 25's modular-addition wrong functions corrected, and a lesson on wrong functions (D58) |
 | 2026-10-23 | Phase 7 feasibility, rounds 1 and 2: findings 23 to 32; H10 added, H6 evidence added; ideas, lessons and where the evidence lives; "Where things stand" brought to H6 |
 | 2026-10-20 | Phase 6 feasibility, round 3: findings 17 to 22; H8 refuted, H9 added, H2 evidence added; lessons and the reference run's names |
 | 2026-10-20 | Phase 6 feasibility, rounds 1 and 2: findings 9 to 16; H1 and H3 supported, H4 refuted, H2 stronger; H6 to H8 added; ideas and lessons updated |
