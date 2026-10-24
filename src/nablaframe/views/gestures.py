@@ -105,6 +105,7 @@ METER_KEYS = {
              "signed_within", "random_within", "error_median"),
     "generalize": ("form", "relation", "description", "class", "values", "envelope", "slices_f1", "slices_follows",
                    "seeds", "final"),
+    "crystallize": ("label", "kl", "ablation", "removed", "agreement", "loss_delta"),
 }
 _INDEX = "index.json"
 
@@ -184,6 +185,10 @@ def _generalize_meter(key: str, r: dict, args: dict) -> dict[str, Any]:
     return out
 
 
+def _crystallize_meter(key: str, r: dict) -> dict[str, Any]:
+    return {k: _get(key, r, "meter", k) for k in METER_KEYS["crystallize"]}
+
+
 def _meter(key: str, kind: str, args: dict, results: dict) -> dict[str, Any]:
     if kind == "name":
         return _name_meter(key, results)
@@ -191,6 +196,8 @@ def _meter(key: str, kind: str, args: dict, results: dict) -> dict[str, Any]:
         return _edge_meter(key, results)
     if kind == "open":
         return _open_meter(key, results)
+    if kind == "crystallize":
+        return _crystallize_meter(key, results)
     return _generalize_meter(key, results, args)
 
 
