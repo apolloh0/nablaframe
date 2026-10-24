@@ -73,8 +73,11 @@ the zoo and recorded elsewhere, as its notes say.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
+
+from nablaframe.reports import validate_report
 
 SUBJECTS = ("crystallize", "set")
 UNITS = ("fraction", "ratio", "nats", "count", "span", "flag", "label")
@@ -94,5 +97,121 @@ SET_NOTE = ("The identities show set changes nothing where it should change noth
             "reproduces the pass bit for bit, at every residual-shaped tap but hook_z, on every zoo model (D55).")
 
 
+_GATES = ("G7.2", "G7.3", "G7.4")
+_JUDGED_BY = {"crystallize": ("G7.3", "G7.4"), "set": ("G7.3",)}
+_NOTES = {"crystallize": [METER_NOTE, ENVELOPE_NOTE, NAMES_NOTE, RECORDED_NOTE], "set": [SET_NOTE]}
+
+
+def _checked(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
+    out: dict[str, Mapping[str, Any]] = {}
+    for gate_id in _GATES:
+        if gate_id not in reports:
+            raise ValueError(f"reports must hold {', '.join(_GATES)}; {gate_id} is missing")
+        report = reports[gate_id]
+        problems = validate_report(report)
+        if problems:
+            raise ValueError(f"the {gate_id} report is invalid: {'; '.join(problems)}")
+        if report["gate_id"] != gate_id:
+            raise ValueError(f"the report filed under {gate_id} carries gate id {report['gate_id']!r}")
+        out[gate_id] = report
+    return out
+
+
+class _Facts:
+    """Collects facts, reading each value from the report at its path."""
+
+    def __init__(self, reports: Mapping[str, Mapping[str, Any]]) -> None:
+        self.reports = reports
+        self.facts: list[dict[str, Any]] = []
+
+    def value(self, gate: str, path: list) -> Any:
+        value: Any = self.reports[gate]["measurements"]
+        for segment in path:
+            try:
+                value = value[segment]
+            except (KeyError, IndexError, TypeError):
+                raise ValueError(f"the {gate} report has no measurement at {path!r}") from None
+        return value
+
+    def add(self, label: str, unit: str, gate: str, path: list) -> None:
+        self.facts.append({"label": label, "value": copy.deepcopy(self.value(gate, path)), "unit": unit,
+                           "gate": gate, "path": list(path)})
+
+    def flag(self, gate: str, path: list, what: str) -> bool:
+        value = self.value(gate, path)
+        if not isinstance(value, bool):
+            raise ValueError(f"the {gate} report's {what} must be a flag")
+        return value
+
+    def places(self, gate: str, key: str) -> list[str]:
+        mapping = self.value(gate, [key])
+        if not isinstance(mapping, Mapping):
+            raise ValueError(f"the {gate} report's {key} must be a mapping of places")
+        return sorted(mapping)
+
+
+def _crystallize(f: _Facts) -> None:
+    for form in f.places("G7.3", "records_by_form"):
+        f.add(f"{form} records: one request built twice gives identical bytes", "flag", "G7.3",
+              ["records_by_form", form, 0])
+        f.add(f"{form} records: the command line's build gives identical bytes too", "flag", "G7.3",
+              ["records_by_form", form, 1])
+    for key, unit, label in (
+            ("kl_max", "nats", "KL from the model's own prediction, most of any judged crystallization"),
+            ("ablation_min", "nats", "KL of the mean ablation, least of any judged crystallization"),
+            ("wrong_min", "nats", "KL of a wrong function, least of any wrong function of any judged "
+                                  "crystallization"),
+            ("reads_agreement_min", "fraction", "agreement keyed by what the component reads, least of any "
+                                                "judged crystallization with a counterfactual"),
+            ("answer_agreement_max", "fraction", "agreement keyed by the answer, most of any judged "
+                                                 "crystallization with a counterfactual"),
+            ("twin_within_max", "nats", "twin: a wrong function's KL from the twin's own KL, most of any judged "
+                                        "crystallization"),
+            ("envelope_ok", "flag", "every judged crystallization holds at the final checkpoint, with step 0 "
+                                    "outside")):
+        f.add(label, unit, "G7.4", [key])
+    for place in f.places("G7.4", "crystallizations"):
+        at = ["crystallizations", place]
+        tag = "" if f.flag("G7.4", at + ["judged"], f"judged flag at {place}") else " (recorded)"
+        f.add(f"{place}: the crystallization's verdict{tag}", "label", "G7.4", at + ["meter", "label"])
+        f.add(f"{place}: KL from the model's own prediction{tag}", "nats", "G7.4", at + ["meter", "kl"])
+        f.add(f"{place}: KL of the mean ablation{tag}", "nats", "G7.4", at + ["meter", "ablation"])
+        f.add(f"{place}: the run of checkpoints where it holds, ending at the final one{tag}", "span", "G7.4",
+              at + ["envelope", "final"])
+        f.add(f"{place}: twin: the crystallization's verdict{tag}", "label", "G7.4", at + ["twin", "meter", "label"])
+    f.add("modular addition's dictionary: fraction of variance unexplained (recorded)", "ratio", "G7.2", ["fvu"])
+    f.add("modular addition's twin dictionary: fraction of variance unexplained (recorded)", "ratio", "G7.2",
+          ["twin_fvu"])
+    for place in f.places("G7.2", "names"):
+        trained = ["names", place, "trained"]
+        f.add(f"modular addition {place}: values named as planted (recorded)", "fraction", "G7.2",
+              trained + ["named_as_planted"])
+        f.add(f"modular addition {place}: steering follows (recorded)", "fraction", "G7.2",
+              trained + ["steering", "follows"])
+        f.add(f"modular addition {place}: steering follows under the null (recorded)", "fraction", "G7.2",
+              trained + ["steering", "null_follows"])
+
+
+def _set(f: _Facts) -> None:
+    f.add("identities reproduced bit for bit", "count", "G7.3", ["identities_exact"])
+    f.add("identities checked", "count", "G7.3", ["identities_checked"])
+
+
+_BUILDERS = {"crystallize": _crystallize, "set": _set}
+
+
 def crystallize_badges(reports: Mapping[str, Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    raise NotImplementedError
+    checked = _checked(reports)
+    f = _Facts(checked)
+    badges: dict[str, dict[str, Any]] = {}
+    for subject in SUBJECTS:
+        f.facts = []
+        _BUILDERS[subject](f)
+        labels = [fact["label"] for fact in f.facts]
+        if len(set(labels)) != len(labels):
+            raise ValueError(f"the {subject} badge would repeat a label")
+        passed = all(checked[g]["status"] == "pass" for g in _JUDGED_BY[subject])
+        badges[subject] = {"status": "judged: pass" if passed else "judged: fail",
+                           "sources": sorted({fact["gate"] for fact in f.facts}), "facts": f.facts,
+                           "notes": list(_NOTES[subject])}
+    return badges

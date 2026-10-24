@@ -233,7 +233,7 @@ def _open(f: _Facts) -> None:
                        ("random_within_max", "in random order of parts, instances read within 128 parts, most of any "
                                           "target"),
                        ("twin_planted_top_max", "twin: the planted set's first part in the top 8 parts, most of any "
-                                              "target")):
+                                              "judged target")):
         f.add(label, "fraction", "G6.4", [key])
     for place in f.places("G6.4", "targets"):
         target = ["targets", place]
