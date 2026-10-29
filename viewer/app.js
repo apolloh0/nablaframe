@@ -337,7 +337,47 @@
 //   lists them under "Name records", or says it has none, or that no gestures panel is open.
 //   Choosing one opens it in the gestures panel and scrolls there.
 // * The fragment gains gesture=<key>; a key the panel doesn't list says so in the panel.
-"use strict";
+// * Phase 7's units: a KL in nats reads to three decimals followed by "nats"; a null reads "none" in a
+//   badge of `crystallize` or `set` too, as views/crystallize_badges.py says, while Phase 4's and
+//   Phase 5's badges keep it as held and marked. Without `?badges=` the page still reads Phase 4's
+//   file; G7.5 prints addresses naming runs/phase7/badges.json.
+// * A set edit reads "set <tap> at <positions> to values <hash>". A crystallization's write is a set
+//   then a zero, so its spec shows `set`'s badge and then `zero`'s, one per distinct operation as
+//   before.
+// * `?gestures=` is split at every comma, each part a relative folder; an empty part is skipped, and
+//   the list says how many were. The folders' panels are read together, and their entries listed in
+//   the address's folder order, each folder's in its panel's order, within each kind's group. A key
+//   that an earlier entry already lists, in its own folder or an earlier one, isn't listed again: the
+//   list names it, with the folder it is read from instead, so one key always opens one file. A
+//   folder whose panel can't be read is a red row in the panel's meter and in the header; the other
+//   folders stay listed, and only when none can be read is the panel an error. Every entry is
+//   fetched from its own folder. With more than one folder, each entry, and the chosen record, says
+//   which folder it comes from, which the filter matches too; every entry names it on hover.
+// * The panel's meter lists each folder with its count and run. Folders whose records name more than
+//   one run are a red row naming each folder's run, and a folder whose run isn't the view index's is
+//   a red row as before; either outlines the panel in red, and the records stay listed. Entries not
+//   listed are counted in an amber row. The features panel's links to names take every folder's
+//   `names`, place by place and latent by latent, in folder order.
+// * A crystallize-this entry reads its label, the KL beside the mean ablation's with the share
+//   removed, agreement and the loss delta, then block, part, class, function and form, how many
+//   records it cites, its step, instances and seed. A label is coloured as crystallize.py's three
+//   are: holds, doesn't hold, inert.
+// * A chosen crystallization shows, from its results: its function, form, block, part, taps and rows;
+//   the meter as words over a table of the model's and the crystallized loss and accuracy; the keys
+//   with their descriptions, each read with where (own position or earlier ones), and the relation;
+//   for each cited key its share named as planted over its values, the record's note verbatim, and
+//   its name records as buttons, each its short key with the record's label and name; the edge
+//   records as a table; the form's seen values per key, the held-out rows with an unseen value, and
+//   R²; for `fourier` a table of each frequency with both shares; the wrong functions as a table
+//   under the function's own KL and agreement; the counterfactual's two keyings as a table, or that
+//   it declares none; the twin's meter and its wrong functions likewise; and a table of every
+//   checkpoint's label, KL, the ablation's KL and accuracy, with the gap's rows ▼ and the
+//   before-accuracy rows ◆. A results entry that is null reads as the record holding none of it.
+// * While a crystallization is chosen the timeline gains three rows, its KL and the ablation's in
+//   nats and the model's accuracy as a fraction, each on its own scale as every row is; its
+//   envelope's runs are shaded on them, its gap's checkpoints are ▼ on the step axis, and its
+//   checkpoints where it holds before accuracy reaches 0.9 are ◆ there, green. A record with no
+//   checkpoints adds no row and says so.
 
 (() => {
   // ---------------------------------------------------------------- basics
@@ -416,8 +456,13 @@
   // Model-level badges (D38): a file, not a folder.
   const BADGES_NAMED = !!new URLSearchParams(location.search).get("badges");
   const BADGES_PATH = new URLSearchParams(location.search).get("badges") || "../runs/phase4/badges.json";
-  // A run's gesture records (D47): only when ?gestures= names their folder.
-  const GESTURES_DIR = new URLSearchParams(location.search).get("gestures") ? dirParam("gestures", "") : null;
+  // A run's gesture records (D47): only when ?gestures= names their folders, separated by commas,
+  // so a zoo run's Phase 7 records sit beside the Phase 6 records they cite. Each is a relative
+  // folder, as ?views= is; an empty name between commas is skipped and said.
+  const GESTURES_PARAM = new URLSearchParams(location.search).get("gestures") || "";
+  const GESTURES_NAMED = GESTURES_PARAM !== "";
+  const GESTURES_DIRS = GESTURES_PARAM.split(",").filter((d) => d !== "").map((d) => (d.endsWith("/") ? d : `${d}/`));
+  const GESTURES_EMPTY = GESTURES_NAMED ? GESTURES_PARAM.split(",").length - GESTURES_DIRS.length : 0;
 
   // Resolves a relative path against the page; refuses anything that leaves its origin.
   function localUrl(path) {
@@ -768,11 +813,13 @@
     // aren't listed, the chosen one as `${dictionary}-${site}`, the chosen latent, and loaded
     // payloads by file name.
     features: { entries: null, problems: [], chosen: null, latent: null, payloads: new Map() },
-    // Gestures (D47): the panel's status ("loading", "ok" or "error"), its well-formed entries and
-    // why any others aren't listed, its names, the chosen record's key, the measured instance shown
-    // in an open-this-up record, loaded records by key, and a generalize-this record's timeline rows.
-    gestures: { status: null, error: null, panel: null, entries: [], byKey: new Map(), problems: [], names: {},
-      chosen: null, instance: 0, records: new Map(), timeline: null },
+    // Gestures (D47): the panel's status ("loading", "ok" or "error"), each folder as read
+    // ({dir, run, count} or {dir, error}), the well-formed entries of every folder and why any
+    // others aren't listed, the folder each listed key is fetched from, every folder's names, the
+    // chosen record's key, the measured instance shown in an open-this-up record, loaded records by
+    // key, and a generalize-this or crystallize-this record's timeline rows.
+    gestures: { status: null, error: null, folders: [], entries: [], byKey: new Map(), folderOf: new Map(), problems: [],
+      names: {}, chosen: null, instance: 0, records: new Map(), timeline: null },
   };
 
   const step = () => state.index.steps[state.stepIndex];
@@ -868,7 +915,10 @@
     }
     const g = state.gestures;
     if (g.status === "ok") {
-      parts.push(el("span", { title: `${GESTURES_DIR}panel.json` }, `gestures: ${g.entries.length} records`));
+      const read = g.folders.filter((f) => !f.error);
+      parts.push(el("span", { title: read.map((f) => `${f.dir}panel.json: ${f.count} records`).join("\n") },
+        `gestures: ${g.entries.length} records${GESTURES_DIRS.length > 1 ? ` from ${read.length} folders` : ""}`));
+      for (const f of g.folders.filter((f) => f.error)) parts.push(el("span", { class: "error", text: `gestures: ${f.error}` }));
     } else if (g.status === "error") {
       parts.push(el("span", { class: "error", text: `gestures: ${g.error}` }));
     }
@@ -939,7 +989,7 @@
         });
       }
     }
-    // A chosen generalize-this record's checkpoints join the timeline, below the index's own rows.
+    // A chosen generalize-this or crystallize-this record's checkpoints join the timeline, below the index's own rows.
     if (state.gestures.timeline) rows.push(...state.gestures.timeline.rows);
     return { rows, problems };
   }
@@ -1015,13 +1065,14 @@
           svg("text", { x: m.l - 6, y: y(t) + 4, "text-anchor": "end" }, fmt(t, 2)));
       }
       root.append(svg("line", { class: "axis", x1: m.l, x2: width - m.r, y1: p1, y2: p1 }));
-      // A generalize-this record's envelope: each run of checkpoints where the name holds, shaded.
+      // A generalize-this or crystallize-this record's envelope: each run of checkpoints where it holds, shaded.
       if (row.gesture) {
-        for (const [first, last] of state.gestures.timeline.runs) {
+        const tl = state.gestures.timeline;
+        for (const [first, last] of tl.runs) {
           const x0 = Math.max(m.l, Math.min(x(first), x(last)) - 4);
           const x1 = Math.min(width - m.r, Math.max(x(first), x(last)) + 4);
           root.append(svg("rect", { class: "envelope", x: x0, y: p0, width: x1 - x0, height: plotH, "pointer-events": "none" },
-            svg("title", {}, `the envelope's run from step ${first} to step ${last}, where the name holds`)));
+            svg("title", {}, tl.runTitle ? tl.runTitle([first, last]) : `the envelope's run from step ${first} to step ${last}, where the name holds`)));
         }
       }
       if (!values.length) {
@@ -1061,12 +1112,19 @@
     }
     root.append(svg("text", { x: width - m.r, y: height - 2, "text-anchor": "end" }, "training step (log scale)"));
     steps.forEach((s, i) => root.append(marker(s, i, x(s), axisY, `step ${s} (checkpoint ${i + 1} of ${steps.length})`, true)));
-    // The gap's checkpoints, where the probe reads the description but the name doesn't hold.
+    // The gap's checkpoints, where the probe reads the description but the name doesn't hold, or for
+    // a crystallization, where the model is accurate but it doesn't hold.
     const gesture = state.gestures.timeline;
     for (const g of gesture ? gesture.gap : []) {
       const gx = x(g);
       root.append(svg("path", { class: "gap", d: `M${gx - 5},${axisY - 13}L${gx + 5},${axisY - 13}L${gx},${axisY - 5}Z` },
-        svg("title", {}, `step ${g}: in the record's gap, where the probe reads the description but the name doesn't hold`)));
+        svg("title", {}, gesture.gapTitle ? gesture.gapTitle(g) : `step ${g}: in the record's gap, where the probe reads the description but the name doesn't hold`)));
+    }
+    // A crystallization's checkpoints where it holds before the model's accuracy reaches 0.9, marked apart.
+    for (const b of gesture && gesture.before ? gesture.before : []) {
+      const bx = x(b);
+      root.append(svg("path", { class: "before", d: `M${bx},${axisY - 15}L${bx + 5},${axisY - 9}L${bx},${axisY - 3}L${bx - 5},${axisY - 9}Z` },
+        svg("title", {}, gesture.beforeTitle(b))));
     }
 
     clear(box, root);
@@ -1818,16 +1876,17 @@
     return bad === -1 ? null : `fact ${bad} isn't {"label", "value", "unit", "gate", "path"}`;
   }
 
-  // The subjects G6.7 writes, whose nulls read as none (views/gesture_badges.py).
-  const PHASE6_SUBJECTS = ["name", "edge", "open", "generalize", "dsteer"];
+  // The subjects whose nulls read as none: G6.7's (views/gesture_badges.py) and G7.5's
+  // (views/crystallize_badges.py).
+  const NULL_AS_NONE_SUBJECTS = ["name", "edge", "open", "generalize", "dsteer", "crystallize", "set"];
 
   // A fact's value in its unit, as {text, odd}: odd when the file's value doesn't fit the unit,
   // in which case the text is the value as the file holds it. Display only; nothing is computed.
   function factValue(subject, fact, facts) {
     const v = fact.value;
     const asHeld = (why) => ({ text: `${JSON.stringify(v)} ${fact.unit}`, odd: why });
-    // Phase 6: a null reads as none in any unit, on Phase 6's subjects only; three units aren't numbers.
-    if (v === null && PHASE6_SUBJECTS.includes(subject)) return { text: "none" };
+    // Phases 6 and 7: a null reads as none in any unit, on their subjects only; three units aren't numbers.
+    if (v === null && NULL_AS_NONE_SUBJECTS.includes(subject)) return { text: "none" };
     switch (fact.unit) {
       case "span":
         return Array.isArray(v) && v.length === 2 && v.every(Number.isInteger) ? { text: `${v[0]} to ${v[1]}` }
@@ -1858,6 +1917,8 @@
       case "score":
       case "ratio":
         return { text: v.toFixed(3) };
+      case "nats":
+        return { text: `${v.toFixed(3)} nats` };
       case "edges":
         return Number.isInteger(v) ? { text: String(v) } : asHeld("not a whole number of edges");
       case "count":
@@ -2077,6 +2138,8 @@
       case "dsteer":
         return ["move dictionary ", hashCode(args.dictionary), "'s latents at ", tapCode(e.tap), `, ${at}, removing rows `,
           hashCode(args.remove), " and adding rows ", hashCode(args.add), " at amounts ", hashCode(args.amounts)];
+      case "set":
+        return ["set ", tapCode(e.tap), ` at ${at} to values `, hashCode(args.values)];
       default:
         return [el("span", { class: "error", text: `unknown operation ${JSON.stringify(e.op)}: ` }), tapCode(String(e.tap)), ` at ${at}, arguments ${JSON.stringify(args)}`];
     }
@@ -2681,8 +2744,9 @@
 
   // ---------------------------------------------------------------- gestures (Phase 6, D47)
 
-  const GESTURE_KINDS = ["name", "edge", "open", "generalize"];
-  const GESTURE_TITLES = { name: "name-this-direction", edge: "assert-this-edge", open: "open-this-up", generalize: "generalize-this" };
+  const GESTURE_KINDS = ["name", "edge", "open", "generalize", "crystallize"];
+  const GESTURE_TITLES = { name: "name-this-direction", edge: "assert-this-edge", open: "open-this-up", generalize: "generalize-this",
+    crystallize: "crystallize-this" };
   // Each kind's meter keys, as src/nablaframe/views/gestures.py's METER_KEYS lists them.
   const GESTURE_METER_KEYS = {
     name: ["label", "description", "value", "f1", "set_f1", "coverage", "causal", "instances", "follows", "null_follows",
@@ -2692,6 +2756,7 @@
     open: ["class", "target", "candidates", "instances", "measured", "no_span", "parts", "reading", "within",
       "signed_within", "random_within", "error_median"],
     generalize: ["form", "relation", "description", "class", "values", "envelope", "slices_f1", "slices_follows", "seeds", "final"],
+    crystallize: ["label", "kl", "ablation", "removed", "agreement", "loss_delta"],
   };
   const HEX64 = /^[0-9a-f]{64}$/;
 
@@ -2734,43 +2799,68 @@
     return missing.length ? `its meter has no ${missing.join(", ")}` : null;
   }
 
-  // Reads the gestures panel, when ?gestures= names a records folder; without it the panel stays hidden.
+  // Reads one folder's panel.json: {dir, panel}, or {dir, error} saying why it can't be read.
+  async function readGesturePanel(dir) {
+    const path = `${dir}panel.json`;
+    let panel;
+    try {
+      panel = await fetchJSON(path, `gestures panel · ${dir}`);
+    } catch (error) {
+      return { dir, error: `${path} is missing or unreadable (${error.message})` };
+    }
+    if (!isMapping(panel) || !Array.isArray(panel.records) || !isMapping(panel.names) || !(panel.run === null || typeof panel.run === "string")) {
+      return { dir, error: `${path} isn't {"run", "records", "names"}, the form views/gestures.py writes` };
+    }
+    return { dir, panel };
+  }
+
+  // Reads the gestures panel of every folder ?gestures= names, and lists their records together;
+  // without ?gestures= the panel stays hidden.
   async function loadGestures() {
-    if (!GESTURES_DIR) return;
+    if (!GESTURES_NAMED) return;
     const g = state.gestures;
     g.status = "loading";
     $("gestures-panel").hidden = false;
-    $("gestures-sub").textContent = `from ${GESTURES_DIR}`;
-    clear($("gestures-panel-meter"), meterRow("info", "loading the gestures panel…", ""));
-    const path = `${GESTURES_DIR}panel.json`;
-    const fail = (why) => {
+    $("gestures-sub").textContent = GESTURES_DIRS.length ? `from ${GESTURES_DIRS.join(", ")}` : "";
+    clear($("gestures-panel-meter"), meterRow("info", `loading the gestures ${GESTURES_DIRS.length === 1 ? "panel" : "panels"}…`, ""));
+    const read = await Promise.all(GESTURES_DIRS.map(readGesturePanel));
+    if (GESTURES_EMPTY) g.problems.push(`?gestures= has ${GESTURES_EMPTY} empty folder ${GESTURES_EMPTY === 1 ? "name" : "names"} between its commas, skipped`);
+    for (const { dir, panel, error } of read) {
+      if (error) {
+        g.folders.push({ dir, error });
+        continue;
+      }
+      const folder = { dir, run: panel.run, count: 0 };
+      g.folders.push(folder);
+      panel.records.forEach((e, i) => {
+        const before = isMapping(e) && g.byKey.has(e.key) ? g.folderOf.get(e.key) : null;
+        const why = gestureEntryProblem(e) ?? (before === null ? null
+          : before === dir ? "it repeats an earlier entry's key" : `its key is listed already, from ${before}, so it is read from there`);
+        if (why) g.problems.push(`${dir}: record ${i}${isMapping(e) && typeof e.key === "string" ? ` (${short(e.key)})` : ""} isn't listed: ${why}`);
+        else {
+          g.entries.push(e);
+          g.byKey.set(e.key, e);
+          g.folderOf.set(e.key, dir);
+          folder.count += 1;
+        }
+      });
+      // Every folder's names, place by place and latent by latent, in the address's folder order.
+      for (const [place, latents] of Object.entries(panel.names)) {
+        if (!isMapping(latents)) continue;
+        const into = (g.names[place] ||= {});
+        for (const [latent, keys] of Object.entries(latents)) if (Array.isArray(keys)) (into[latent] ||= []).push(...keys);
+      }
+    }
+    const failed = g.folders.filter((f) => f.error);
+    if (!GESTURES_DIRS.length || failed.length === g.folders.length) {
       g.status = "error";
-      g.error = why;
-      clear($("gestures-panel-meter"), meterRow("bad", "gestures panel unavailable", why));
+      g.error = GESTURES_DIRS.length ? failed.map((f) => f.error).join("; ") : "?gestures= names no folder";
+      clear($("gestures-panel-meter"), meterRow("bad", `gestures ${GESTURES_DIRS.length > 1 ? "panels" : "panel"} unavailable`, g.error));
+      clear($("gestures-list"), g.problems.map((problem) => errorBox(problem)));
       setPanelBad("gestures-panel", true);
       renderFacts();
-    };
-    let panel;
-    try {
-      panel = await fetchJSON(path, "gestures panel");
-    } catch (error) {
-      fail(`${path} is missing or unreadable (${error.message})`);
       return;
     }
-    if (!isMapping(panel) || !Array.isArray(panel.records) || !isMapping(panel.names) || !(panel.run === null || typeof panel.run === "string")) {
-      fail(`${path} isn't {"run", "records", "names"}, the form views/gestures.py writes`);
-      return;
-    }
-    g.panel = panel;
-    panel.records.forEach((e, i) => {
-      const why = gestureEntryProblem(e) ?? (g.byKey.has(e.key) ? "it repeats an earlier entry's key" : null);
-      if (why) g.problems.push(`record ${i}${isMapping(e) && typeof e.key === "string" ? ` (${short(e.key)})` : ""} isn't listed: ${why}`);
-      else {
-        g.entries.push(e);
-        g.byKey.set(e.key, e);
-      }
-    });
-    g.names = panel.names;
     g.status = "ok";
     renderGesturePanelMeter();
     renderGestureList();
@@ -2781,16 +2871,29 @@
 
   function renderGesturePanelMeter() {
     const g = state.gestures;
-    const run = g.panel.run;
     const id = state.index.run_id;
-    const rows = [meterRow("info", "gestures panel",
-      `${g.entries.length} ${g.entries.length === 1 ? "record" : "records"} of run ${run === null ? "none (the index lists no record)" : short(run)}, each listed with its meter first; a chosen record is drawn from its own file once its SHA-256, key and request are its entry's`,
-      `${GESTURES_DIR}panel.json\nrun ${run}`)];
-    if (run !== null && !(run.startsWith(id) || id.startsWith(run))) {
-      rows.push(meterRow("bad", "another run's records", `the panel's records are run ${short(run)}'s, the view index's run is ${short(id)}: their names and steps don't belong to these views`));
+    const sameRun = (a, b) => a.startsWith(b) || b.startsWith(a);
+    const read = g.folders.filter((f) => !f.error);
+    const folderWords = (f) => `${f.dir}: ${f.count} ${f.count === 1 ? "record" : "records"} of run ${f.run === null ? "none (its index lists no record)" : short(f.run)}`;
+    const runs = [...new Set(read.map((f) => f.run).filter((run) => run !== null))];
+    const rows = [meterRow("info", GESTURES_DIRS.length > 1 ? `gestures panels, ${GESTURES_DIRS.length} folders` : "gestures panel",
+      [`${g.entries.length} ${g.entries.length === 1 ? "record" : "records"}`,
+        GESTURES_DIRS.length > 1 ? ` listed together (${read.map(folderWords).join("; ")})` : ` of run ${runs.length ? short(runs[0]) : "none (the index lists no record)"}`,
+        ", each listed with its meter first; a chosen record is drawn from its own folder's file once its SHA-256, key and request are its entry's"],
+      read.map((f) => `${f.dir}panel.json\nrun ${f.run}`).join("\n"))];
+    for (const f of g.folders.filter((f) => f.error)) rows.push(meterRow("bad", "a folder's panel unavailable", f.error));
+    if (runs.length > 1) {
+      rows.push(meterRow("bad", "records of several runs", `every folder's records must be of one run, but ${read.filter((f) => f.run !== null).map((f) => `${f.dir}'s are run ${short(f.run)}'s`).join(", ")}`));
     }
+    for (const f of read) {
+      if (f.run !== null && !sameRun(f.run, id)) {
+        rows.push(meterRow("bad", "another run's records", `${GESTURES_DIRS.length > 1 ? `${f.dir}: ` : ""}the panel's records are run ${short(f.run)}'s, the view index's run is ${short(id)}: their names and steps don't belong to these views`));
+      }
+    }
+    const bad = rows.length > 1;
+    if (g.problems.length) rows.push(meterRow("warn", "not listed", `${g.problems.length} ${g.problems.length === 1 ? "entry isn't" : "entries aren't"} listed; each is named, with why, under the list`));
     clear($("gestures-panel-meter"), rows);
-    setPanelBad("gestures-panel", rows.length > 1);
+    setPanelBad("gestures-panel", bad);
   }
 
   // A record's request in words, with its step, instances and seed.
@@ -2802,6 +2905,11 @@
       return [el("code", { text: String(a.relation) }), ": ", site(a.up, a.up_site), " → ", site(a.down, a.down_site), tail];
     }
     if (request.kind === "name") return [`latent ${JSON.stringify(a.latent)} of `, site(a.dictionary, a.site), ` at ${a.class}`, tail];
+    if (request.kind === "crystallize") {
+      const cites = Array.isArray(a.cites) ? `${a.cites.length} cited ${a.cites.length === 1 ? "record" : "records"}` : `cites ${JSON.stringify(a.cites)}`;
+      return [`block ${JSON.stringify(a.block)}'s ${partWords(a.part)} at ${a.class}, as `, el("code", { text: String(a.function) }),
+        ` in the ${a.form} form · ${cites}`, tail];
+    }
     if (request.kind === "open") {
       const target = "latent" in a ? `latent ${JSON.stringify(a.latent)}` : ["the set of ", nameOf(a.description, a.value)];
       return [target, " of ", site(a.dictionary, a.site), ` at ${a.class}, opened into `, site(a.upstream, a.upstream_site), tail];
@@ -2834,6 +2942,10 @@
         ", random ", gShare(m.random_within), ")", sep, gCount(m.measured), " measured of ", gCount(m.instances), " drawn, ",
         gCount(m.no_span), " with no span, ", gCount(m.candidates), " candidates"];
     }
+    if (entry.kind === "crystallize") {
+      return [crystalLabel(m.label), sep, "KL ", gScore(m.kl), " vs the mean ablation's ", gScore(m.ablation), " nats, ", gShare(m.removed),
+        " of it removed", sep, "agreement ", gShare(m.agreement), sep, "loss delta ", gSigned(m.loss_delta), " nats"];
+    }
     const f = isMapping(m.final) ? m.final : {};
     const seeds = Array.isArray(m.seeds) ? m.seeds : [];
     if (m.form === "edge") {
@@ -2851,7 +2963,8 @@
       gShare(f.probe), ", accuracy ", gShare(f.accuracy), f.holds ? ", holds" : ", doesn't hold"];
   }
 
-  // The list, built once: each kind in its own group, in the order name, edge, open, generalize.
+  // The list, built once: each kind in its own group, in the order name, edge, open, generalize,
+  // crystallize, every folder's entries together, folder by folder in the address's order.
   function renderGestureList() {
     const g = state.gestures;
     const groups = GESTURE_KINDS.map((kind) => {
@@ -2859,9 +2972,10 @@
       const items = entries.map((e) => {
         const item = el("button", {
           type: "button", class: "gesture-entry", "data-key": e.key, "aria-pressed": String(e.key === g.chosen),
-          title: `${GESTURE_TITLES[kind]} record ${e.key}\n${e.file}, SHA-256 ${e.sha256}`,
+          title: `${GESTURE_TITLES[kind]} record ${e.key}\n${g.folderOf.get(e.key)}${e.file}, SHA-256 ${e.sha256}`,
           onclick: () => chooseGesture(e.key),
-        }, el("span", { class: "gm" }, meterWords(e)), el("span", { class: "gr" }, requestWords(e.request)));
+        }, el("span", { class: "gm" }, meterWords(e)), el("span", { class: "gr" }, requestWords(e.request),
+          GESTURES_DIRS.length > 1 ? ` · from ${g.folderOf.get(e.key)}` : null));
         item.dataset.words = `${GESTURE_TITLES[kind]} ${kind} ${e.key} ${item.textContent}`.toLowerCase();
         return item;
       });
@@ -2913,7 +3027,7 @@
     const g = state.gestures;
     if (!g.records.has(entry.key)) {
       const promise = (async () => {
-        const { bytes, load } = await fetchBytes(GESTURES_DIR + entry.file, `${GESTURE_TITLES[entry.kind]} · ${short(entry.key)}`);
+        const { bytes, load } = await fetchBytes(g.folderOf.get(entry.key) + entry.file, `${GESTURE_TITLES[entry.kind]} · ${short(entry.key)}`);
         load.stage("hashing");
         const computed = await sha256Hex(bytes);
         const status = computed === null ? "unchecked" : computed === entry.sha256 ? "ok" : "bad";
@@ -3018,7 +3132,8 @@
     }
     const r = loaded.data.results;
     clear(body,
-      el("div", { class: "note" }, el("b", { text: GESTURE_TITLES[entry.kind] }), " of ", requestWords(entry.request)),
+      el("div", { class: "note" }, el("b", { text: GESTURE_TITLES[entry.kind] }), " of ", requestWords(entry.request),
+        GESTURES_DIRS.length > 1 ? ` · from ${g.folderOf.get(entry.key)}` : null),
       gestureSections(entry, r));
   }
 
@@ -3046,6 +3161,10 @@
     if (entry.kind === "open") {
       setGestureTimeline(null);
       return openSections(r);
+    }
+    if (entry.kind === "crystallize") {
+      setGestureTimeline(crystallizeTimeline(entry, r));
+      return crystallizeSections(entry, r);
     }
     setGestureTimeline(generalizeTimeline(entry, r));
     return generalizeSections(entry, r);
@@ -3319,6 +3438,150 @@
     ];
   }
 
+  // ---- crystallize-this
+
+  // Where a function reads a description, as zoo/functions.py's Read says.
+  const READ_WHERE = { same: "at the component's own position", across: "at earlier positions" };
+  const partWords = (part) => ({ attention: "attention", mlp: "MLP", write: "write" }[part] || JSON.stringify(part));
+  // A crystallization's label as the record holds it, coloured by which of crystallize.py's three it is.
+  const CRYSTAL_LABELS = { holds: "holds", "doesn't hold": "misses", inert: "inert" };
+  const crystalLabel = (label) => el("b", { class: `crystal-${CRYSTAL_LABELS[label] || "odd"}`, title: JSON.stringify(label), text: String(label) });
+
+  // The rows a crystallize-this record adds to the timeline: its KL, the ablation's KL and the
+  // model's accuracy at every checkpoint, its envelope's runs, its gap, and the checkpoints where
+  // it holds before accuracy reaches 0.9.
+  function crystallizeTimeline(entry, r) {
+    const rows = Array.isArray(r.checkpoints) ? r.checkpoints : [];
+    const what = `${r.function} in the ${r.form} form, block ${r.block}'s ${partWords(r.part)} at ${r.class}`;
+    if (!rows.length) return null;
+    const series = (name, unit, key) => ({ gesture: true, name: `crystallize-this: ${name}`, unit,
+      points: rows.filter((row) => isMapping(row) && Number.isInteger(row.step))
+        .map((row) => ({ step: row.step, value: isNumber(row[key]) ? row[key] : null })).sort((a, b) => a.step - b.step) });
+    const env = isMapping(r.envelope) ? r.envelope : {};
+    const runs = Array.isArray(env.runs) ? env.runs.filter((run) => Array.isArray(run) && run.length === 2 && run.every(Number.isInteger)) : [];
+    const gap = Array.isArray(env.gap) ? env.gap.filter(Number.isInteger) : [];
+    const before = Array.isArray(env.before) ? env.before.filter(Number.isInteger) : [];
+    const from = env.accurate_from;
+    const accurate = Number.isInteger(from) ? `step ${from}` : "no checkpoint";
+    return { rows: [series("KL", "nats", "kl"), series("the ablation's KL", "nats", "ablation"), series("accuracy", "fraction", "accuracy")],
+      runs, gap, before,
+      runTitle: ([first, last]) => `the envelope's run from step ${first} to step ${last}, where the crystallization holds`,
+      gapTitle: (at) => `step ${at}: in the record's gap, where the model is accurate but the crystallization doesn't hold`,
+      beforeTitle: (at) => `step ${at}: the crystallization holds before the model's accuracy reaches 0.9 (at ${accurate})`,
+      note: [`The last three rows are the chosen crystallize-this record's checkpoints, ${what}: shaded where its envelope's runs hold (`,
+        runs.length ? runs.map((run) => `${run[0]} to ${run[1]}`).join(", ") : "none", "), ▼ on the step axis at its gap's checkpoints (",
+        gap.length ? gap.join(", ") : "none", "), where the model is accurate but it doesn't hold, and ◆ at the checkpoints where it holds before the model's accuracy reaches 0.9 (",
+        before.length ? before.join(", ") : "none", `; accuracy reaches 0.9 at ${accurate}).`] };
+  }
+
+  // A cited record's key as a button that opens it, when any folder lists it; otherwise it says so.
+  function citedRecord(key) {
+    const entry = state.gestures.byKey.get(key);
+    if (!entry) return el("span", { class: "error", title: key, text: `${short(key)} (in no folder the address names)` });
+    const m = entry.meter;
+    const words = entry.kind === "name" ? (m.label === null ? ": no name" : [": ", el("span", { class: `label-${m.label}`, text: m.label }), " ", nameOf(m.description, m.value)])
+      : entry.kind === "edge" ? [": ", el("code", { text: String(m.relation) }), ` ${m.label}`] : ` (${GESTURE_TITLES[entry.kind]})`;
+    return el("button", {
+      type: "button", class: "name-link", title: `open ${GESTURE_TITLES[entry.kind]} record ${key} in the gestures panel\nfrom ${state.gestures.folderOf.get(key)}`,
+      onclick: () => chooseGesture(key),
+    }, el("code", { text: short(key) }), words);
+  }
+
+  // The crystallization's KL and agreement beside each wrong function's.
+  function wrongTable(own, keys, wrong) {
+    return table("wrong", [el("th", { text: "keyed by" }), "KL (nats)", "agreement"], [
+      el("tr", { class: "chosen" }, tdText("the function's ", keys.map((k, i) => [i ? ", " : null, el("code", { text: String(k) })])), td(gScore(own.kl)), td(gShare(own.agreement))),
+      ...wrong.map((w) => el("tr", {}, tdText("wrong: ", el("code", { text: String(w.key) })), td(gScore(w.kl)), td(gShare(w.agreement))))]);
+  }
+
+  // A meter of crystallize.py's results in words: the label, the KL beside the ablation's, the share removed, agreement and the loss delta.
+  const crystalMeter = (m) => [crystalLabel(m.label), ": KL ", gScore(m.kl), " nats from the model's own prediction, beside the mean ablation's ",
+    gScore(m.ablation), " nats, so ", gShare(m.removed), " of it removed; agreement ", gShare(m.agreement), "; loss delta ", gSigned(m.loss_delta), " nats"];
+
+  function crystallizeSections(entry, r) {
+    const keys = Array.isArray(r.keys) ? r.keys : [];
+    return [
+      section(null, () => el("div", { class: "name-head" }, el("code", { text: String(r.function) }), ` in the ${r.form} form, replacing block ${r.block}'s `,
+        partWords(r.part), ` at ${r.class} (`, r.taps.map((tap, i) => [i ? " and " : null, tapCode(tap)]), ")",
+        el("span", { class: "muted" }, ` · fitted on ${r.rows.fit} rows, measured on ${r.rows.held} held-out rows`))),
+      section("The meter", () => [
+        el("div", { class: "note" }, crystalMeter(r.meter)),
+        table("loss", ["", "loss (nats)", "accuracy"], [
+          el("tr", {}, tdText("the model"), td(gScore(r.loss.model)), td(gShare(r.accuracy.model))),
+          el("tr", {}, tdText(el("b", { text: "crystallized" })), td(gScore(r.loss.crystallized)), td(gShare(r.accuracy.crystallized)))]),
+      ]),
+      section("The function", () => [
+        table("keys", [el("th", { text: "key" }), el("th", { text: "description" })],
+          keys.map((k, j) => el("tr", {}, tdText(el("code", { text: String(k) })),
+            tdText(r.describes[j] === null ? shown(null, "none: no description equals it at every row") : el("code", { text: String(r.describes[j]) }))))),
+        el("div", { class: "note" }, "It reads ", r.reads.length ? r.reads.map(([d, where], i) => [i ? ", " : null, el("code", { text: String(d) }), " ",
+          el("span", { title: `where: ${JSON.stringify(where)}`, text: READ_WHERE[where] || `(where ${JSON.stringify(where)})` })]) : "nothing",
+          "; its relation for what it reads at its own position: ", r.relation === null ? shown(null, "none") : el("code", { text: String(r.relation) }), "."),
+        crystallizeCites(r.cites),
+      ]),
+      section("The form", () => [
+        table("seen", [el("th", { text: "key" }), "values the fitting rows show"], keys.map((k, j) => el("tr", {}, tdText(el("code", { text: String(k) })), td(gCount(r.values.seen[j]))))),
+        el("div", { class: "note" }, gCount(r.values.unseen), " held-out rows have a key value the fitting rows don't show. R² ", el("b", {}, gScore(r.r2)), " over the held-out rows."),
+        r.frequencies === null ? null : [
+          el("div", { class: "note", text: `The fourier form's ${r.frequencies.k.length} frequencies, each with its share of the embedding's energy at these params and of the fitted coefficients:` }),
+          table("frequencies", ["frequency", "the embedding's energy", "the fitted coefficients"],
+            r.frequencies.k.map((k, i) => el("tr", {}, td(gCount(k)), td(gShare(r.frequencies.embedding[i])), td(gShare(r.frequencies.coefficients[i])))))],
+      ]),
+      section("The controls", () => [
+        el("h4", { text: "Wrong functions" }),
+        r.wrong.length ? wrongTable(r.meter, keys, r.wrong) : el("div", { class: "note", text: "The function declares no wrong function." }),
+        el("h4", { text: "The counterfactual" }),
+        r.counterfactual === null ? el("div", { class: "note", text: "The function declares no counterfactual." }) : [
+          el("div", { class: "note" }, el("code", { text: String(r.counterfactual.name) }), ", over ", gCount(r.counterfactual.rows),
+            " rows where the key the component reads and the answer's key differ: the part put to the form's value keyed each way."),
+          table("counterfactual", [el("th", { text: "keyed by" }), "KL (nats)", "agreement"], [
+            el("tr", {}, tdText("what the component reads"), td(gScore(r.counterfactual.reads.kl)), td(gShare(r.counterfactual.reads.agreement))),
+            el("tr", {}, tdText("the answer"), td(gScore(r.counterfactual.answer.kl)), td(gShare(r.counterfactual.answer.agreement)))])],
+        el("h4", { text: "The twin" }),
+        r.twin === null ? el("div", { class: "note", text: "No twin was measured." }) : [
+          el("div", { class: "note" }, "On the random-weights twin, fitted and measured again: ", crystalMeter(r.twin.meter), "."),
+          r.twin.wrong.length ? wrongTable(r.twin.meter, keys, r.twin.wrong) : null],
+      ]),
+      section("Across training", () => crystallizeEnvelope(r)),
+    ];
+  }
+
+  // What the record cites: for each key, its name records and the share of its values they name as planted; and its edge records.
+  function crystallizeCites(cites) {
+    if (cites === null) return el("div", { class: "note", text: "It cites nothing: the record was built without cited records." });
+    return [
+      el("h4", { text: "Cited name records" }),
+      cites.names.length ? cites.names.map((n) => el("div", { class: "cite" },
+        el("div", { class: "note" }, "Key ", el("code", { text: String(n.key) }), ", ", el("code", { text: String(n.description) }), ": ",
+          gCount(n.records.length), ` cited name ${n.records.length === 1 ? "record names" : "records name"} it, naming `, el("b", {}, gShare(n.named)),
+          " of its ", gCount(n.values), " held-out values as planted."),
+        n.note === null ? null : el("div", { class: "note record-note", text: String(n.note) }),
+        n.records.length ? el("div", { class: "cite-records" }, n.records.map((key) => citedRecord(key))) : null))
+        : el("div", { class: "note", text: "No key has a description, so no name record is cited." }),
+      el("h4", { text: "Cited edge records" }),
+      cites.edges.length ? table("edges", [el("th", { text: "record" }), el("th", { text: "relation" }), el("th", { text: "label" })],
+        cites.edges.map((e) => el("tr", {}, tdText(citedRecord(e.key)), tdText(el("code", { text: String(e.relation) })), tdText(String(e.label)))))
+        : el("div", { class: "note", text: "No edge record is cited." }),
+    ];
+  }
+
+  function crystallizeEnvelope(r) {
+    if (!Array.isArray(r.checkpoints) || !r.checkpoints.length) return el("div", { class: "note", text: "The record was built without checkpoints, so it adds no row to the timeline." });
+    const env = r.envelope;
+    const steps = (list) => (list.length ? list.join(", ") : "none");
+    return [
+      el("div", { class: "note" }, `Fitted again at each of its ${r.checkpoints.length} checkpoints, which are rows on the timeline above while it is chosen. `,
+        "Its envelope's runs: ", env.runs.length ? env.runs.map((run, i) => [i ? ", " : null, shown(run, steps2(run))]) : shown(env.runs, "none"),
+        "; its final run ", env.final === null ? shown(null, "none") : shown(env.final, steps2(env.final)),
+        "; its gap ", shown(env.gap, steps(env.gap)), "; the model's accuracy reaches 0.9 at ",
+        env.accurate_from === null ? shown(null, "no checkpoint") : shown(env.accurate_from, `step ${env.accurate_from}`),
+        ", and the crystallization holds before it at ", shown(env.before, steps(env.before)), "."),
+      table("checkpoints", ["step", el("th", { text: "label" }), "KL (nats)", "the ablation's KL", "accuracy"],
+        r.checkpoints.map((c) => el("tr", { class: env.before.includes(c.step) ? "before" : env.gap.includes(c.step) ? "in-gap" : null },
+          td(env.before.includes(c.step) ? "◆ " : env.gap.includes(c.step) ? "▼ " : null, gCount(c.step)), tdText(crystalLabel(c.label)), td(gScore(c.kl)), td(gScore(c.ablation)), td(gShare(c.accuracy))))),
+    ];
+  }
+
   // ---- the features panel's links to names
 
   // The name records of a latent of the features payload's dictionary and site, as buttons.
@@ -3343,7 +3606,7 @@
 
   function latentNames(data, latent) {
     const g = state.gestures;
-    if (!GESTURES_DIR) return el("div", { class: "note", text: "No gestures panel is open (the address names no ?gestures= folder), so its name records can't be listed." });
+    if (!GESTURES_NAMED) return el("div", { class: "note", text: "No gestures panel is open (the address names no ?gestures= folder), so its name records can't be listed." });
     if (g.status !== "ok") return el("div", { class: "note", text: g.status === "error" ? "The gestures panel couldn't be read, so its name records can't be listed." : "Loading the gestures panel…" });
     const links = nameLinks(data, latent);
     return links.length ? el("div", { class: "controls" }, links)

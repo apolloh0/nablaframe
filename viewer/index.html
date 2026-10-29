@@ -275,6 +275,18 @@
     svg .bar-text { font-weight: 600; }
     svg .envelope { fill: var(--accent); opacity: 0.14; }
     svg .gap { fill: var(--warning); stroke: var(--warning-text); stroke-width: 0.5; }
+
+    /* Crystallize-this (Phase 7) */
+    .crystal-holds { color: var(--good-text); }
+    .crystal-misses { color: var(--critical-text); }
+    .crystal-inert { color: var(--text-secondary); }
+    .crystal-odd { color: var(--critical-text); font-style: italic; }
+    #gestures-body h4 { margin: 10px 0 2px; font-size: 13px; }
+    .cite { margin: 2px 0 8px; }
+    .cite-records { display: flex; flex-wrap: wrap; gap: 2px 6px; max-height: 140px; overflow-y: auto; }
+    table.gesture tr.before td { background: color-mix(in srgb, var(--good) 14%, transparent); }
+    table.gesture tr.in-gap td { background: color-mix(in srgb, var(--warning) 18%, transparent); }
+    svg .before { fill: var(--good); stroke: var(--good-text); stroke-width: 0.5; }
   </style>
 </head>
 <body>
