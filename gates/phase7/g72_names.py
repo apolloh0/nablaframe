@@ -116,6 +116,7 @@ def measure(g71: dict[str, Any]) -> dict[str, Any]:
     out = {
         "fvu": fvu,
         "twin_fvu": twin_fvu,
+        "meters": {"fvu": fvu, "twin_fvu": twin_fvu},
         "names": names,
         "records": len(keys),
         "seconds": seconds,
