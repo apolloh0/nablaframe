@@ -3,7 +3,7 @@
   "env_lock_sha256": "9c2155edb31caf6aa916bb9a5ce4aa13d7b404f721039fab3d2796e312740df5",
   "env_name": "nf-jax",
   "gate_id": "G7.2",
-  "git_commit": "9451935893434be00d96b0184b1aa219b10068c3",
+  "git_commit": "0f0b9cb3d95c92d0ac68e733968a415e288c7713",
   "git_dirty": false,
   "measurements": {
     "class": "answer",
@@ -17,6 +17,10 @@
     },
     "fvu": 0.01750201414449884,
     "instances": 512,
+    "meters": {
+      "fvu": 0.01750201414449884,
+      "twin_fvu": 0.045044242739667534
+    },
     "names": {
       "token(p+1)": {
         "trained": {
@@ -724,11 +728,11 @@
     "records": 130,
     "run_id": "6109bcc44b5e1ef2cacda584954e3c3b2db1a9915713b8ff7ee51cae419f2f17",
     "seconds": {
-      "dictionary": 31.6441779169254,
-      "fvu": 0.29903437523171306,
-      "names": 100.60821645800024,
-      "records": 33.40524316672236,
-      "twin_dictionary": 31.787819750141352
+      "dictionary": null,
+      "fvu": 0.3796993331052363,
+      "names": 97.15443929191679,
+      "records": 0.11962354183197021,
+      "twin_dictionary": null
     },
     "seed": 31,
     "step": 10000,
@@ -747,6 +751,6 @@
   "schema_version": 2,
   "status": "pass",
   "thread_count": 12,
-  "timestamp_utc": "2026-10-24T11:32:48Z",
+  "timestamp_utc": "2026-10-29T12:27:45Z",
   "xla_flags": ""
 }
