@@ -1,6 +1,6 @@
 # Phase 7 spec: crystallize-this, with modular addition in the zoo
 
-Status: proposed with C11 and D54 to D57; D58 corrects modular addition's wrong functions, D59 drops G6.7's rerun, and D60 sets G7.1's probe to 64 pairs. Charter: [../charter.md](../charter.md).
+Status: complete, with C11 and D54 to D60. Ruled at human gate H7 on 2026-11-07: see D61 in [../decisions.md](../decisions.md). Charter: [../charter.md](../charter.md).
 
 ## Purpose
 
