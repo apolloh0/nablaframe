@@ -4,7 +4,7 @@ Status: working notes, started by apolloh0 at H5 on 2026-10-18 and updated as ph
 
 ## Where things stand
 
-Phase 6 is closed: H6 passed (D53, commit `6a918a4`). Its four gestures name latents, test edges, open targets and read names across training, each with a faithfulness number. Phase 7 builds crystallize-this, with modular addition joining the zoo. Two feasibility rounds in the cloud workspace on 2026-10-23 shaped the Phase 7 spec (C11, D54 to D57); their findings are under "Phase 7 feasibility". Phase 5 closed at H5 (D46, commit `8bef5da`), and the Phase 6 spec took its bars from the rounds under "Phase 6 feasibility". This notebook keeps what the zoo has shown, what it hasn't, and what to try next.
+Phase 7 is closed: H7 passed on 2026-11-07 (D61, commit `5db4589`). Crystallize-this replaces a component's output by an explicit function, and three crystallizations are judged: induction's block-1 attention as a table by the copied token, two-hop's block-3 write at `⇒` as a table by the hop's object, and modular addition's block-0 write at `=` as a table by the sum and in its fourier form. Modular addition's write holds as a function of the sum at five frequencies from step 1,100, six checkpoints before held-out accuracy reaches 0.9 at 1,700 (G7.4). That repeats, as a judged result, the order Nanda et al. (2023) reported. Phase 8, the self-learning ledger, comes next. The neuron-basis feasibility round, held until H7, ran on 2026-11-13; its findings are under "Neuron-basis feasibility". Phase 6 closed at H6 (D53, commit `6a918a4`); its four gestures name latents, test edges, open targets and read names across training, each with a faithfulness number. Two feasibility rounds in the cloud workspace on 2026-10-23 shaped the Phase 7 spec (C11, D54 to D57); their findings are under "Phase 7 feasibility". Phase 5 closed at H5 (D46, commit `8bef5da`), and the Phase 6 spec took its bars from the rounds under "Phase 6 feasibility". This notebook keeps what the zoo has shown, what it hasn't, and what to try next.
 
 The zoo's two-hop model has 4 layers and 51 tokens: entities `e0` to `e47`, then `→`, `;` and `⇒`. A window lists six facts `s → o ;` at positions 0 to 23, then `a ⇒ c`, with `⇒` at position 25. To answer, the model finds `b` in `a → b`, then `c` in `b → c`.
 
@@ -389,7 +389,7 @@ For each neuron, the share of its activation variance over all 113² pairs expla
 
 So the clock is in the neurons, and spread over every key frequency: no single cluster moves the sum. Width 128's tuned neurons sit beside an embedding with no key frequencies, at energy 0.104 against the twin's 0.102 (finding 23). So "memorizing" describes the embedding, not every neuron.
 
-The comparison with G7.2 is about set size. Its sets hold four latents. With about 30 latents, G7.2's SAE, on the residual stream after block 0, steers the sum 60% to 78% on every seed, above the tuned neurons' 14% to 45% (the tech report's hardening round, 2026-11-14, feasibility). The two edits sit at different sites: the SAE's on the whole residual stream, the neurons' on the MLP alone, whose own ceiling is 36% to 88%.
+G7.2's 0.9% is a small-set result: four latents. With about 30, its SAE steers the sum 60% to 78% on every seed, against 14% to 45% for the tuned neurons (the tech report's hardening round, 2026-11-14, feasibility). But it edits the whole residual stream after block 0, and on 4 of 6 seeds it goes past all 128 neurons together, the MLP's own ceiling (36% to 88%). So this doesn't separate basis from site.
 
 ### 35. What weak activations carry depends on the code
 
@@ -428,11 +428,11 @@ At each checkpoint, each neuron gets its best class, description and value by F1
 - **Names:** 421 to 452 of 512 neurons are named at every checkpoint. At step 5,000, 425 (83%) are named, and 352 of them (69% of all neurons) name `token(p-1)` as `→`: they fire at object positions.
 - **Changes:** per 100 steps, 389 to 413 names stay, against 252 to 266 for the null. The null stays this often because so many neurons share the `→` name. Unrelated changes rise from 6 to 24 per step, against 35 to 84 for the null.
 - **The composing route's neurons:** neurons naming `token(p-1)` at `⇒` (the query's `a`) go from 0 at step 5,000 to 41 at 6,000, most of them from 5,600.
-  - **Where they came from:** 26 of the 41 (63%) had another name at step 5,000, and 20 (49%) were `→` detectors. Both shares are below the base rates of 83% and 69%. So the route doesn't favour neurons that already had a job.
-  - **What the 20 `→` detectors do:** they keep firing at object positions (mean activation 1.26 at step 5,000, 1.04 at 6,000), while their response at `⇒` sharpens: 0.83 to 1.55 for their own entity, against 0.39 to 0.12 for the others. Each carries two responses, but that is no more often than chance would put a new name on an old neuron.
+  - **Where they came from:** 26 of the 41 (63%) had another name at step 5,000, and 19 (46%) were `→` detectors. One more named `token(p-1)` as `;`. Both shares are below the base rates of 83% and 69%. So the route doesn't favour neurons that already had a job.
+  - **What the 19 `→` detectors do:** they keep firing at object positions (mean activation 1.33 at step 5,000, 1.10 at 6,000), while their response at `⇒` sharpens: 0.82 to 1.45 for their own entity, against 0.37 to 0.08 for the others. Each carries two responses, but that is no more often than chance would put a new name on an old neuron.
 - **The twin:** names 33.
 
-So names, once given, hold in both models. Where new names appear tells nothing about re-use or recruitment beyond the base rate: induction has few named neurons, and two-hop's block 0 has mostly named ones. An earlier draft read two-hop as giving old neurons a second job; it didn't control for how many neurons were already named.
+So names, once given, hold in both models. The tech report's hardening round (2026-11-14, feasibility) finds the same on 5 induction seeds and on 4 two-hop seeds. Across each two-hop seed's change window, kept names outnumber the null's (seed 0: 3,515 against 1,683; seeds 1, 2 and 4: 3,479, 2,920 and 2,242 against 967, 1,182 and 299). Unrelated changes stay below it (137, 327, 558 and 995 against 535, 1,690, 1,562 and 2,332). Where new names appear tells nothing about re-use or recruitment beyond the base rate: induction has few named neurons, and two-hop's block 0 has mostly named ones. An earlier draft read two-hop as giving old neurons a second job; it didn't control for how many neurons were already named.
 
 ### 37. Only two-hop's block-0 MLP matters
 
@@ -548,6 +548,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | Finding 36's count corrected to 19 `→` detectors and its stability given on the seeds; finding 34's lead qualified (basis and site aren't separated); "Where things stand" brought to H7 |
 | 2026-11-14 | Neuron-basis feasibility: findings 33 to 37, with finding 36 read against the base rate and finding 34 qualified by the seeds; tests 3 and 6 built but not run |
 | 2026-10-23 | Phase 7 delta 2: finding 25's modular-addition wrong functions corrected, and a lesson on wrong functions (D58) |
 | 2026-10-23 | Phase 7 feasibility, rounds 1 and 2: findings 23 to 32; H10 added, H6 evidence added; ideas, lessons and where the evidence lives; "Where things stand" brought to H6 |
