@@ -354,7 +354,7 @@ A round in the cloud workspace, held until H7 (D61), asked what the MLP's own ne
 
 A neuron is active above its own threshold: whichever of its 50th, 75th, 90th, 95th and 99th percentiles, on fitting rows, gives its best F1 for any description and value. F1 is measured on held-out rows. Transcoder latents are active where their code is above zero (D49).
 
-### 33. Neurons name, but they don't steer
+### 33. Neurons name, but small sets of them don't steer
 
 Each value is pointed at its best unit by F1, and "named" means that F1 is at least 0.5. Steering swaps the top-k units of `v` and of `w` to `w`'s mean, and counts how often the prediction follows. The whole MLP is every unit swapped.
 
@@ -371,7 +371,9 @@ Every null follows at most 1.6%, except at modular addition's 64 of 128 neurons 
 - **Names hold only at high thresholds.** Most neurons choose their 95th or 99th percentile. With any positive activation counted as active, induction block 1's mean best F1 falls from 0.65 to 0.20.
 - **Neurons don't carry the name's write.** At induction's block 1, 16 latents steer 99% and the whole MLP 100%, while 64 neurons steer 26.6%.
 - **Two-hop's blocks 2 and 3 aren't on the answer's path.** Zeroing every neuron there changes no answer, so no basis can steer. `b` lives on the residual stream (finding 19, H9). Block-2 neurons are positive on only 3.5% of rows, against about 50% on the twin.
-- **A latent edit can beat the whole-MLP swap.** At induction's block 0, 16 latents steer 66%, but the whole MLP only 8.6%: the latents' decoder directions push harder along the token than the MLP's own mean output does.
+- **A latent edit can steer more than the MLP itself.** At induction's block 0, 16 latents steer 66%, while the whole MLP swapped to the other value's mean steers 8.6%.
+  - **The donor patch is the better ceiling.** The tech report's hardening round (2026-11-14, feasibility) writes in the MLP's own output from a window holding the other value. That patch steers 11.9% on seed 0, and 16 latents beat it on 4 of 5 seeds. The mean swap sits well below the donor patch on seeds 2 and 3 (4.7% against 10.2%, 2.1% against 11.7%).
+  - **The cause is open.** Swapping every latent, or writing in the transcoder's reconstruction of the donor row, steers within 3 points of the donor patch. So the excess comes from editing a few latents and leaving the rest, not from the dictionary's directions.
 - **Twins:** neurons name 0% to 4% of values. Two-hop's twin transcoder names 43% of `token(p)` at block 0, because the residual carries it there (finding 18).
 
 ### 34. Modular addition's neurons sit on its frequencies
@@ -391,7 +393,7 @@ So the clock is in the neurons, and spread over every key frequency: no single c
 
 G7.2's 0.9% is a small-set result: four latents. With about 30, its SAE steers the sum 60% to 78% on every seed, against 14% to 45% for the tuned neurons (the tech report's hardening round, 2026-11-14, feasibility). But it edits the whole residual stream after block 0, and on 4 of 6 seeds it goes past all 128 neurons together, the MLP's own ceiling (36% to 88%). So this doesn't separate basis from site.
 
-### 35. What weak activations carry depends on the code
+### 35. Weak activations against a random removal: the order differs by task
 
 The replication's design: zero each neuron's activations below its 75th percentile of magnitude, with thresholds fitted on calibration windows and applied to disjoint evaluation windows. Beside it, two removals matched on mass: the strongest activations, and a random removal. All MLPs together:
 
@@ -411,6 +413,7 @@ The replication's design: zero each neuron's activations below its 75th percenti
   - **The entity two back:** still reads at 0.97 or more under every removal.
 - **Modular addition:** every removal breaks the dense code.
 - **Twins:** the weak removal moves the loss by at most 0.001 nats.
+- **Seeds:** on the hardening round's seeds (2026-11-14, feasibility), weak costs less than random on induction (5 of 5 seeds) and modular addition (6 of 6). On two-hop it costs more on 4 of 5; seed 4 reverses. Each seed has one random draw.
 
 ### 36. Names hold once given; where new ones land follows the base rate
 
@@ -484,7 +487,7 @@ Things worth building or trying, roughly in order of payoff.
 
 So far this is calibration on models whose answers are known, not discovery in a real network.
 
-- **Toy scale:** both zoo models have 4 layers, and two-hop has 51 tokens. Passing here is necessary before trusting the tools elsewhere, not sufficient.
+- **Toy scale:** the zoo models have 1 to 4 blocks (induction 2, two-hop 4, modular addition 1), and two-hop has 51 tokens. Passing here is necessary before trusting the tools elsewhere, not sufficient.
 - **Nothing judged on real text:** the reference run's dictionaries leave 6% to 22% of the variance unexplained, and none of its results can be judged (D44). Its meters travel with every view for that reason.
 - **Feasibility isn't a gate:** findings 9 to 22 come from experiments outside the gates, on one dictionary seed per site. Phase 6's gates measure them again.
 - **Few declared names on real text:** token offsets name 8.6% to 30.1% of the reference run's latents, most of them as the current token (finding 22).
@@ -548,6 +551,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | From the report's overclaiming review: finding 33's title, ceiling and explanation; finding 35's title and its seeds; the zoo's layer counts under "What these results don't show yet" |
 | 2026-11-14 | Finding 36's count corrected to 19 `→` detectors and its stability given on the seeds; finding 34's lead qualified (basis and site aren't separated); "Where things stand" brought to H7 |
 | 2026-11-14 | Neuron-basis feasibility: findings 33 to 37, with finding 36 read against the base rate and finding 34 qualified by the seeds; tests 3 and 6 built but not run |
 | 2026-10-23 | Phase 7 delta 2: finding 25's modular-addition wrong functions corrected, and a lesson on wrong functions (D58) |
