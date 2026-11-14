@@ -373,7 +373,7 @@ Every null follows at most 1.6%, except at modular addition's 64 of 128 neurons 
 - **Two-hop's blocks 2 and 3 aren't on the answer's path.** Zeroing every neuron there changes no answer, so no basis can steer. `b` lives on the residual stream (finding 19, H9). Block-2 neurons are positive on only 3.5% of rows, against about 50% on the twin.
 - **A latent edit can steer more than the MLP itself.** At induction's block 0, 16 latents steer 66%, while the whole MLP swapped to the other value's mean steers 8.6%.
   - **The donor patch is the better ceiling.** The tech report's hardening round (2026-11-14, feasibility) writes in the MLP's own output from a window holding the other value. That patch steers 11.9% on seed 0, and 16 latents beat it on 4 of 5 seeds. The mean swap sits well below the donor patch on seeds 2 and 3 (4.7% against 10.2%, 2.1% against 11.7%).
-  - **The cause is open.** Swapping every latent, or writing in the transcoder's reconstruction of the donor row, steers within 3 points of the donor patch. So the excess comes from editing a few latents and leaving the rest, not from the dictionary's directions.
+  - **The cause is open.** Writing in the transcoder's reconstruction of the donor row steers within 1.2 points of the donor patch. Every latent swapped to its mean steers within 0.7 points of every neuron swapped to its mean. So the excess comes from editing a few latents and leaving the rest, not from the dictionary's directions.
 - **Twins:** neurons name 0% to 4% of values. Two-hop's twin transcoder names 43% of `token(p)` at block 0, because the residual carries it there (finding 18).
 
 ### 34. Modular addition's neurons sit on its frequencies
@@ -551,6 +551,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | Finding 33: the reconstruction tracks the donor patch, and every latent tracks every neuron; corrected from "both within 3 points of the donor patch" |
 | 2026-11-14 | From the report's overclaiming review: finding 33's title, ceiling and explanation; finding 35's title and its seeds; the zoo's layer counts under "What these results don't show yet" |
 | 2026-11-14 | Finding 36's count corrected to 19 `→` detectors and its stability given on the seeds; finding 34's lead qualified (basis and site aren't separated); "Where things stand" brought to H7 |
 | 2026-11-14 | Neuron-basis feasibility: findings 33 to 37, with finding 36 read against the base rate and finding 34 qualified by the seeds; tests 3 and 6 built but not run |
