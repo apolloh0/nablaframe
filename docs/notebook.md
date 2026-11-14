@@ -348,6 +348,100 @@ The sum is written in five frequencies (finding 28), a code no set of four laten
 
 On every twin, the right function and the wrong ones all leave the twin's prediction within 0.005 nats, and within 0.003 of each other. The mean ablation does the same: induction 0.0035, two-hop 0.0016, modular addition 0.0041. A twin's components don't steer its readout, so there is nothing to crystallize, and no function stands out.
 
+## Neuron-basis feasibility (2026-11-13)
+
+A round in the cloud workspace, held until H7 (D61), asked what the MLP's own neurons do on the zoo, under the same bars and twins as the dictionaries. It comes from Cammarata's essay "Neural Networks Are Already Clean" (Goodfire, 2026-10-15) and from AMX07's replication of it. Everything here is tagged feasibility. It ran on the gate-judged specimens copied from the Mac, each with its twin. A neuron is `gelu_tanh(ln2.hook_normalized @ c_fc + b_fc)`, decoded from a recorded tap. Rebuilt through `c_proj`, it matches `hook_mlp_out` to float32 rounding. Edits go through `set` on `hook_mlp_out` (D55).
+
+A neuron is active above its own threshold: whichever of its 50th, 75th, 90th, 95th and 99th percentiles, on fitting rows, gives its best F1 for any description and value. F1 is measured on held-out rows. Transcoder latents are active where their code is above zero (D49).
+
+### 33. Neurons name, but they don't steer
+
+Each value is pointed at its best unit by F1, and "named" means that F1 is at least 0.5. Steering swaps the top-k units of `v` and of `w` to `w`'s mean, and counts how often the prediction follows. The whole MLP is every unit swapped.
+
+| Site | Named: neurons, transcoder | Follows, top 8: neurons, transcoder | Neurons, top 64 | Whole MLP |
+| --- | --- | --- | --- | --- |
+| Induction block 1, `token(p+1)` at mechanism positions | 84%, 77% | 0%, 94% | 26.6% | 100% |
+| Induction block 0, `token(p)` everywhere | 14%, 89% | 0%, 65% | 9.4% | 8.6% |
+| Two-hop block 2, `b` at `⇒` | 75%, 83% | 0%, 0% | 0% | 0% |
+| Two-hop block 3, `token(p+1)` at `⇒` | 50%, 8% | 0%, 0% | 0% | 0% |
+| Modular addition, the sum at `=` | 0%, no transcoder | 2.0% | 25.8% | 51.2% |
+
+Every null follows at most 1.6%, except at modular addition's 64 of 128 neurons (13.3%) and in the whole-MLP swaps.
+
+- **Names hold only at high thresholds.** Most neurons choose their 95th or 99th percentile. With any positive activation counted as active, induction block 1's mean best F1 falls from 0.65 to 0.20.
+- **Neurons don't carry the name's write.** At induction's block 1, 16 latents steer 99% and the whole MLP 100%, while 64 neurons steer 26.6%.
+- **Two-hop's blocks 2 and 3 aren't on the answer's path.** Zeroing every neuron there changes no answer, so no basis can steer. `b` lives on the residual stream (finding 19, H9). Block-2 neurons are positive on only 3.5% of rows, against about 50% on the twin.
+- **A latent edit can beat the whole-MLP swap.** At induction's block 0, 16 latents steer 66%, but the whole MLP only 8.6%: the latents' decoder directions push harder along the token than the MLP's own mean output does.
+- **Twins:** neurons name 0% to 4% of values. Two-hop's twin transcoder names 43% of `token(p)` at block 0, because the residual carries it there (finding 18).
+
+### 34. Modular addition's neurons sit on its frequencies
+
+For each neuron, the share of its activation variance over all 113² pairs explained by one frequency. The basis is Nanda et al.'s: cos and sin of `a`, `b`, `a + b` and `a − b`, with `k` and `113 − k` folded together. A neuron is tuned at 0.8 or more.
+
+- **Width 32:**
+  - **Tuning:** 53 of 128 neurons are tuned, covering exactly the five key frequencies 2, 18, 25, 36 and 44 (finding 28), 7 to 13 neurons each. Operand terms carry 0.82 of their variance.
+  - **Steering:** the union of the five clusters, used as one set, steers the sum 32.2% of the time (null 0%). All 128 neurons steer 52.3%, the most the MLP can do while attention still carries the operands (finding 27). One cluster alone steers 1% at most. G7.2's latents steered 0.9% (null 0.8%).
+  - **The twin:** no neuron is tuned.
+- **Width 128:** the run finding 23 calls memorizing, retrained with the feasibility script.
+  - **Tuning:** 121 of 512 neurons are tuned, over 28 frequencies, with operand terms at 0.70.
+  - **Steering:** together they steer 84.6% (null 0%), and all 512 neurons steer 100%.
+  - **The twin:** no neuron is tuned.
+
+So the clock is in the neurons, and spread over every key frequency: no single cluster moves the sum. Width 128's tuned neurons sit beside an embedding with no key frequencies, at energy 0.104 against the twin's 0.102 (finding 23). So "memorizing" describes the embedding, not every neuron.
+
+The comparison with G7.2 is about set size. Its sets hold four latents. With about 30 latents, G7.2's SAE, on the residual stream after block 0, steers the sum 60% to 78% on every seed, above the tuned neurons' 14% to 45% (the tech report's hardening round, 2026-11-14, feasibility). The two edits sit at different sites: the SAE's on the whole residual stream, the neurons' on the MLP alone, whose own ceiling is 36% to 88%.
+
+### 35. What weak activations carry depends on the code
+
+The replication's design: zero each neuron's activations below its 75th percentile of magnitude, with thresholds fitted on calibration windows and applied to disjoint evaluation windows. Beside it, two removals matched on mass: the strongest activations, and a random removal. All MLPs together:
+
+| Model | Weak: mass removed, loss change | Random, matched on mass | Strongest, matched on mass |
+| --- | --- | --- | --- |
+| Reference run | 42.5%, +0.50 nats | +0.95 | +2.42 |
+| Induction | 30.0%, +0.013 | +0.34 | +2.91 |
+| Two-hop | 35.9%, +0.76 | +0.13 | +1.05 |
+| Modular addition | 46.3%, +2.44 | +4.52 | +6.71 |
+
+- **The reference run:** the weak removal changes 33.9% of predictions, nearer ties than the rest: the median top-2 share of a changed prediction is 0.65, against 0.79 over all tokens. The replication reports +0.037 nats at 29.8% of the mass for SwiGLU.
+- **Induction:** weak activations carry almost nothing. Its accuracy holds at 0.997, and the next token reads from block 1's output at 0.997.
+- **Two-hop:** weak activations matter more than random ones of the same mass, almost all of it at block 0.
+  - **Accuracy:** 0.861 under the weak removal, against 0.977 random and 0.766 strongest.
+  - **`b` after block 2:** a ridge probe reads it at 0.793 under the weak removal, against 0.953 unablated.
+  - **G4.3's swap after block 2:** 0.809 under the weak removal, against 0.852 unablated.
+  - **The entity two back:** still reads at 0.97 or more under every removal.
+- **Modular addition:** every removal breaks the dense code.
+- **Twins:** the weak removal moves the loss by at most 0.001 nats.
+
+### 36. Names hold once given; where new ones land follows the base rate
+
+At each checkpoint, each neuron gets its best class, description and value by F1, and is named at 0.5 or more. Between checkpoints, a name either stays (sharpening where F1 rises by 0.05), moves to a neighbouring description, changes to an unrelated one, appears or disappears. The replication's null pairs a neuron's later name with another neuron's earlier one.
+
+**Induction, every checkpoint from 400 to 1,000:**
+
+- **Names:** block 0 names `token(p)` at mechanism positions, from 2 neurons at step 500 to 28 at 750, then about 20. Block 1 names `token(p+1)` there, from 2 at 650 to 51 at 1,000. Nothing else is named.
+- **Changes:** a named neuron keeps its description and value, or drops below 0.5. None moves to a neighbouring or unrelated name, against up to 10 unrelated changes per step for the null.
+- **New names land on unnamed neurons,** as they must while almost none are named: 2 of block 1's 256 at step 650.
+- **The twin:** names nothing.
+
+**Two-hop's block 0, every 100 steps from 5,000 to 6,000** (finding 37; the checkpoints come from a replay on the Mac, which hashes identically to the run at steps 5,000 and 6,000):
+
+- **Names:** 421 to 452 of 512 neurons are named at every checkpoint. At step 5,000, 425 (83%) are named, and 352 of them (69% of all neurons) name `token(p-1)` as `→`: they fire at object positions.
+- **Changes:** per 100 steps, 389 to 413 names stay, against 252 to 266 for the null. The null stays this often because so many neurons share the `→` name. Unrelated changes rise from 6 to 24 per step, against 35 to 84 for the null.
+- **The composing route's neurons:** neurons naming `token(p-1)` at `⇒` (the query's `a`) go from 0 at step 5,000 to 41 at 6,000, most of them from 5,600.
+  - **Where they came from:** 26 of the 41 (63%) had another name at step 5,000, and 20 (49%) were `→` detectors. Both shares are below the base rates of 83% and 69%. So the route doesn't favour neurons that already had a job.
+  - **What the 20 `→` detectors do:** they keep firing at object positions (mean activation 1.26 at step 5,000, 1.04 at 6,000), while their response at `⇒` sharpens: 0.83 to 1.55 for their own entity, against 0.39 to 0.12 for the others. Each carries two responses, but that is no more often than chance would put a new name on an old neuron.
+- **The twin:** names 33.
+
+So names, once given, hold in both models. Where new names appear tells nothing about re-use or recruitment beyond the base rate: induction has few named neurons, and two-hop's block 0 has mostly named ones. An earlier draft read two-hop as giving old neurons a second job; it didn't control for how many neurons were already named.
+
+### 37. Only two-hop's block-0 MLP matters
+
+Mean-ablating each MLP's output at `⇒` costs block 0 between 1.1 and 4.9 nats at every checkpoint from 1,000 to 20,000. Blocks 1 to 3 never cost more than 0.036. So two-hop's neurons are tracked at block 0 only (finding 36).
+
+### Not run: tests 3 and 6
+
+Test 3, labelling neurons with an agent on trained models and twins, and the addendum's test 6, a reader that sees only weights, both need a model called through the API from a harness on the Mac. The harness, its jail and its bundles are built: the selftest passed on the Mac on 2026-11-13, with the strict sandbox. The scoring bars are fixed: `bars.json`, SHA-256 `e8906dc268c9…`. The round closed without running them, since the API is billed apart from the Claude plan. The harness and bundles stay in `~/nf-feasibility/neurons/reader/` for a later round.
+
 ## Hypotheses to test
 
 Readings of the results above. Feasibility tested H1, H3, H4 and H8, and added H6 to H9. Phase 6's gestures can test most of the rest. Status is one of Open, Testing, Supported or Refuted; a status set by feasibility says so.
@@ -454,6 +548,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | Neuron-basis feasibility: findings 33 to 37, with finding 36 read against the base rate and finding 34 qualified by the seeds; tests 3 and 6 built but not run |
 | 2026-10-23 | Phase 7 delta 2: finding 25's modular-addition wrong functions corrected, and a lesson on wrong functions (D58) |
 | 2026-10-23 | Phase 7 feasibility, rounds 1 and 2: findings 23 to 32; H10 added, H6 evidence added; ideas, lessons and where the evidence lives; "Where things stand" brought to H6 |
 | 2026-10-20 | Phase 6 feasibility, round 3: findings 17 to 22; H8 refuted, H9 added, H2 evidence added; lessons and the reference run's names |
