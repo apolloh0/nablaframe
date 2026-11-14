@@ -415,7 +415,7 @@ The replication's design: zero each neuron's activations below its 75th percenti
 - **Twins:** the weak removal moves the loss by at most 0.001 nats.
 - **Seeds:** on the hardening round's seeds (2026-11-14, feasibility), weak costs less than random on induction (5 of 5 seeds) and modular addition (6 of 6). On two-hop it costs more on 4 of 5; seed 4 reverses. Each seed has one random draw.
 
-### 36. Names hold once given; where new ones land follows the base rate
+### 36. A named neuron rarely takes an unrelated name; where new names land follows the base rate
 
 At each checkpoint, each neuron gets its best class, description and value by F1, and is named at 0.5 or more. Between checkpoints, a name either stays (sharpening where F1 rises by 0.05), moves to a neighbouring description, changes to an unrelated one, appears or disappears. The replication's null pairs a neuron's later name with another neuron's earlier one.
 
@@ -435,7 +435,7 @@ At each checkpoint, each neuron gets its best class, description and value by F1
   - **What the 19 `→` detectors do:** they keep firing at object positions (mean activation 1.33 at step 5,000, 1.10 at 6,000), while their response at `⇒` sharpens: 0.82 to 1.45 for their own entity, against 0.37 to 0.08 for the others. Each carries two responses, but that is no more often than chance would put a new name on an old neuron.
 - **The twin:** names 33.
 
-So names, once given, hold in both models. The tech report's hardening round (2026-11-14, feasibility) finds the same on 5 induction seeds and on 4 two-hop seeds. Across each two-hop seed's change window, kept names outnumber the null's (seed 0: 3,515 against 1,683; seeds 1, 2 and 4: 3,479, 2,920 and 2,242 against 967, 1,182 and 299). Unrelated changes stay below it (137, 327, 558 and 995 against 535, 1,690, 1,562 and 2,332). Where new names appear tells nothing about re-use or recruitment beyond the base rate: induction has few named neurons, and two-hop's block 0 has mostly named ones. An earlier draft read two-hop as giving old neurons a second job; it didn't control for how many neurons were already named.
+So a named neuron rarely takes an unrelated name, in both models. Names do lapse below F1 0.5: up to 12 per step on induction (97 over its window, both blocks), and 13 to 33 per step on two-hop's block 0 (232 over its window). The tech report's hardening round (2026-11-14, feasibility) finds the same rarity of unrelated changes on 5 induction seeds and on 4 two-hop seeds. Across each two-hop seed's change window, kept names outnumber the null's (seed 0: 3,515 against 1,683; seeds 1, 2 and 4: 3,479, 2,920 and 2,242 against 967, 1,182 and 299). Unrelated changes stay below it (137, 327, 558 and 995 against 535, 1,690, 1,562 and 2,332). Where new names appear tells nothing about re-use or recruitment beyond the base rate: induction has few named neurons, and two-hop's block 0 has mostly named ones. An earlier draft read two-hop as giving old neurons a second job; it didn't control for how many neurons were already named.
 
 ### 37. Only two-hop's block-0 MLP matters
 
@@ -551,6 +551,7 @@ Newest first.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | Finding 36: "names hold once given" narrowed to "rarely take an unrelated name", with the names that lapse counted |
 | 2026-11-14 | Finding 33: the reconstruction tracks the donor patch, and every latent tracks every neuron; corrected from "both within 3 points of the donor patch" |
 | 2026-11-14 | From the report's overclaiming review: finding 33's title, ceiling and explanation; finding 35's title and its seeds; the zoo's layer counts under "What these results don't show yet" |
 | 2026-11-14 | Finding 36's count corrected to 19 `→` detectors and its stability given on the seeds; finding 34's lead qualified (basis and site aren't separated); "Where things stand" brought to H7 |
