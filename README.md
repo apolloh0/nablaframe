@@ -47,7 +47,7 @@ UV_PROJECT_ENVIRONMENT=.venv-jax uv run --extra jax python gates/phase4/g41_zoo_
 
 1. **Install** the reference lane into `.venv-jax`. Every lane command names its extra: without `--extra jax`, uv resyncs the lane to the base packages.
 2. **Run the tests.** All 387 passed in about 13 minutes on a 2-core Linux machine.
-3. **Train a zoo model** (macOS only). This trains the induction model (2 layers, 4,000 steps) and records its trace under `runs/phase4/induction/`. Then it retrains the model from step 0 and checks that the final state hash is identical. With `--only` it writes no report.
+3. **Train a zoo model** (macOS only). This trains the induction model (2 layers, 4,000 steps) and records its trace under `runs/phase4/induction/`. Then it retrains the model from step 0 and checks that the final state hash is identical. Both trainings together took just under 2 minutes on an M-series Mac. With `--only` it writes no report.
 
 **Rebuilding the reports** (macOS): each gate script, in `gates/` (Phase 0) and `gates/phase1/` to `gates/phase7/`, says in its docstring how to run it. Together they rebuild [reports/](reports/).
 
