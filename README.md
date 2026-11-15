@@ -6,6 +6,10 @@
 
 Nablaframe trains a small GPT from scratch on a Mac and makes the result legible. The training run and the forward pass can be replayed exactly, inspected through lenses, manipulated, and refactored, and every explanation it shows carries a measured faithfulness number. nanoGPT makes the code readable; Nablaframe aims to make the trained model readable.
 
+## Report
+
+The first technical report: [Nablaframe: Beating the Null Isn't Enough](https://grasphouse.pages.dev/posts/nablaframe-beating-the-null-isnt-enough.html). Its seed-round results and scripts are in the [evidence release](https://github.com/apolloh0/nablaframe/releases/tag/report-2026-11).
+
 ## Status
 
 Phases 0 to 7 are complete. Each closed at a human gate that ruled on scripted measurements before the next phase began, and every ruling is in [docs/decisions.md](docs/decisions.md). Phase 8, a self-learning ledger, is next.
