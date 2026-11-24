@@ -8,7 +8,7 @@ Nablaframe trains a small GPT from scratch on a Mac and makes the result legible
 
 ## Report
 
-The first technical report: [Nablaframe: Toward a Learnable Learner](https://gradprop.pages.dev/posts/nablaframe-beating-the-null-isnt-enough). Its seed-round results and scripts are in the [evidence release](https://github.com/apolloh0/nablaframe/releases/tag/report-2026-11).
+The first technical report: [Nablaframe: Toward a Learnable Learner](https://gradprop.pages.dev/posts/nablaframe-toward-a-learnable-learner). Its seed-round results and scripts are in the [evidence release](https://github.com/apolloh0/nablaframe/releases/tag/report-2026-11).
 
 ## Status
 
