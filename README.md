@@ -2,9 +2,9 @@
 
 <h1 align="center">Nablaframe</h1>
 
-<p align="center">A small GPT you can read.</p>
+<p align="center"><b>Toward a learnable learner.</b><br>A small GPT trained from scratch, where every explanation carries a measured number.</p>
 
-Nablaframe trains a small GPT from scratch on a Mac and makes the result legible. The training run and the forward pass can be replayed exactly, inspected through lenses, manipulated, and refactored, and every explanation it shows carries a measured faithfulness number. nanoGPT makes the code readable; Nablaframe aims to make the trained model readable.
+Nablaframe trains a small GPT from scratch on a Mac and makes the result legible. The training run and the forward pass can be replayed exactly, inspected through lenses, manipulated, and refactored, and every explanation it shows carries a measured faithfulness number. nanoGPT makes the code readable; Nablaframe aims to make every claim about the trained model checkable.
 
 ## Report
 
